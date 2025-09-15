@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/wrappers"
@@ -99,7 +100,7 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 				Computed:    true,
 			},
 			"origin_group_id": {
-				Type:        schema.TypeInt,
+				Type:        schema.TypeString,
 				Description: "The ID of a specific origin group.",
 				Optional:    true,
 			},
@@ -842,7 +843,11 @@ func prepareCDNCreateResourceRequest(ctx context.Context, d *schema.ResourceData
 		result := &cdn.CreateResourceRequest_Origin{}
 
 		if v, ok := d.GetOk("origin_group_id"); ok {
-			groupID := int64(v.(int))
+			groupIDStr := v.(string)
+			groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid origin_group_id: %s", err)
+			}
 
 			result.OriginVariant = &cdn.CreateResourceRequest_Origin_OriginGroupId{
 				OriginGroupId: groupID,
@@ -1138,7 +1143,7 @@ func flattenYandexCDNResourceOriginGroup(d *schema.ResourceData, resource *cdn.R
 	}
 
 	if _, ok := d.GetOk("origin_group_id"); ok {
-		_ = d.Set("origin_group_id", resource.OriginGroupId)
+		_ = d.Set("origin_group_id", strconv.FormatInt(resource.OriginGroupId, 10))
 	}
 }
 
@@ -1233,10 +1238,14 @@ func prepareCDNUpdateResourceRequest(ctx context.Context, d *schema.ResourceData
 	}
 
 	if d.HasChange("origin_group_id") {
-		groupID := d.Get("origin_group_id").(int)
-		if groupID > 0 {
+		groupIDStr := d.Get("origin_group_id").(string)
+		if groupIDStr != "" {
+			groupID, err := strconv.ParseInt(groupIDStr, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid origin_group_id: %s", err)
+			}
 			request.OriginGroupId = &wrappers.Int64Value{
-				Value: int64(groupID),
+				Value: groupID,
 			}
 		}
 	}
