@@ -133,11 +133,6 @@ func prepareCDNCreateOriginGroupRequest(d *schema.ResourceData, meta *Config) (*
 		return nil, fmt.Errorf("Error getting folder ID while creating instance: %s", err)
 	}
 
-	var useNext *wrappers.BoolValue
-	if v, ok := d.GetOk("use_next"); ok {
-		useNext = &wrappers.BoolValue{Value: v.(bool)}
-	}
-
 	log.Printf("[DEBUG] Preparing create CDN Origin Group request %q", d.Get("name").(string))
 	provider := "ourcdn"
 	if v := d.Get("provider_type"); v != "" {
@@ -148,8 +143,7 @@ func prepareCDNCreateOriginGroupRequest(d *schema.ResourceData, meta *Config) (*
 		FolderId:     folderID,
 		Name:         d.Get("name").(string),
 		ProviderType: provider,
-
-		UseNext: useNext,
+		UseNext:      &wrappers.BoolValue{Value: d.Get("use_next").(bool)},
 	}
 
 	for _, origin := range d.Get("origin").(*schema.Set).List() {
