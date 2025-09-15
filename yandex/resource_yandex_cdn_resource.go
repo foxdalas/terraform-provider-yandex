@@ -434,28 +434,28 @@ func resourceYandexCDNResource() *schema.Resource {
 	return resourceSchema
 }
 
-func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
+func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, error) {
 	_, ok := d.GetOk("options")
 	if !ok {
 		log.Printf("[DEBUG] empty cdn resource options list")
-		return nil
+		return nil, nil
 	}
 
 	size := d.Get("options.#").(int)
 	if size < 1 {
 		log.Printf("[DEBUG] resource options list is empty")
-		return nil
+		return nil, nil
 	}
 
 	result := &cdn.ResourceOptions{}
 	var optionsSet bool
 
-	if rawOption, ok := d.GetOk("options.0.disable_cache"); ok {
+	if _, ok := d.GetOk("options.0.disable_cache"); ok || d.HasChange("options.0.disable_cache") {
 		optionsSet = true
-
+		value := d.Get("options.0.disable_cache").(bool)
 		result.DisableCache = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
+			Enabled: true,
+			Value:   value,
 		}
 	}
 
@@ -493,20 +493,33 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.ignore_query_params"); ok {
-		optionsSet = true
+	// Query params options - mutually exclusive
+	queryParamsCount := 0
+	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || d.HasChange("options.0.ignore_query_params") {
+		queryParamsCount++
+	}
+	if _, ok := d.GetOk("options.0.query_params_whitelist"); ok {
+		queryParamsCount++
+	}
+	if _, ok := d.GetOk("options.0.query_params_blacklist"); ok {
+		queryParamsCount++
+	}
+	if queryParamsCount > 1 {
+		return nil, fmt.Errorf("only one of ignore_query_params, query_params_whitelist, or query_params_blacklist can be set")
+	}
 
+	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || d.HasChange("options.0.ignore_query_params") {
+		optionsSet = true
+		value := d.Get("options.0.ignore_query_params").(bool)
 		result.QueryParamsOptions = &cdn.ResourceOptions_QueryParamsOptions{
 			QueryParamsVariant: &cdn.ResourceOptions_QueryParamsOptions_IgnoreQueryString{
 				IgnoreQueryString: &cdn.ResourceOptions_BoolOption{
-					Enabled: rawOption.(bool),
-					Value:   rawOption.(bool),
+					Enabled: true,
+					Value:   value,
 				},
 			},
 		}
-	}
-
-	if rawOption, ok := d.GetOk("options.0.query_params_whitelist"); ok {
+	} else if rawOption, ok := d.GetOk("options.0.query_params_whitelist"); ok {
 		optionsSet = true
 
 		var values []string
@@ -524,9 +537,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 				},
 			}
 		}
-	}
-
-	if rawOption, ok := d.GetOk("options.0.query_params_blacklist"); ok {
+	} else if rawOption, ok := d.GetOk("options.0.query_params_blacklist"); ok {
 		optionsSet = true
 
 		var values []string
@@ -546,107 +557,130 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.slice"); ok {
+	if _, ok := d.GetOk("options.0.slice"); ok || d.HasChange("options.0.slice") {
 		optionsSet = true
-
+		value := d.Get("options.0.slice").(bool)
 		result.Slice = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
+			Enabled: true,
+			Value:   value,
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.fetched_compressed"); ok {
-		optionsSet = true
+	// Compression options - mutually exclusive
+	compressionCount := 0
+	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || d.HasChange("options.0.fetched_compressed") {
+		compressionCount++
+	}
+	if _, ok := d.GetOk("options.0.gzip_on"); ok || d.HasChange("options.0.gzip_on") {
+		compressionCount++
+	}
+	if compressionCount > 1 {
+		return nil, fmt.Errorf("only one of fetched_compressed or gzip_on can be set")
+	}
 
+	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || d.HasChange("options.0.fetched_compressed") {
+		optionsSet = true
+		value := d.Get("options.0.fetched_compressed").(bool)
 		result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
 			CompressionVariant: &cdn.ResourceOptions_CompressionOptions_FetchCompressed{
 				FetchCompressed: &cdn.ResourceOptions_BoolOption{
-					Enabled: rawOption.(bool),
-					Value:   rawOption.(bool),
+					Enabled: true,
+					Value:   value,
 				},
 			},
 		}
-	}
-
-	if rawOption, ok := d.GetOk("options.0.gzip_on"); ok {
+	} else if _, ok := d.GetOk("options.0.gzip_on"); ok || d.HasChange("options.0.gzip_on") {
 		optionsSet = true
-
+		value := d.Get("options.0.gzip_on").(bool)
 		result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
 			CompressionVariant: &cdn.ResourceOptions_CompressionOptions_GzipOn{
 				GzipOn: &cdn.ResourceOptions_BoolOption{
-					Enabled: rawOption.(bool),
-					Value:   rawOption.(bool),
+					Enabled: true,
+					Value:   value,
 				},
 			},
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.redirect_http_to_https"); ok {
-		optionsSet = true
+	// Redirect options - mutually exclusive
+	redirectCount := 0
+	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || d.HasChange("options.0.redirect_http_to_https") {
+		redirectCount++
+	}
+	if _, ok := d.GetOk("options.0.redirect_https_to_http"); ok || d.HasChange("options.0.redirect_https_to_http") {
+		redirectCount++
+	}
+	if redirectCount > 1 {
+		return nil, fmt.Errorf("only one of redirect_http_to_https or redirect_https_to_http can be set")
+	}
 
+	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || d.HasChange("options.0.redirect_http_to_https") {
+		optionsSet = true
+		value := d.Get("options.0.redirect_http_to_https").(bool)
 		result.RedirectOptions = &cdn.ResourceOptions_RedirectOptions{
 			RedirectVariant: &cdn.ResourceOptions_RedirectOptions_RedirectHttpToHttps{
 				RedirectHttpToHttps: &cdn.ResourceOptions_BoolOption{
-					Enabled: rawOption.(bool),
-					Value:   rawOption.(bool),
+					Enabled: true,
+					Value:   value,
 				},
 			},
 		}
-	}
-
-	if rawOption, ok := d.GetOk("options.0.redirect_https_to_http"); ok {
+	} else if _, ok := d.GetOk("options.0.redirect_https_to_http"); ok || d.HasChange("options.0.redirect_https_to_http") {
 		optionsSet = true
-
+		value := d.Get("options.0.redirect_https_to_http").(bool)
 		result.RedirectOptions = &cdn.ResourceOptions_RedirectOptions{
 			RedirectVariant: &cdn.ResourceOptions_RedirectOptions_RedirectHttpsToHttp{
 				RedirectHttpsToHttp: &cdn.ResourceOptions_BoolOption{
-					Enabled: rawOption.(bool),
-					Value:   rawOption.(bool),
+					Enabled: true,
+					Value:   value,
 				},
 			},
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.ignore_cookie"); ok {
+	if _, ok := d.GetOk("options.0.ignore_cookie"); ok || d.HasChange("options.0.ignore_cookie") {
 		optionsSet = true
-
+		value := d.Get("options.0.ignore_cookie").(bool)
 		result.IgnoreCookie = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
+			Enabled: true,
+			Value:   value,
 		}
 	}
 
-	makeHostOption := func() *cdn.ResourceOptions_HostOptions {
-		if rawOption, ok := d.GetOk("options.0.custom_host_header"); ok && rawOption.(string) != "" {
-			optionsSet = true
-
-			return &cdn.ResourceOptions_HostOptions{
-				HostVariant: &cdn.ResourceOptions_HostOptions_Host{
-					Host: &cdn.ResourceOptions_StringOption{
-						Enabled: true,
-						Value:   rawOption.(string),
-					},
-				},
-			}
-		}
-
-		if rawOption, ok := d.GetOk("options.0.forward_host_header"); ok && rawOption.(bool) {
-			optionsSet = true
-
-			return &cdn.ResourceOptions_HostOptions{
-				HostVariant: &cdn.ResourceOptions_HostOptions_ForwardHostHeader{
-					ForwardHostHeader: &cdn.ResourceOptions_BoolOption{
-						Enabled: rawOption.(bool),
-						Value:   rawOption.(bool),
-					},
-				},
-			}
-		}
-
-		return nil
+	// Host options - mutually exclusive
+	hostCount := 0
+	if _, ok := d.GetOk("options.0.custom_host_header"); ok {
+		hostCount++
+	}
+	if _, ok := d.GetOk("options.0.forward_host_header"); ok || d.HasChange("options.0.forward_host_header") {
+		hostCount++
+	}
+	if hostCount > 1 {
+		return nil, fmt.Errorf("only one of custom_host_header or forward_host_header can be set")
 	}
 
-	result.HostOptions = makeHostOption()
+	if rawOption, ok := d.GetOk("options.0.custom_host_header"); ok && rawOption.(string) != "" {
+		optionsSet = true
+		result.HostOptions = &cdn.ResourceOptions_HostOptions{
+			HostVariant: &cdn.ResourceOptions_HostOptions_Host{
+				Host: &cdn.ResourceOptions_StringOption{
+					Enabled: true,
+					Value:   rawOption.(string),
+				},
+			},
+		}
+	} else if _, ok := d.GetOk("options.0.forward_host_header"); ok || d.HasChange("options.0.forward_host_header") {
+		optionsSet = true
+		value := d.Get("options.0.forward_host_header").(bool)
+		result.HostOptions = &cdn.ResourceOptions_HostOptions{
+			HostVariant: &cdn.ResourceOptions_HostOptions_ForwardHostHeader{
+				ForwardHostHeader: &cdn.ResourceOptions_BoolOption{
+					Enabled: true,
+					Value:   value,
+				},
+			},
+		}
+	}
 
 	if rawOption, ok := d.GetOk("options.0.static_response_headers"); ok {
 		optionsSet = true
@@ -693,21 +727,21 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.proxy_cache_method_set"); ok {
+	if _, ok := d.GetOk("options.0.proxy_cache_methods_set"); ok || d.HasChange("options.0.proxy_cache_methods_set") {
 		optionsSet = true
-
+		value := d.Get("options.0.proxy_cache_methods_set").(bool)
 		result.ProxyCacheMethodsSet = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
+			Enabled: true,
+			Value:   value,
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.disable_proxy_force_ranges"); ok {
+	if _, ok := d.GetOk("options.0.disable_proxy_force_ranges"); ok || d.HasChange("options.0.disable_proxy_force_ranges") {
 		optionsSet = true
-
+		value := d.Get("options.0.disable_proxy_force_ranges").(bool)
 		result.DisableProxyForceRanges = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
+			Enabled: true,
+			Value:   value,
 		}
 	}
 
@@ -733,21 +767,15 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 		}
 	}
 
-	if rawOption, ok := d.GetOk("options.0.ignore_cookie"); ok {
-		optionsSet = true
-
-		result.IgnoreCookie = &cdn.ResourceOptions_BoolOption{
-			Enabled: rawOption.(bool),
-			Value:   rawOption.(bool),
-		}
-	}
 
 	if rawOption, ok := d.GetOk("options.0.secure_key"); ok {
 		optionsSet = true
 
 		urlType := cdn.SecureKeyURLType_DISABLE_IP_SIGNING
-		if rawUrlType, ok := d.GetOk("options.0.enable_ip_url_signing"); ok && rawUrlType.(bool) {
-			urlType = cdn.SecureKeyURLType_ENABLE_IP_SIGNING
+		if _, ok := d.GetOk("options.0.enable_ip_url_signing"); ok || d.HasChange("options.0.enable_ip_url_signing") {
+			if d.Get("options.0.enable_ip_url_signing").(bool) {
+				urlType = cdn.SecureKeyURLType_ENABLE_IP_SIGNING
+			}
 		}
 
 		result.SecureKey = &cdn.ResourceOptions_SecureKeyOption{
@@ -779,18 +807,18 @@ func expandCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
 	}
 
 	if !optionsSet {
-		return nil
+		return nil, nil
 	}
 
-	return result
+	return result, nil
 }
 
-func prepareCDNResourceOptions(d *schema.ResourceData) *cdn.ResourceOptions {
-	if options := expandCDNResourceOptions(d); options != nil {
-		return options
+func prepareCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, error) {
+	options, err := expandCDNResourceOptions(d)
+	if err != nil {
+		return nil, err
 	}
-
-	return nil
+	return options, nil
 }
 
 func prepareCDNResourceLabels(d *schema.ResourceData) map[string]string {
@@ -846,6 +874,11 @@ func prepareCDNCreateResourceRequest(ctx context.Context, d *schema.ResourceData
 		return nil, err
 	}
 
+	options, err := prepareCDNResourceOptions(d)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &cdn.CreateResourceRequest{
 		FolderId: folderID,
 		Cname:    d.Get("cname").(string),
@@ -858,7 +891,7 @@ func prepareCDNCreateResourceRequest(ctx context.Context, d *schema.ResourceData
 			Value: d.Get("active").(bool),
 		},
 
-		Options: prepareCDNResourceOptions(d),
+		Options: options,
 		Labels:  prepareCDNResourceLabels(d),
 	}
 
@@ -1249,7 +1282,11 @@ func prepareCDNUpdateResourceRequest(ctx context.Context, d *schema.ResourceData
 	}
 
 	if d.HasChange("options") {
-		request.Options = prepareCDNResourceOptions(d)
+		options, err := prepareCDNResourceOptions(d)
+		if err != nil {
+			return nil, err
+		}
+		request.Options = options
 	}
 
 	if d.HasChange("labels") {
