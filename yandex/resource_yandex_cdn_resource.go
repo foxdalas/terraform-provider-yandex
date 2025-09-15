@@ -438,7 +438,7 @@ func resourceYandexCDNResource() *schema.Resource {
 	return resourceSchema
 }
 
-func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, error) {
+func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.ResourceOptions, error) {
 	_, ok := d.GetOk("options")
 	if !ok {
 		log.Printf("[DEBUG] empty cdn resource options list")
@@ -454,7 +454,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 	result := &cdn.ResourceOptions{}
 	var optionsSet bool
 
-	if _, ok := d.GetOk("options.0.disable_cache"); ok || d.HasChange("options.0.disable_cache") {
+	if _, ok := d.GetOk("options.0.disable_cache"); ok || (!isCreate && d.HasChange("options.0.disable_cache")) {
 		optionsSet = true
 		value := d.Get("options.0.disable_cache").(bool)
 		result.DisableCache = &cdn.ResourceOptions_BoolOption{
@@ -499,7 +499,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 
 	// Query params options - mutually exclusive
 	queryParamsCount := 0
-	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || d.HasChange("options.0.ignore_query_params") {
+	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || (!isCreate && d.HasChange("options.0.ignore_query_params")) {
 		queryParamsCount++
 	}
 	if _, ok := d.GetOk("options.0.query_params_whitelist"); ok {
@@ -512,7 +512,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		return nil, fmt.Errorf("only one of ignore_query_params, query_params_whitelist, or query_params_blacklist can be set")
 	}
 
-	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || d.HasChange("options.0.ignore_query_params") {
+	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || (!isCreate && d.HasChange("options.0.ignore_query_params")) {
 		optionsSet = true
 		value := d.Get("options.0.ignore_query_params").(bool)
 		result.QueryParamsOptions = &cdn.ResourceOptions_QueryParamsOptions{
@@ -561,7 +561,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		}
 	}
 
-	if _, ok := d.GetOk("options.0.slice"); ok || d.HasChange("options.0.slice") {
+	if _, ok := d.GetOk("options.0.slice"); ok || (!isCreate && d.HasChange("options.0.slice")) {
 		optionsSet = true
 		value := d.Get("options.0.slice").(bool)
 		result.Slice = &cdn.ResourceOptions_BoolOption{
@@ -572,17 +572,17 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 
 	// Compression options - mutually exclusive
 	compressionCount := 0
-	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || d.HasChange("options.0.fetched_compressed") {
+	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || (!isCreate && d.HasChange("options.0.fetched_compressed")) {
 		compressionCount++
 	}
-	if _, ok := d.GetOk("options.0.gzip_on"); ok || d.HasChange("options.0.gzip_on") {
+	if _, ok := d.GetOk("options.0.gzip_on"); ok || (!isCreate && d.HasChange("options.0.gzip_on")) {
 		compressionCount++
 	}
 	if compressionCount > 1 {
 		return nil, fmt.Errorf("only one of fetched_compressed or gzip_on can be set")
 	}
 
-	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || d.HasChange("options.0.fetched_compressed") {
+	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || (!isCreate && d.HasChange("options.0.fetched_compressed")) {
 		optionsSet = true
 		value := d.Get("options.0.fetched_compressed").(bool)
 		result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
@@ -593,7 +593,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 				},
 			},
 		}
-	} else if _, ok := d.GetOk("options.0.gzip_on"); ok || d.HasChange("options.0.gzip_on") {
+	} else if _, ok := d.GetOk("options.0.gzip_on"); ok || (!isCreate && d.HasChange("options.0.gzip_on")) {
 		optionsSet = true
 		value := d.Get("options.0.gzip_on").(bool)
 		result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
@@ -608,17 +608,17 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 
 	// Redirect options - mutually exclusive
 	redirectCount := 0
-	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || d.HasChange("options.0.redirect_http_to_https") {
+	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || (!isCreate && d.HasChange("options.0.redirect_http_to_https")) {
 		redirectCount++
 	}
-	if _, ok := d.GetOk("options.0.redirect_https_to_http"); ok || d.HasChange("options.0.redirect_https_to_http") {
+	if _, ok := d.GetOk("options.0.redirect_https_to_http"); ok || (!isCreate && d.HasChange("options.0.redirect_https_to_http")) {
 		redirectCount++
 	}
 	if redirectCount > 1 {
 		return nil, fmt.Errorf("only one of redirect_http_to_https or redirect_https_to_http can be set")
 	}
 
-	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || d.HasChange("options.0.redirect_http_to_https") {
+	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || (!isCreate && d.HasChange("options.0.redirect_http_to_https")) {
 		optionsSet = true
 		value := d.Get("options.0.redirect_http_to_https").(bool)
 		result.RedirectOptions = &cdn.ResourceOptions_RedirectOptions{
@@ -642,7 +642,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		}
 	}
 
-	if _, ok := d.GetOk("options.0.ignore_cookie"); ok || d.HasChange("options.0.ignore_cookie") {
+	if _, ok := d.GetOk("options.0.ignore_cookie"); ok || (!isCreate && d.HasChange("options.0.ignore_cookie")) {
 		optionsSet = true
 		value := d.Get("options.0.ignore_cookie").(bool)
 		result.IgnoreCookie = &cdn.ResourceOptions_BoolOption{
@@ -656,7 +656,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 	if _, ok := d.GetOk("options.0.custom_host_header"); ok {
 		hostCount++
 	}
-	if _, ok := d.GetOk("options.0.forward_host_header"); ok || d.HasChange("options.0.forward_host_header") {
+	if _, ok := d.GetOk("options.0.forward_host_header"); ok || (!isCreate && d.HasChange("options.0.forward_host_header")) {
 		hostCount++
 	}
 	if hostCount > 1 {
@@ -673,7 +673,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 				},
 			},
 		}
-	} else if _, ok := d.GetOk("options.0.forward_host_header"); ok || d.HasChange("options.0.forward_host_header") {
+	} else if _, ok := d.GetOk("options.0.forward_host_header"); ok || (!isCreate && d.HasChange("options.0.forward_host_header")) {
 		optionsSet = true
 		value := d.Get("options.0.forward_host_header").(bool)
 		result.HostOptions = &cdn.ResourceOptions_HostOptions{
@@ -731,7 +731,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		}
 	}
 
-	if _, ok := d.GetOk("options.0.proxy_cache_methods_set"); ok || d.HasChange("options.0.proxy_cache_methods_set") {
+	if _, ok := d.GetOk("options.0.proxy_cache_methods_set"); ok || (!isCreate && d.HasChange("options.0.proxy_cache_methods_set")) {
 		optionsSet = true
 		value := d.Get("options.0.proxy_cache_methods_set").(bool)
 		result.ProxyCacheMethodsSet = &cdn.ResourceOptions_BoolOption{
@@ -740,7 +740,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		}
 	}
 
-	if _, ok := d.GetOk("options.0.disable_proxy_force_ranges"); ok || d.HasChange("options.0.disable_proxy_force_ranges") {
+	if _, ok := d.GetOk("options.0.disable_proxy_force_ranges"); ok || (!isCreate && d.HasChange("options.0.disable_proxy_force_ranges")) {
 		optionsSet = true
 		value := d.Get("options.0.disable_proxy_force_ranges").(bool)
 		result.DisableProxyForceRanges = &cdn.ResourceOptions_BoolOption{
@@ -776,7 +776,7 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 		optionsSet = true
 
 		urlType := cdn.SecureKeyURLType_DISABLE_IP_SIGNING
-		if _, ok := d.GetOk("options.0.enable_ip_url_signing"); ok || d.HasChange("options.0.enable_ip_url_signing") {
+		if _, ok := d.GetOk("options.0.enable_ip_url_signing"); ok || (!isCreate && d.HasChange("options.0.enable_ip_url_signing")) {
 			if d.Get("options.0.enable_ip_url_signing").(bool) {
 				urlType = cdn.SecureKeyURLType_ENABLE_IP_SIGNING
 			}
@@ -817,8 +817,8 @@ func expandCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, err
 	return result, nil
 }
 
-func prepareCDNResourceOptions(d *schema.ResourceData) (*cdn.ResourceOptions, error) {
-	options, err := expandCDNResourceOptions(d)
+func prepareCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.ResourceOptions, error) {
+	options, err := expandCDNResourceOptions(d, isCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -882,7 +882,7 @@ func prepareCDNCreateResourceRequest(ctx context.Context, d *schema.ResourceData
 		provider = v.(string)
 	}
 
-	options, err := prepareCDNResourceOptions(d)
+	options, err := prepareCDNResourceOptions(d, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1296,7 +1296,7 @@ func prepareCDNUpdateResourceRequest(ctx context.Context, d *schema.ResourceData
 	}
 
 	if d.HasChange("options") {
-		options, err := prepareCDNResourceOptions(d)
+		options, err := prepareCDNResourceOptions(d, false)
 		if err != nil {
 			return nil, err
 		}
