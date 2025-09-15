@@ -20,6 +20,16 @@ func dataSourceYandexCDNResource() *schema.Resource {
 		Computed: true,
 		Optional: true,
 	}
+	resourceSchema.Schema["provider_cname"] = &schema.Schema{
+		Type:        schema.TypeString,
+		Description: "Provider CNAME of CDN resource.",
+		Computed:    true,
+	}
+	resourceSchema.Schema["provider_type"] = &schema.Schema{
+		Type:        schema.TypeString,
+		Description: "Type of the CDN provider for this resource.",
+		Computed:    true,
+	}
 
 	return resourceSchema
 }
@@ -78,6 +88,10 @@ func dataSourceYandexCDNResourceRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	if err := flattenYandexCDNResource(d, resource); err != nil {
+		return err
+	}
+
+	if err = d.Set("options", flattenYandexCDNResourceOptions(resource.Options)); err != nil {
 		return err
 	}
 
