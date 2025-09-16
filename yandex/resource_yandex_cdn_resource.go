@@ -766,7 +766,6 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-
 	if rawOption, ok := d.GetOk("options.0.secure_key"); ok {
 		optionsSet = true
 
