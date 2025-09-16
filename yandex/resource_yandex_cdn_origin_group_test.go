@@ -185,11 +185,11 @@ func TestAccCDNOriginGroup_update(t *testing.T) {
 
 func TestAccCDNOriginGroup_updateOriginOnly(t *testing.T) {
 	groupName := fmt.Sprintf("tf-test-cdn-origin-group-%s", acctest.RandString(10))
-	
+
 	var originGroup, originGroupUpdated cdn.OriginGroup
-	
+
 	folderID := getExampleFolderID()
-	
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
