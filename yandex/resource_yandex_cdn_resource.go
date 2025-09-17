@@ -248,16 +248,18 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Optional:    true,
 						},
 						"custom_host_header": {
-							Type:        schema.TypeString,
-							Description: "Custom value for the Host header. Your server must be able to process requests with the chosen header.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeString,
+							Description:   "Custom value for the Host header. Your server must be able to process requests with the chosen header.",
+							Optional:      true,
+							Computed:      true,
+							ConflictsWith: []string{"options.0.forward_host_header"},
 						},
 						"forward_host_header": {
-							Type:        schema.TypeBool,
-							Description: "Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.",
+							Optional:      true,
+							Computed:      true,
+							ConflictsWith: []string{"options.0.custom_host_header"},
 						},
 						"static_response_headers": {
 							Type:        schema.TypeMap,
@@ -652,38 +654,54 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Host options - mutually exclusive
-	hostCount := 0
-	if _, ok := d.GetOk("options.0.custom_host_header"); ok {
-		hostCount++
-	}
-	if _, ok := d.GetOk("options.0.forward_host_header"); ok || (!isCreate && d.HasChange("options.0.forward_host_header")) {
-		hostCount++
-	}
-	if hostCount > 1 {
-		return nil, fmt.Errorf("only one of custom_host_header or forward_host_header can be set")
-	}
+	if !isCreate && (d.HasChange("options.0.custom_host_header") || d.HasChange("options.0.forward_host_header")) {
+		customHost := d.Get("options.0.custom_host_header").(string)
+		forwardHost := d.Get("options.0.forward_host_header").(bool)
 
-	if rawOption, ok := d.GetOk("options.0.custom_host_header"); ok && rawOption.(string) != "" {
-		optionsSet = true
-		result.HostOptions = &cdn.ResourceOptions_HostOptions{
-			HostVariant: &cdn.ResourceOptions_HostOptions_Host{
-				Host: &cdn.ResourceOptions_StringOption{
-					Enabled: true,
-					Value:   rawOption.(string),
+		if customHost != "" {
+			optionsSet = true
+			result.HostOptions = &cdn.ResourceOptions_HostOptions{
+				HostVariant: &cdn.ResourceOptions_HostOptions_Host{
+					Host: &cdn.ResourceOptions_StringOption{
+						Enabled: true,
+						Value:   customHost,
+					},
 				},
-			},
+			}
+		} else {
+			optionsSet = true
+			result.HostOptions = &cdn.ResourceOptions_HostOptions{
+				HostVariant: &cdn.ResourceOptions_HostOptions_ForwardHostHeader{
+					ForwardHostHeader: &cdn.ResourceOptions_BoolOption{
+						Enabled: true,
+						Value:   forwardHost,
+					},
+				},
+			}
 		}
-	} else if _, ok := d.GetOk("options.0.forward_host_header"); ok || (!isCreate && d.HasChange("options.0.forward_host_header")) {
-		optionsSet = true
-		value := d.Get("options.0.forward_host_header").(bool)
-		result.HostOptions = &cdn.ResourceOptions_HostOptions{
-			HostVariant: &cdn.ResourceOptions_HostOptions_ForwardHostHeader{
-				ForwardHostHeader: &cdn.ResourceOptions_BoolOption{
-					Enabled: true,
-					Value:   value,
+	} else if isCreate {
+		// On create, check which option is set
+		if rawOption, ok := d.GetOk("options.0.custom_host_header"); ok && rawOption.(string) != "" {
+			optionsSet = true
+			result.HostOptions = &cdn.ResourceOptions_HostOptions{
+				HostVariant: &cdn.ResourceOptions_HostOptions_Host{
+					Host: &cdn.ResourceOptions_StringOption{
+						Enabled: true,
+						Value:   rawOption.(string),
+					},
 				},
-			},
+			}
+		} else if _, ok := d.GetOk("options.0.forward_host_header"); ok {
+			optionsSet = true
+			value := d.Get("options.0.forward_host_header").(bool)
+			result.HostOptions = &cdn.ResourceOptions_HostOptions{
+				HostVariant: &cdn.ResourceOptions_HostOptions_ForwardHostHeader{
+					ForwardHostHeader: &cdn.ResourceOptions_BoolOption{
+						Enabled: true,
+						Value:   value,
+					},
+				},
+			}
 		}
 	}
 
@@ -1046,9 +1064,19 @@ func flattenYandexCDNResourceOptions(options *cdn.ResourceOptions) []map[string]
 		switch val := options.HostOptions.HostVariant.(type) {
 		case *cdn.ResourceOptions_HostOptions_ForwardHostHeader:
 			setIfEnabled("forward_host_header", val.ForwardHostHeader.Enabled, val.ForwardHostHeader.Value)
+			// Clear the custom_host_header field since they are mutually exclusive
+			// When forward_host_header is active, custom_host_header should be empty
+			item["custom_host_header"] = ""
 		case *cdn.ResourceOptions_HostOptions_Host:
 			setIfEnabled("custom_host_header", val.Host.Enabled, val.Host.Value)
+			// Clear the forward_host_header field since they are mutually exclusive
+			// When custom_host_header is active, forward_host_header should be false
+			item["forward_host_header"] = false
 		}
+	} else {
+		// If no HostOptions at all, both fields should have their zero values
+		item["custom_host_header"] = ""
+		item["forward_host_header"] = false
 	}
 
 	if options.Cors != nil {
