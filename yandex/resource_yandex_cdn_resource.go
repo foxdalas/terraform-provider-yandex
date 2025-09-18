@@ -486,7 +486,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Query params options - schema already enforces mutual exclusion via ConflictsWith
+	// Query params options
 	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || (!isCreate && d.HasChange("options.0.ignore_query_params")) {
 		optionsSet = true
 		value := d.Get("options.0.ignore_query_params").(bool)
@@ -545,7 +545,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Compression options - schema already enforces mutual exclusion via ConflictsWith
+	// Compression options
 	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || (!isCreate && d.HasChange("options.0.fetched_compressed")) {
 		optionsSet = true
 		value := d.Get("options.0.fetched_compressed").(bool)
@@ -570,7 +570,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Redirect options - schema already enforces mutual exclusion via ConflictsWith
+	// Redirect options
 	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || (!isCreate && d.HasChange("options.0.redirect_http_to_https")) {
 		optionsSet = true
 		value := d.Get("options.0.redirect_http_to_https").(bool)
