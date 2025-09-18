@@ -6,7 +6,8 @@ before:
     # this is just an example and not a requirement for provider building/publishing
     - go mod tidy
 builds:
-- env:
+- no_unique_dist_dir: true
+  env:
     # goreleaser does not work with CGO, it could also complicate
     # usage by users in CI/CD systems like Terraform Cloud where
     # they are unable to install libraries.
@@ -33,7 +34,7 @@ builds:
       goarch: arm64
     - goos: windows
       goarch: arm
-  binary: '{{ .ProjectName }}_v{{ .Version }}'
+  binary: '{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 archives:
 - formats: [ "zip" ]
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
