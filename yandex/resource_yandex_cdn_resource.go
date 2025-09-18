@@ -118,10 +118,14 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"type": {
-							Type:         schema.TypeString,
-							Description:  "SSL certificate type.",
-							Required:     true,
-							ValidateFunc: validateResourceSSLCertTypeFunc(),
+							Type:        schema.TypeString,
+							Description: "SSL certificate type.",
+							Required:    true,
+							ValidateFunc: validation.StringInSlice([]string{
+								cdnSSLCertificateTypeNotUsed,
+								cdnSSLCertificateTypeCM,
+								cdnSSLCertificateTypeLE,
+							}, false),
 						},
 						"status": {
 							Type:        schema.TypeString,
@@ -149,13 +153,12 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 			},
 
 			"options": {
-				Type:        schema.TypeList,
-				Description: "CDN Resource settings and options to tune CDN edge behavior.",
-				Optional:    true,
-				Computed:    true,
-
-				MaxItems: 1,
-
+				Type:             schema.TypeList,
+				Description:      "CDN Resource settings and options to tune CDN edge behavior.",
+				Optional:         true,
+				Computed:         true,
+				MaxItems:         1,
+				ValidateDiagFunc: validateCDNResourceOptions(),
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"disable_cache": {
@@ -166,16 +169,18 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 						},
 						// TODO: use CDN Provider custom values for response codes.
 						"edge_cache_settings": {
-							Type:        schema.TypeInt,
-							Description: "Content will be cached according to origin cache settings. The value applies for a response with codes 200, 201, 204, 206, 301, 302, 303, 304, 307, 308 if an origin server does not have caching HTTP headers. Responses with other codes will not be cached.",
-							Computed:    true,
-							Optional:    true,
+							Type:         schema.TypeInt,
+							Description:  "Content will be cached according to origin cache settings. The value applies for a response with codes 200, 201, 204, 206, 301, 302, 303, 304, 307, 308 if an origin server does not have caching HTTP headers. Responses with other codes will not be cached.",
+							Computed:     true,
+							Optional:     true,
+							ValidateFunc: validateEdgeCacheSettings,
 						},
 						"browser_cache_settings": {
-							Type:        schema.TypeInt,
-							Description: "Set up a cache period for the end-users browser. Content will be cached due to origin settings. If there are no cache settings on your origin, the content will not be cached. The list of HTTP response codes that can be cached in browsers: 200, 201, 204, 206, 301, 302, 303, 304, 307, 308. Other response codes will not be cached. The default value is 4 days.",
-							Computed:    true,
-							Optional:    true,
+							Type:         schema.TypeInt,
+							Description:  "Set up a cache period for the end-users browser. Content will be cached due to origin settings. If there are no cache settings on your origin, the content will not be cached. The list of HTTP response codes that can be cached in browsers: 200, 201, 204, 206, 301, 302, 303, 304, 307, 308. Other response codes will not be cached. The default value is 4 days.",
+							Computed:     true,
+							Optional:     true,
+							ValidateFunc: validateBrowserCacheSettings,
 						},
 						"cache_http_headers": {
 							Type:        schema.TypeList,
@@ -188,29 +193,32 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							},
 						},
 						"ignore_query_params": {
-							Type:        schema.TypeBool,
-							Description: "Files with different query parameters are cached as objects with the same key regardless of the parameter value. selected by default.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "Files with different query parameters are cached as objects with the same key regardless of the parameter value. selected by default.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.query_params_whitelist", "options.0.query_params_blacklist"},
 						},
 						"query_params_whitelist": {
-							Type:        schema.TypeList,
-							Description: "Files with the specified query parameters are cached as objects with different keys, files with other parameters are cached as objects with the same key.",
-							Computed:    true,
-							Optional:    true,
-
+							Type:          schema.TypeList,
+							Description:   "Files with the specified query parameters are cached as objects with different keys, files with other parameters are cached as objects with the same key.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.ignore_query_params", "options.0.query_params_blacklist"},
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 						"query_params_blacklist": {
-							Type:        schema.TypeList,
-							Description: "Files with the specified query parameters are cached as objects with the same key, files with other parameters are cached as objects with different keys.",
-							Computed:    true,
-							Optional:    true,
-
+							Type:          schema.TypeList,
+							Description:   "Files with the specified query parameters are cached as objects with the same key, files with other parameters are cached as objects with different keys.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.ignore_query_params", "options.0.query_params_whitelist"},
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validation.StringIsNotEmpty,
 							},
 						},
 						"slice": {
@@ -220,28 +228,32 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Optional:    true,
 						},
 						"fetched_compressed": {
-							Type:        schema.TypeBool,
-							Description: "Option helps you to reduce the bandwidth between origin and CDN servers. Also, content delivery speed becomes higher because of reducing the time for compressing files in a CDN.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "Option helps you to reduce the bandwidth between origin and CDN servers. Also, content delivery speed becomes higher because of reducing the time for compressing files in a CDN.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.gzip_on"},
 						},
 						"gzip_on": {
-							Type:        schema.TypeBool,
-							Description: "GZip compression at CDN servers reduces file size by 70% and can be as high as 90%.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "GZip compression at CDN servers reduces file size by 70% and can be as high as 90%.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.fetched_compressed"},
 						},
 						"redirect_http_to_https": {
-							Type:        schema.TypeBool,
-							Description: "Set up a redirect from HTTP to HTTPS.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "Set up a redirect from HTTP to HTTPS.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.redirect_https_to_http"},
 						},
 						"redirect_https_to_http": {
-							Type:        schema.TypeBool,
-							Description: "Set up a redirect from HTTPS to HTTP.",
-							Computed:    true,
-							Optional:    true,
+							Type:          schema.TypeBool,
+							Description:   "Set up a redirect from HTTPS to HTTP.",
+							Computed:      true,
+							Optional:      true,
+							ConflictsWith: []string{"options.0.redirect_http_to_https"},
 						},
 						"custom_host_header": {
 							Type:          schema.TypeString,
@@ -258,12 +270,11 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							ConflictsWith: []string{"options.0.custom_host_header"},
 						},
 						"static_response_headers": {
-							Type:        schema.TypeMap,
-							Description: "Set up a static response header. The header name must be lowercase.",
-
-							Computed: true,
-							Optional: true,
-
+							Type:             schema.TypeMap,
+							Description:      "Set up a static response header. The header name must be lowercase.",
+							Computed:         true,
+							Optional:         true,
+							ValidateDiagFunc: validateStaticHeaders(),
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
@@ -273,9 +284,9 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Description: "Parameter that lets browsers get access to selected resources from a domain different to a domain from which the request is received.",
 							Computed:    true,
 							Optional:    true,
-
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validateCORSOrigin,
 							},
 						},
 						"allowed_http_methods": {
@@ -283,9 +294,9 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Description: "HTTP methods for your CDN content. By default the following methods are allowed: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS. In case some methods are not allowed to the user, they will get the 405 (Method Not Allowed) response. If the method is not supported, the user gets the 501 (Not Implemented) response.",
 							Computed:    true,
 							Optional:    true,
-
 							Elem: &schema.Schema{
-								Type: schema.TypeString,
+								Type:         schema.TypeString,
+								ValidateFunc: validateHTTPMethods,
 							},
 						},
 						"proxy_cache_methods_set": {
@@ -301,20 +312,21 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Optional:    true,
 						},
 						"static_request_headers": {
-							Type:        schema.TypeMap,
-							Description: "Set up custom headers that CDN servers will send in requests to origins.",
-							Computed:    true,
-							Optional:    true,
-
+							Type:             schema.TypeMap,
+							Description:      "Set up custom headers that CDN servers will send in requests to origins.",
+							Computed:         true,
+							Optional:         true,
+							ValidateDiagFunc: validateStaticHeaders(),
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
 						},
 						"custom_server_name": {
-							Type:        schema.TypeString,
-							Description: "Wildcard additional CNAME. If a resource has a wildcard additional CNAME, you can use your own certificate for content delivery via HTTPS.",
-							Computed:    true,
-							Optional:    true,
+							Type:         schema.TypeString,
+							Description:  "Wildcard additional CNAME. If a resource has a wildcard additional CNAME, you can use your own certificate for content delivery via HTTPS.",
+							Computed:     true,
+							Optional:     true,
+							ValidateFunc: validateCustomServerName,
 						},
 						"ignore_cookie": {
 							Type:        schema.TypeBool,
@@ -323,10 +335,12 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							Optional:    true,
 						},
 						"secure_key": {
-							Type:        schema.TypeString,
-							Description: "Set secure key for url encoding to protect contect and limit access by IP addresses and time limits.",
-							Computed:    true,
-							Optional:    true,
+							Type:         schema.TypeString,
+							Description:  "Set secure key for url encoding to protect content and limit access by IP addresses and time limits.",
+							Computed:     true,
+							Optional:     true,
+							Sensitive:    true,
+							ValidateFunc: validateSecureKey,
 						},
 						"enable_ip_url_signing": {
 							Type:         schema.TypeBool,
@@ -336,29 +350,26 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							RequiredWith: []string{"options.0.secure_key"},
 						},
 						"ip_address_acl": {
-							Type:        schema.TypeList,
-							Description: "IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type.",
-							Optional:    true,
-							Computed:    true,
-
-							MaxItems: 1,
-
+							Type:             schema.TypeList,
+							Description:      "IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type.",
+							Optional:         true,
+							Computed:         true,
+							MaxItems:         1,
+							ValidateDiagFunc: validateIPAddressACL(),
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"policy_type": {
-										Type:        schema.TypeString,
-										Description: "The policy type for ACL. One of `allow` or `deny` values.",
-										Optional:    true,
-										Computed:    true,
-
-										ValidateFunc: validateACLPolicyTypeFunc(),
+										Type:         schema.TypeString,
+										Description:  "The policy type for ACL. One of `allow` or `deny` values.",
+										Required:     true,
+										ValidateFunc: validation.StringInSlice([]string{"allow", "deny"}, false),
 									},
 									"excepted_values": {
 										Type:        schema.TypeList,
 										Description: "The list of specified IP addresses to be allowed or denied depending on acl policy type.",
-										Optional:    true,
-										Computed:    true,
-
+										Required:    true,
+										MinItems:    1,
+										MaxItems:    200,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
@@ -371,27 +382,6 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 			},
 		},
 	}
-}
-
-func validateResourceSSLCertTypeFunc() schema.SchemaValidateFunc {
-	return validation.StringInSlice(
-		[]string{
-			cdnSSLCertificateTypeNotUsed,
-			cdnSSLCertificateTypeCM,
-			cdnSSLCertificateTypeLE,
-		},
-		false,
-	)
-}
-
-func validateACLPolicyTypeFunc() schema.SchemaValidateFunc {
-	return validation.StringInSlice(
-		[]string{
-			cdnACLPolicyTypeAllow,
-			cdnACLPolicyTypeDeny,
-		},
-		false,
-	)
 }
 
 func aclPolicyTypeFromString(policyType string) cdn.PolicyType {
@@ -496,21 +486,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Query params options - mutually exclusive
-	queryParamsCount := 0
-	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || (!isCreate && d.HasChange("options.0.ignore_query_params")) {
-		queryParamsCount++
-	}
-	if _, ok := d.GetOk("options.0.query_params_whitelist"); ok {
-		queryParamsCount++
-	}
-	if _, ok := d.GetOk("options.0.query_params_blacklist"); ok {
-		queryParamsCount++
-	}
-	if queryParamsCount > 1 {
-		return nil, fmt.Errorf("only one of ignore_query_params, query_params_whitelist, or query_params_blacklist can be set")
-	}
-
+	// Query params options - schema already enforces mutual exclusion via ConflictsWith
 	if _, ok := d.GetOk("options.0.ignore_query_params"); ok || (!isCreate && d.HasChange("options.0.ignore_query_params")) {
 		optionsSet = true
 		value := d.Get("options.0.ignore_query_params").(bool)
@@ -569,18 +545,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Compression options - mutually exclusive
-	compressionCount := 0
-	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || (!isCreate && d.HasChange("options.0.fetched_compressed")) {
-		compressionCount++
-	}
-	if _, ok := d.GetOk("options.0.gzip_on"); ok || (!isCreate && d.HasChange("options.0.gzip_on")) {
-		compressionCount++
-	}
-	if compressionCount > 1 {
-		return nil, fmt.Errorf("only one of fetched_compressed or gzip_on can be set")
-	}
-
+	// Compression options - schema already enforces mutual exclusion via ConflictsWith
 	if _, ok := d.GetOk("options.0.fetched_compressed"); ok || (!isCreate && d.HasChange("options.0.fetched_compressed")) {
 		optionsSet = true
 		value := d.Get("options.0.fetched_compressed").(bool)
@@ -605,18 +570,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
-	// Redirect options - mutually exclusive
-	redirectCount := 0
-	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || (!isCreate && d.HasChange("options.0.redirect_http_to_https")) {
-		redirectCount++
-	}
-	if _, ok := d.GetOk("options.0.redirect_https_to_http"); ok || (!isCreate && d.HasChange("options.0.redirect_https_to_http")) {
-		redirectCount++
-	}
-	if redirectCount > 1 {
-		return nil, fmt.Errorf("only one of redirect_http_to_https or redirect_https_to_http can be set")
-	}
-
+	// Redirect options - schema already enforces mutual exclusion via ConflictsWith
 	if _, ok := d.GetOk("options.0.redirect_http_to_https"); ok || (!isCreate && d.HasChange("options.0.redirect_http_to_https")) {
 		optionsSet = true
 		value := d.Get("options.0.redirect_http_to_https").(bool)
