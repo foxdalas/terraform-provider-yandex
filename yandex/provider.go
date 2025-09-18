@@ -253,6 +253,7 @@ func sdkProvider(emptyFolder bool) *schema.Provider {
 			"yandex_container_repository_lifecycle_policy":            resourceYandexContainerRepositoryLifecyclePolicy(),
 			"yandex_cdn_origin_group":                                 resourceYandexCDNOriginGroup(),
 			"yandex_cdn_resource":                                     resourceYandexCDNResource(),
+			"yandex_cdn_rule":                                         resourceYandexCDNRule(),
 			"yandex_cm_certificate":                                   resourceYandexCMCertificate(),
 			"yandex_compute_disk":                                     resourceYandexComputeDisk(),
 			"yandex_compute_disk_placement_group":                     resourceYandexComputeDiskPlacementGroup(),
