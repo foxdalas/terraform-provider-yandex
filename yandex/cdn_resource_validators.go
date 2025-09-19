@@ -41,6 +41,37 @@ var (
 	validateSecureKey = validation.StringLenBetween(6, 32)
 )
 
+// validateIPAddressOrCIDR validates that a string is a valid IP address or CIDR notation
+func validateIPAddressOrCIDR(val interface{}, path cty.Path) diag.Diagnostics {
+	var diags diag.Diagnostics
+	v, ok := val.(string)
+	if !ok {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Invalid type",
+			Detail:   "Expected a string value",
+		})
+		return diags
+	}
+	
+	// Try parsing as CIDR first
+	if _, _, err := net.ParseCIDR(v); err == nil {
+		return diags
+	}
+	
+	// Try parsing as IP address
+	if ip := net.ParseIP(v); ip != nil {
+		return diags
+	}
+	
+	diags = append(diags, diag.Diagnostic{
+		Severity: diag.Error,
+		Summary:  "Invalid IP address or CIDR",
+		Detail:   fmt.Sprintf("%q must be a valid IP address (e.g., 192.168.1.1) or CIDR notation (e.g., 192.168.1.0/24)", v),
+	})
+	return diags
+}
+
 // validateCDNResourceOptions performs complex validation of CDN resource options
 func validateCDNResourceOptions() schema.SchemaValidateDiagFunc {
 	return func(val interface{}, path cty.Path) diag.Diagnostics {
