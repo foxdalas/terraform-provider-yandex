@@ -37,6 +37,13 @@ const (
 	cdnACLPolicyTypeDeny  = "deny"
 )
 
+const (
+	cdnRewriteFlagLast      = "last"
+	cdnRewriteFlagBreak     = "break"
+	cdnRewriteFlagRedirect  = "redirect"
+	cdnRewriteFlagPermanent = "permanent"
+)
+
 func defineYandexCDNResourceBaseSchema() *schema.Resource {
 	return &schema.Resource{
 		Description: "Allows management of [Yandex Cloud CDN Resource](https://yandex.cloud/docs/cdn/concepts/resource).\n\n~> CDN provider must be activated prior usage of CDN resources, either via UI console or via yc cli command: `yc cdn provider activate --folder-id <folder-id> --type gcore`.",
@@ -377,6 +384,35 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 								},
 							},
 						},
+						"rewrite": {
+							Type:        schema.TypeList,
+							Description: "An option for changing or redirecting query paths.",
+							Optional:    true,
+							MaxItems:    1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"enabled": {
+										Type:        schema.TypeBool,
+										Description: "True - the rewrite option is enabled and its flag is applied to the resource. False - the rewrite option is disabled. Default is false.",
+										Optional:    true,
+										Computed:    true,
+									},
+									"body": {
+										Type:         schema.TypeString,
+										Description:  "Pattern for rewrite. The value must have the following format: `<source path> <destination path>`, where both paths are regular expressions which use at least one group. E.g., `/foo/(.*) /bar/$1`.",
+										Required:     true,
+										ValidateFunc: validateRewriteBody,
+									},
+									"flag": {
+										Type:         schema.TypeString,
+										Description:  "Rewrite flag. Available values: 'last', 'break', 'redirect', 'permanent'. Default is 'break'.",
+										Optional:     true,
+										Computed:    true,
+										ValidateFunc: validation.StringInSlice([]string{"last", "break", "redirect", "permanent"}, false),
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -404,6 +440,36 @@ func aclPolicyTypeToString(policyType cdn.PolicyType) string {
 	}
 
 	return cdnACLPolicyTypeAllow
+}
+
+func rewriteFlagFromString(flag string) cdn.RewriteFlag {
+	switch flag {
+	case cdnRewriteFlagLast:
+		return cdn.RewriteFlag_LAST
+	case cdnRewriteFlagBreak:
+		return cdn.RewriteFlag_BREAK
+	case cdnRewriteFlagRedirect:
+		return cdn.RewriteFlag_REDIRECT
+	case cdnRewriteFlagPermanent:
+		return cdn.RewriteFlag_PERMANENT
+	}
+
+	return cdn.RewriteFlag_BREAK
+}
+
+func rewriteFlagToString(flag cdn.RewriteFlag) string {
+	switch flag {
+	case cdn.RewriteFlag_LAST:
+		return cdnRewriteFlagLast
+	case cdn.RewriteFlag_BREAK:
+		return cdnRewriteFlagBreak
+	case cdn.RewriteFlag_REDIRECT:
+		return cdnRewriteFlagRedirect
+	case cdn.RewriteFlag_PERMANENT:
+		return cdnRewriteFlagPermanent
+	}
+
+	return cdnRewriteFlagBreak
 }
 
 // validateRedirectOptions проверяет, что только один из redirect вариантов может быть true
@@ -831,6 +897,38 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 		}
 	}
 
+	// Rewrite option
+	if _, ok := d.GetOk("options.0.rewrite"); ok {
+		if size := d.Get("options.0.rewrite.#").(int); size > 0 {
+			optionsSet = true
+			
+			// For enabled field: use value if explicitly set, otherwise default to false
+			enabled := false
+			if rawEnabled, exists := d.GetOkExists("options.0.rewrite.0.enabled"); exists {
+				enabled = rawEnabled.(bool)
+			} else if isCreate {
+				// On create, if not specified, default to false
+				enabled = false
+			}
+			// On update, if not specified, keep existing value (handled by Terraform)
+			
+			// Body is required, so we can get it directly
+			body := d.Get("options.0.rewrite.0.body").(string)
+			
+			// For flag field: use value if set, otherwise default to "break"
+			flagStr := "break" // default value
+			if rawFlag, ok := d.GetOk("options.0.rewrite.0.flag"); ok && rawFlag.(string) != "" {
+				flagStr = rawFlag.(string)
+			}
+			
+			result.Rewrite = &cdn.ResourceOptions_RewriteOption{
+				Enabled: enabled,
+				Body:    body,
+				Flag:    rewriteFlagFromString(flagStr),
+			}
+		}
+	}
+
 	if !optionsSet {
 		return nil, nil
 	}
@@ -1130,6 +1228,15 @@ func flattenYandexCDNResourceOptions(options *cdn.ResourceOptions) []map[string]
 		ipAddrACL["excepted_values"] = options.IpAddressAcl.ExceptedValues
 
 		setIfEnabled("ip_address_acl", options.IpAddressAcl.Enabled, []map[string]interface{}{ipAddrACL})
+	}
+
+	if options.Rewrite != nil {
+		rewrite := make(map[string]interface{})
+		rewrite["enabled"] = options.Rewrite.Enabled
+		rewrite["body"] = options.Rewrite.Body
+		rewrite["flag"] = rewriteFlagToString(options.Rewrite.Flag)
+		
+		item["rewrite"] = []map[string]interface{}{rewrite}
 	}
 
 	return []map[string]interface{}{
