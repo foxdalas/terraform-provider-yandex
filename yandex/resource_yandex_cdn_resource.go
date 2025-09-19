@@ -470,6 +470,12 @@ func rewriteFlagToString(flag cdn.RewriteFlag) string {
 
 // validateRedirectOptions проверяет, что только один из redirect вариантов может быть true
 func validateRedirectOptions(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	// Проверяем только если есть изменения в этих полях
+	if !diff.HasChange("options.0.redirect_http_to_https") && !diff.HasChange("options.0.redirect_https_to_http") {
+		// Если поля не изменились, не проверяем - это позволит работать с существующими ресурсами
+		return nil
+	}
+	
 	// Проверяем, есть ли вообще блок options
 	options, ok := diff.GetOk("options")
 	if !ok || len(options.([]interface{})) == 0 {
@@ -494,13 +500,19 @@ func validateRedirectOptions(ctx context.Context, diff *schema.ResourceDiff, v i
 
 // validateHostOptions проверяет, что только один из host вариантов может быть установлен
 func validateHostOptions(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	// Проверяем только если есть изменения в этих полях
+	if !diff.HasChange("options.0.custom_host_header") && !diff.HasChange("options.0.forward_host_header") {
+		// Если поля не изменились, не проверяем - это позволит работать с существующими ресурсами
+		return nil
+	}
+	
 	// Проверяем, есть ли вообще блок options
 	options, ok := diff.GetOk("options")
 	if !ok || len(options.([]interface{})) == 0 {
 		return nil
 	}
 	
-	// Получаем значения полей
+	// Получаем новые значения полей
 	customHostRaw, customHostSet := diff.GetOk("options.0.custom_host_header")
 	forwardHostRaw, forwardHostSet := diff.GetOk("options.0.forward_host_header")
 	
