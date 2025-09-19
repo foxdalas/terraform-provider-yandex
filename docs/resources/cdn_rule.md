@@ -170,6 +170,63 @@ resource "yandex_cdn_rule" "api_with_params" {
 }
 ```
 
+### URL Rewrite Examples
+
+```terraform
+# Rewrite API versioning - strip version from path
+resource "yandex_cdn_rule" "api_version_rewrite" {
+  resource_id  = yandex_cdn_resource.my_resource.id
+  name         = "api-version-rewrite"
+  rule_pattern = "^/api/v[0-9]+/.*"
+  weight       = 50
+
+  options {
+    # Remove API version from path: /api/v2/users -> /users
+    rewrite {
+      enabled = true
+      body    = "^/api/v[0-9]+/(.*) /$1"
+      flag    = "break"  # Stop processing after rewrite
+    }
+    
+    forward_host_header = true
+  }
+}
+
+# Permanent redirect from old URLs to new structure
+resource "yandex_cdn_rule" "legacy_redirect" {
+  resource_id  = yandex_cdn_resource.my_resource.id
+  name         = "legacy-url-redirect"
+  rule_pattern = "^/old/.*"
+  weight       = 100
+
+  options {
+    rewrite {
+      enabled = true
+      body    = "^/old/(.*) /new/$1"
+      flag    = "permanent"  # Send 301 redirect to client
+    }
+  }
+}
+
+# Serve index.html for directory requests in specific paths
+resource "yandex_cdn_rule" "docs_index" {
+  resource_id  = yandex_cdn_resource.my_resource.id
+  name         = "docs-index-rewrite"
+  rule_pattern = "^/docs/.*/$"
+  weight       = 150
+
+  options {
+    rewrite {
+      enabled = true
+      body    = "^/(.*)/$ /$1/index.html"
+      flag    = "last"  # Re-evaluate all rules with new URL
+    }
+    
+    edge_cache_settings = 3600
+  }
+}
+```
+
 ## Schema
 
 ### Required
@@ -220,6 +277,7 @@ Optional:
 - `slice` (Boolean) Files larger than 10 MB will be requested and cached in parts (no larger than 10 MB each part). It reduces time to first byte.
 - `static_request_headers` (Map of String) Set up custom headers that CDN servers will send in requests to origins.
 - `static_response_headers` (Map of String) Set up a static response header. The header name must be lowercase.
+- `rewrite` (Block List, Max: 1) An option for changing or redirecting query paths. (see [below for nested schema](#nestedblock--options--rewrite))
 
 <a id="nestedblock--options--ip_address_acl"></a>
 ### Nested Schema for `options.ip_address_acl`
@@ -228,6 +286,22 @@ Optional:
 
 - `excepted_values` (List of String) The list of specified IP addresses to be allowed or denied depending on acl policy type.
 - `policy_type` (String) The policy type for ACL. One of `allow` or `deny` values.
+
+<a id="nestedblock--options--rewrite"></a>
+### Nested Schema for `options.rewrite`
+
+Required:
+
+- `body` (String) Pattern for rewrite. The value must have the following format: `<source path> <destination path>`, where both paths are regular expressions which use at least one group. E.g., `/foo/(.*) /bar/$1`.
+
+Optional:
+
+- `enabled` (Boolean) True - the rewrite option is enabled and its flag is applied to the rule. False - the rewrite option is disabled. Default is false.
+- `flag` (String) Rewrite flag determines how the rewrite is processed. Available values:
+  - `'break'` (default) - Stop processing further rules after this rewrite
+  - `'last'` - Apply this rewrite and re-evaluate all rules with the new URL
+  - `'redirect'` - Send HTTP 302 temporary redirect to the client
+  - `'permanent'` - Send HTTP 301 permanent redirect to the client
 
 ## Import
 
