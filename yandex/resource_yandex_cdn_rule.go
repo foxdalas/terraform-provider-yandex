@@ -131,7 +131,7 @@ func cdnOptionsSchemaFields() map[string]*schema.Schema {
 					"default_value": {
 						Type:         schema.TypeInt,
 						Optional:     true,
-						ValidateFunc: validation.IntBetween(0, 3600000000),
+						ValidateFunc: validation.IntBetween(0, 31536000), // 365 days in seconds
 					},
 					"custom_values": {
 						Type:     schema.TypeMap,
@@ -144,7 +144,7 @@ func cdnOptionsSchemaFields() map[string]*schema.Schema {
 		"browser_cache_settings": {
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ValidateFunc: validation.IntBetween(0, 3600000000),
+			ValidateFunc: validation.IntBetween(0, 31536000), // 365 days in seconds
 		},
 		"cache_http_headers": {
 			Type:     schema.TypeSet,
