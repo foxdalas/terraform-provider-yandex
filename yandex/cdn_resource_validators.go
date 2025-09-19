@@ -41,6 +41,33 @@ var (
 	validateSecureKey = validation.StringLenBetween(6, 32)
 )
 
+// validateRewriteBody validates the format of rewrite body pattern
+func validateRewriteBody(val interface{}, key string) (warns []string, errs []error) {
+	v := val.(string)
+	
+	// Check if the string contains at least two parts separated by space
+	parts := strings.Fields(v)
+	if len(parts) != 2 {
+		errs = append(errs, fmt.Errorf("%q must have format '<source path> <destination path>' (e.g., '/foo/(.*) /bar/$1')", key))
+		return
+	}
+	
+	// Basic validation that source and destination paths start with / or are regex patterns
+	source, destination := parts[0], parts[1]
+	
+	// Check if source starts with ^ (regex anchor) or / (path)
+	if !strings.HasPrefix(source, "^") && !strings.HasPrefix(source, "/") {
+		warns = append(warns, fmt.Sprintf("Source path in %q should start with '^' for regex or '/' for path", key))
+	}
+	
+	// Check if destination starts with / or $ (for variables like $scheme)
+	if !strings.HasPrefix(destination, "/") && !strings.HasPrefix(destination, "$") && !strings.HasPrefix(destination, "http://") && !strings.HasPrefix(destination, "https://") {
+		warns = append(warns, fmt.Sprintf("Destination path in %q should start with '/', '$', 'http://' or 'https://'", key))
+	}
+	
+	return
+}
+
 // validateIPAddressOrCIDR validates that a string is a valid IP address or CIDR notation
 func validateIPAddressOrCIDR(val interface{}, path cty.Path) diag.Diagnostics {
 	var diags diag.Diagnostics
