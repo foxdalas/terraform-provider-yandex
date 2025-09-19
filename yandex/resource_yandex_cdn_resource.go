@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/wrappers"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/cdn/v1"
@@ -153,12 +154,11 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 			},
 
 			"options": {
-				Type:             schema.TypeList,
-				Description:      "CDN Resource settings and options to tune CDN edge behavior.",
-				Optional:         true,
-				Computed:         true,
-				MaxItems:         1,
-				ValidateDiagFunc: validateCDNResourceOptions(),
+				Type:        schema.TypeList,
+				Description: "CDN Resource settings and options to tune CDN edge behavior.",
+				Optional:    true,
+				Computed:    true,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"disable_cache": {
@@ -242,32 +242,28 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							ConflictsWith: []string{"options.0.fetched_compressed"},
 						},
 						"redirect_http_to_https": {
-							Type:          schema.TypeBool,
-							Description:   "Set up a redirect from HTTP to HTTPS.",
-							Computed:      true,
-							Optional:      true,
-							ConflictsWith: []string{"options.0.redirect_https_to_http"},
+							Type:        schema.TypeBool,
+							Description: "Set up a redirect from HTTP to HTTPS.",
+							Computed:    true,
+							Optional:    true,
 						},
 						"redirect_https_to_http": {
-							Type:          schema.TypeBool,
-							Description:   "Set up a redirect from HTTPS to HTTP.",
-							Computed:      true,
-							Optional:      true,
-							ConflictsWith: []string{"options.0.redirect_http_to_https"},
+							Type:        schema.TypeBool,
+							Description: "Set up a redirect from HTTPS to HTTP.",
+							Computed:    true,
+							Optional:    true,
 						},
 						"custom_host_header": {
-							Type:          schema.TypeString,
-							Description:   "Custom value for the Host header. Your server must be able to process requests with the chosen header.",
-							Optional:      true,
-							Computed:      true,
-							ConflictsWith: []string{"options.0.forward_host_header"},
+							Type:        schema.TypeString,
+							Description: "Custom value for the Host header. Your server must be able to process requests with the chosen header.",
+							Optional:    true,
+							Computed:    true,
 						},
 						"forward_host_header": {
-							Type:          schema.TypeBool,
-							Description:   "Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.",
-							Optional:      true,
-							Computed:      true,
-							ConflictsWith: []string{"options.0.custom_host_header"},
+							Type:        schema.TypeBool,
+							Description: "Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.",
+							Optional:    true,
+							Computed:    true,
 						},
 						"static_response_headers": {
 							Type:             schema.TypeMap,
@@ -350,12 +346,11 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 							RequiredWith: []string{"options.0.secure_key"},
 						},
 						"ip_address_acl": {
-							Type:             schema.TypeList,
-							Description:      "IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type.",
-							Optional:         true,
-							Computed:         true,
-							MaxItems:         1,
-							ValidateDiagFunc: validateIPAddressACL(),
+							Type:        schema.TypeList,
+							Description: "IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type.",
+							Optional:    true,
+							Computed:    true,
+							MaxItems:    1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"policy_type": {
@@ -371,7 +366,8 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 										MinItems:    1,
 										MaxItems:    200,
 										Elem: &schema.Schema{
-											Type: schema.TypeString,
+											Type:             schema.TypeString,
+											ValidateDiagFunc: validateIPAddressOrCIDR,
 										},
 									},
 								},
@@ -406,6 +402,54 @@ func aclPolicyTypeToString(policyType cdn.PolicyType) string {
 	return cdnACLPolicyTypeAllow
 }
 
+// validateRedirectOptions проверяет, что только один из redirect вариантов может быть true
+func validateRedirectOptions(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	// Проверяем, есть ли вообще блок options
+	options, ok := diff.GetOk("options")
+	if !ok || len(options.([]interface{})) == 0 {
+		return nil
+	}
+	
+	// Получаем значения полей
+	httpToHttpsRaw, httpToHttpsSet := diff.GetOk("options.0.redirect_http_to_https")
+	httpsToHttpRaw, httpsToHttpSet := diff.GetOk("options.0.redirect_https_to_http")
+	
+	// Оба поля установлены и оба true - это конфликт
+	if httpToHttpsSet && httpsToHttpSet {
+		httpToHttps := httpToHttpsRaw.(bool)
+		httpsToHttp := httpsToHttpRaw.(bool)
+		if httpToHttps && httpsToHttp {
+			return fmt.Errorf("only one of 'redirect_http_to_https' or 'redirect_https_to_http' can be true at the same time")
+		}
+	}
+	
+	return nil
+}
+
+// validateHostOptions проверяет, что только один из host вариантов может быть установлен
+func validateHostOptions(ctx context.Context, diff *schema.ResourceDiff, v interface{}) error {
+	// Проверяем, есть ли вообще блок options
+	options, ok := diff.GetOk("options")
+	if !ok || len(options.([]interface{})) == 0 {
+		return nil
+	}
+	
+	// Получаем значения полей
+	customHostRaw, customHostSet := diff.GetOk("options.0.custom_host_header")
+	forwardHostRaw, forwardHostSet := diff.GetOk("options.0.forward_host_header")
+	
+	// Оба поля установлены - это конфликт
+	if customHostSet && forwardHostSet {
+		customHost := customHostRaw.(string)
+		forwardHost := forwardHostRaw.(bool)
+		if customHost != "" && forwardHost {
+			return fmt.Errorf("only one of 'custom_host_header' or 'forward_host_header' can be set at the same time")
+		}
+	}
+	
+	return nil
+}
+
 func resourceYandexCDNResource() *schema.Resource {
 	resourceSchema := defineYandexCDNResourceBaseSchema()
 
@@ -423,6 +467,11 @@ func resourceYandexCDNResource() *schema.Resource {
 		Update: schema.DefaultTimeout(yandexComputeCDNResourceDefaultTimeout),
 		Delete: schema.DefaultTimeout(yandexComputeCDNResourceDefaultTimeout),
 	}
+
+	resourceSchema.CustomizeDiff = customdiff.All(
+		validateRedirectOptions,
+		validateHostOptions,
+	)
 
 	return resourceSchema
 }
