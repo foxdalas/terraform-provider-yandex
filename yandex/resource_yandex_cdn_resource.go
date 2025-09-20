@@ -1229,12 +1229,16 @@ func flattenYandexCDNResourceOptions(options *cdn.ResourceOptions) []map[string]
 	}
 
 	if options.Rewrite != nil {
-		rewrite := make(map[string]interface{})
-		rewrite["enabled"] = options.Rewrite.Enabled
-		rewrite["body"] = options.Rewrite.Body
-		rewrite["flag"] = rewriteFlagToString(options.Rewrite.Flag)
-		
-		item["rewrite"] = []map[string]interface{}{rewrite}
+		// Only add rewrite to state if it's enabled or has a non-empty body
+		// This prevents showing drift when rewrite is disabled and not in config
+		if options.Rewrite.Enabled || options.Rewrite.Body != "" {
+			rewrite := make(map[string]interface{})
+			rewrite["enabled"] = options.Rewrite.Enabled
+			rewrite["body"] = options.Rewrite.Body
+			rewrite["flag"] = rewriteFlagToString(options.Rewrite.Flag)
+			
+			item["rewrite"] = []map[string]interface{}{rewrite}
+		}
 	}
 
 	return []map[string]interface{}{
