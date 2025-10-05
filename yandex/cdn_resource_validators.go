@@ -13,6 +13,9 @@ import (
 )
 
 // CDN resource field validators
+// Note: Some validators appear unused to linters but are called via reflection in Terraform schema
+//
+//nolint:unused
 var (
 	// Validates edge_cache_settings (0-365 days in seconds)
 	validateEdgeCacheSettings = validation.IntBetween(0, 31536000)
