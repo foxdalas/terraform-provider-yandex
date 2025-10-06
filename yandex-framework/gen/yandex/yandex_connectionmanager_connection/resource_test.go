@@ -72,6 +72,9 @@ func sweepConnectionOnce(conf *provider_config.Config, id string) error {
 	op, err := connectionmanagerv1sdk.NewConnectionClient(conf.SDKv2).Delete(ctx, &connectionmanager.DeleteConnectionRequest{
 		ConnectionId: id,
 	})
+	if err != nil {
+		return err
+	}
 	_, err = op.Wait(context.Background())
 	return err
 }

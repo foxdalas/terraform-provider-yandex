@@ -83,7 +83,7 @@ func expandALBModification(d *schema.ResourceData, path string) (*apploadbalance
 	appendValue, gotAppend := d.GetOk(path + "append")
 
 	if isPlural(gotReplace, gotRemove, gotAppend) {
-		return nil, fmt.Errorf("Cannot specify more than one of replace and remove and append operation for the header modification at the same time")
+		return nil, fmt.Errorf("cannot specify more than one of replace and remove and append operation for the header modification at the same time")
 	}
 	if gotReplace {
 		modification.SetReplace(replace.(string))
@@ -244,10 +244,10 @@ func expandALBRoute(d *schema.ResourceData, path string) (*apploadbalancer.Route
 	_, gotGRPCRoute := d.GetOk(path + "grpc_route")
 
 	if isPlural(gotHTTPRoute, gotGRPCRoute) {
-		return nil, fmt.Errorf("Cannot specify both HTTP route and gRPC route for the route")
+		return nil, fmt.Errorf("cannot specify both HTTP route and gRPC route for the route")
 	}
 	if !gotHTTPRoute && !gotGRPCRoute {
-		return nil, fmt.Errorf("Either HTTP route or gRPC route should be specified for the route")
+		return nil, fmt.Errorf("either HTTP route or gRPC route should be specified for the route")
 	}
 	if gotHTTPRoute {
 		r, err := expandALBHTTPRoute(d, path+"http_route.0.")
@@ -332,11 +332,11 @@ func expandALBPrincipal(d *schema.ResourceData, path string) (*apploadbalancer.P
 	anyValue, gotAny := d.GetOk(path + "any")
 
 	if isPlural(gotHeader, gotRemoteIP, gotAny) {
-		return nil, fmt.Errorf("Cannot specify more than one of header pricnipal and remote ip pricnipal and any principal for the RBAC principal at the same time")
+		return nil, fmt.Errorf("cannot specify more than one of header pricnipal and remote ip pricnipal and any principal for the RBAC principal at the same time")
 	}
 
 	if !gotHeader && !gotRemoteIP && !gotAny {
-		return nil, fmt.Errorf("Either header pricnipal or remote ip pricnipal or any principal should be specified for the RBAC principal")
+		return nil, fmt.Errorf("either header pricnipal or remote ip pricnipal or any principal should be specified for the RBAC principal")
 	}
 
 	if gotHeader {
@@ -392,10 +392,10 @@ func expandALBHTTPRoute(d *schema.ResourceData, path string) (*apploadbalancer.H
 	_, gotDirectResponseAction := d.GetOk(path + "direct_response_action")
 
 	if isPlural(gotHTTPRouteAction, gotRedirectAction, gotDirectResponseAction) {
-		return nil, fmt.Errorf("Cannot specify more than one of HTTP route action and redirect action and direct response action for the HTTP route at the same time")
+		return nil, fmt.Errorf("cannot specify more than one of HTTP route action and redirect action and direct response action for the HTTP route at the same time")
 	}
 	if !gotHTTPRouteAction && !gotRedirectAction && !gotDirectResponseAction {
-		return nil, fmt.Errorf("Either HTTP route action or redirect action or direct response action should be specified for the HTTP route")
+		return nil, fmt.Errorf("either HTTP route action or redirect action or direct response action should be specified for the HTTP route")
 	}
 	if gotHTTPRouteAction {
 		action, err := expandALBHTTPRouteAction(d, path+"http_route_action.0.")

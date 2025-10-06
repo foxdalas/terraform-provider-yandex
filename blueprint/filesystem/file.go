@@ -44,11 +44,14 @@ func WriteContent(outputPath string, override bool, content io.Reader) error {
 	}
 
 	f, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	defer f.Close()
-
 	if err != nil {
 		return fmt.Errorf("open file (%s) for writing: %w", outputPath, err)
 	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close file (%s): %w", outputPath, closeErr)
+		}
+	}()
 
 	if _, err := io.Copy(f, content); err != nil {
 		return fmt.Errorf("write content to file (%s) : %w", outputPath, err)

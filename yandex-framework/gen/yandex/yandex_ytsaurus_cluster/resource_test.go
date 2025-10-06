@@ -59,6 +59,9 @@ func sweepYtsaurusClusterOnce(conf *provider_config.Config, id string) error {
 	op, err := ytsaurusv1sdk.NewClusterClient(conf.SDKv2).Delete(context.Background(), &ytsaurus.DeleteClusterRequest{
 		ClusterId: id,
 	})
+	if err != nil {
+		return err
+	}
 	_, err = op.Wait(context.Background())
 	return err
 }
