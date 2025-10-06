@@ -1119,3 +1119,19 @@ func shouldRetryOperationByCode(op *sdkoperation.Operation, retriableCodes []cod
 
 	return op.Failed()
 }
+
+// IAM helper functions (moved from iam_member.go after migration to yandex-framework)
+
+// validateIamMember validates IAM member format (TYPE:ID)
+func validateIamMember(i interface{}, k string) (s []string, es []error) {
+	chunks := strings.SplitN(i.(string), ":", 2)
+	if len(chunks) == 1 || chunks[0] == "" || chunks[1] == "" {
+		es = append(es, fmt.Errorf("expect 'member' value should be in TYPE:ID format, got '%v'", i.(string)))
+	}
+	return
+}
+
+// canonicalMember returns canonical representation of an access binding member
+func canonicalMember(ab *access.AccessBinding) string {
+	return ab.Subject.Type + ":" + ab.Subject.Id
+}

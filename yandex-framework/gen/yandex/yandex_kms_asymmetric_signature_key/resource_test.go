@@ -472,6 +472,9 @@ func sweepKMSAsymmetricSignatureKeyOnce(conf *provider_config.Config, id string)
 			Paths: []string{"deletion_protection"},
 		},
 	})
+	if err != nil {
+		return err
+	}
 	if _, err = op.Wait(ctx); err != nil {
 		return err
 	}
@@ -479,6 +482,9 @@ func sweepKMSAsymmetricSignatureKeyOnce(conf *provider_config.Config, id string)
 	opDelete, err := asymmetricsignaturesdk.NewAsymmetricSignatureKeyClient(conf.SDKv2).Delete(ctx, &kms.DeleteAsymmetricSignatureKeyRequest{
 		KeyId: id,
 	})
+	if err != nil {
+		return err
+	}
 	_, err = opDelete.Wait(ctx)
 	return err
 }

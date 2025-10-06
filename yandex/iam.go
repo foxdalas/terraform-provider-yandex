@@ -9,6 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+// Core IAM infrastructure code used by SDK v2 provider.
+// Used by iam_policy resources and all IAM updaters.
+//
+// Note: iam_binding and iam_member resources were migrated to yandex-framework/gen/
+// and use pkg/iam_access instead of this code.
 type PolicyDelta struct {
 	Deltas []*access.AccessBindingDelta
 }
@@ -39,6 +44,7 @@ type ResourceIamUpdater interface {
 }
 
 type newResourceIamUpdaterFunc func(d *schema.ResourceData, config *Config) (ResourceIamUpdater, error)
+
 type iamPolicyModifyFunc func(p *Policy) error
 
 type resourceIDParserFunc func(d *schema.ResourceData, config *Config) error

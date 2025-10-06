@@ -7,8 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/redis/v1"
-	redisproto "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/redis/v1"
+	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/redis/v1" //nolint:depguard
 	ycsdk "github.com/yandex-cloud/go-sdk"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/mdbcommon"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/timestamp"
@@ -42,7 +41,7 @@ func clusterRead(ctx context.Context, sdk *ycsdk.SDK, diagnostics *diag.Diagnost
 
 	state.SecurityGroupIDs = mdbcommon.FlattenSetString(ctx, cluster.SecurityGroupIds, diagnostics)
 
-	state.Resources = mdbcommon.FlattenResources[redisproto.Resources](ctx, cluster.GetConfig().GetResources(), diagnostics)
+	state.Resources = mdbcommon.FlattenResources[redis.Resources](ctx, cluster.GetConfig().GetResources(), diagnostics)
 
 	conf := FlattenConfig(cluster.Config)
 	if state.Config != nil {
@@ -67,7 +66,7 @@ func clusterRead(ctx context.Context, sdk *ycsdk.SDK, diagnostics *diag.Diagnost
 	state.Access, diags = flattenAccess(ctx, cluster.GetConfig().GetAccess())
 	diagnostics.Append(diags...)
 
-	var entityIdToApiHosts map[string]Host = mdbcommon.ReadHosts[Host, *redisproto.Host, *redisproto.HostSpec, redisproto.UpdateHostSpec](ctx, sdk, diagnostics, redisHostService, &redisAPI, state.HostSpecs, cid)
+	var entityIdToApiHosts map[string]Host = mdbcommon.ReadHosts[Host, *redis.Host, *redis.HostSpec, redis.UpdateHostSpec](ctx, sdk, diagnostics, redisHostService, &redisAPI, state.HostSpecs, cid)
 
 	state.HostSpecs, diags = types.MapValueFrom(ctx, HostType, entityIdToApiHosts)
 

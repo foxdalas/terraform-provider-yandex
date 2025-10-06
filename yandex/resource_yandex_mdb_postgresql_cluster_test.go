@@ -265,7 +265,7 @@ func TestAccMDBPostgreSQLCluster_full(t *testing.T) {
 				),
 			},
 			mdbPGClusterImportStep(clusterResource),
-			// 20. Disable performanse diagnostic
+			// 20. Disable performance diagnostic
 			{
 				Config: testAccMDBPGClusterConfigUpdated(clusterName, "", version, 16, false),
 				Check: resource.ComposeTestCheckFunc(

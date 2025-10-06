@@ -62,6 +62,9 @@ func sweepContainerRegistryOnce(conf *provider_config.Config, id string) error {
 	defer cancel()
 
 	op, err := containerregistrysdk.NewRegistryClient(conf.SDKv2).Delete(ctx, &containerregistry.DeleteRegistryRequest{RegistryId: id})
+	if err != nil {
+		return err
+	}
 	_, err = op.Wait(ctx)
 	return err
 }

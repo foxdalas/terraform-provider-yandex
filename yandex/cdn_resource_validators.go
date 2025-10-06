@@ -13,6 +13,9 @@ import (
 )
 
 // CDN resource field validators
+// Note: Some validators appear unused to linters but are called via reflection in Terraform schema
+//
+//nolint:unused
 var (
 	// Validates edge_cache_settings (0-365 days in seconds)
 	validateEdgeCacheSettings = validation.IntBetween(0, 31536000)
@@ -44,27 +47,27 @@ var (
 // validateRewriteBody validates the format of rewrite body pattern
 func validateRewriteBody(val interface{}, key string) (warns []string, errs []error) {
 	v := val.(string)
-	
+
 	// Check if the string contains at least two parts separated by space
 	parts := strings.Fields(v)
 	if len(parts) != 2 {
 		errs = append(errs, fmt.Errorf("%q must have format '<source path> <destination path>' (e.g., '/foo/(.*) /bar/$1')", key))
 		return
 	}
-	
+
 	// Basic validation that source and destination paths start with / or are regex patterns
 	source, destination := parts[0], parts[1]
-	
+
 	// Check if source starts with ^ (regex anchor) or / (path)
 	if !strings.HasPrefix(source, "^") && !strings.HasPrefix(source, "/") {
 		warns = append(warns, fmt.Sprintf("Source path in %q should start with '^' for regex or '/' for path", key))
 	}
-	
+
 	// Check if destination starts with / or $ (for variables like $scheme)
 	if !strings.HasPrefix(destination, "/") && !strings.HasPrefix(destination, "$") && !strings.HasPrefix(destination, "http://") && !strings.HasPrefix(destination, "https://") {
 		warns = append(warns, fmt.Sprintf("Destination path in %q should start with '/', '$', 'http://' or 'https://'", key))
 	}
-	
+
 	return
 }
 
@@ -80,17 +83,17 @@ func validateIPAddressOrCIDR(val interface{}, path cty.Path) diag.Diagnostics {
 		})
 		return diags
 	}
-	
+
 	// Try parsing as CIDR first
 	if _, _, err := net.ParseCIDR(v); err == nil {
 		return diags
 	}
-	
+
 	// Try parsing as IP address
 	if ip := net.ParseIP(v); ip != nil {
 		return diags
 	}
-	
+
 	diags = append(diags, diag.Diagnostic{
 		Severity: diag.Error,
 		Summary:  "Invalid IP address or CIDR",

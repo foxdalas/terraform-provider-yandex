@@ -407,7 +407,7 @@ func defineYandexCDNResourceBaseSchema() *schema.Resource {
 										Type:         schema.TypeString,
 										Description:  "Rewrite flag. Available values: 'last', 'break', 'redirect', 'permanent'. Default is 'break'.",
 										Optional:     true,
-										Computed:    true,
+										Computed:     true,
 										ValidateFunc: validation.StringInSlice([]string{"last", "break", "redirect", "permanent"}, false),
 									},
 								},
@@ -479,17 +479,17 @@ func validateRedirectOptions(ctx context.Context, diff *schema.ResourceDiff, v i
 		// Если поля не изменились, не проверяем - это позволит работать с существующими ресурсами
 		return nil
 	}
-	
+
 	// Проверяем, есть ли вообще блок options
 	options, ok := diff.GetOk("options")
 	if !ok || len(options.([]interface{})) == 0 {
 		return nil
 	}
-	
+
 	// Получаем значения полей
 	httpToHttpsRaw, httpToHttpsSet := diff.GetOk("options.0.redirect_http_to_https")
 	httpsToHttpRaw, httpsToHttpSet := diff.GetOk("options.0.redirect_https_to_http")
-	
+
 	// Оба поля установлены и оба true - это конфликт
 	if httpToHttpsSet && httpsToHttpSet {
 		httpToHttps := httpToHttpsRaw.(bool)
@@ -498,7 +498,7 @@ func validateRedirectOptions(ctx context.Context, diff *schema.ResourceDiff, v i
 			return fmt.Errorf("only one of 'redirect_http_to_https' or 'redirect_https_to_http' can be true at the same time")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -509,17 +509,17 @@ func validateHostOptions(ctx context.Context, diff *schema.ResourceDiff, v inter
 		// Если поля не изменились, не проверяем - это позволит работать с существующими ресурсами
 		return nil
 	}
-	
+
 	// Проверяем, есть ли вообще блок options
 	options, ok := diff.GetOk("options")
 	if !ok || len(options.([]interface{})) == 0 {
 		return nil
 	}
-	
+
 	// Получаем новые значения полей
 	customHostRaw, customHostSet := diff.GetOk("options.0.custom_host_header")
 	forwardHostRaw, forwardHostSet := diff.GetOk("options.0.forward_host_header")
-	
+
 	// Оба поля установлены - это конфликт
 	if customHostSet && forwardHostSet {
 		customHost := customHostRaw.(string)
@@ -528,7 +528,7 @@ func validateHostOptions(ctx context.Context, diff *schema.ResourceDiff, v inter
 			return fmt.Errorf("only one of 'custom_host_header' or 'forward_host_header' can be set at the same time")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -913,7 +913,7 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 	if _, ok := d.GetOk("options.0.rewrite"); ok {
 		if size := d.Get("options.0.rewrite.#").(int); size > 0 {
 			optionsSet = true
-			
+
 			// For enabled field: use value if explicitly set, otherwise default to false
 			enabled := false
 			if rawEnabled, exists := d.GetOkExists("options.0.rewrite.0.enabled"); exists {
@@ -923,16 +923,16 @@ func expandCDNResourceOptions(d *schema.ResourceData, isCreate bool) (*cdn.Resou
 				enabled = false
 			}
 			// On update, if not specified, keep existing value (handled by Terraform)
-			
+
 			// Body is required, so we can get it directly
 			body := d.Get("options.0.rewrite.0.body").(string)
-			
+
 			// For flag field: use value if set, otherwise default to "break"
 			flagStr := "break" // default value
 			if rawFlag, ok := d.GetOk("options.0.rewrite.0.flag"); ok && rawFlag.(string) != "" {
 				flagStr = rawFlag.(string)
 			}
-			
+
 			result.Rewrite = &cdn.ResourceOptions_RewriteOption{
 				Enabled: enabled,
 				Body:    body,
@@ -1250,7 +1250,7 @@ func flattenYandexCDNResourceOptions(options *cdn.ResourceOptions) []map[string]
 			rewrite["enabled"] = options.Rewrite.Enabled
 			rewrite["body"] = options.Rewrite.Body
 			rewrite["flag"] = rewriteFlagToString(options.Rewrite.Flag)
-			
+
 			item["rewrite"] = []map[string]interface{}{rewrite}
 		}
 	}

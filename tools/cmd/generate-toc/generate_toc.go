@@ -59,7 +59,7 @@ func main() {
 		log.Fatalf("Error while create toc.yaml: %s\n", err)
 		return
 	}
-	defer tocFile.Close()
+	defer tocFile.Close() //nolint:errcheck // function uses log.Fatalf instead of returning errors
 
 	encoder := yaml.NewEncoder(tocFile)
 	err = encoder.Encode(&toc)
@@ -129,7 +129,7 @@ func parseFrontMatter(path string) (*FrontMatter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file %s: %w", path, err)
 	}
-	defer file.Close()
+	defer file.Close() //nolint:errcheck // read-only file
 
 	scanner := bufio.NewScanner(file)
 	inFrontMatter := false

@@ -65,6 +65,9 @@ func sweepEventrouterBusOnce(conf *provider_config.Config, id string) error {
 	op, err := eventrouterv1sdk.NewBusClient(conf.SDKv2).Delete(ctx, &eventrouter.DeleteBusRequest{
 		BusId: id,
 	})
+	if err != nil {
+		return err
+	}
 	_, err = op.Wait(ctx)
 	return err
 }

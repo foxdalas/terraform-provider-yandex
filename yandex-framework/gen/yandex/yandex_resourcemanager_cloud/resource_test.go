@@ -45,6 +45,9 @@ func sweepCloudOnce(conf *provider_config.Config, id string) error {
 		CloudId:     id,
 		DeleteAfter: timestamppb.Now(),
 	})
+	if err != nil {
+		return err
+	}
 	_, err = op.Wait(ctx)
 	return err
 }

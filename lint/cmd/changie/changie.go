@@ -75,7 +75,7 @@ func checkUnreleasedBody() error {
 			return fmt.Errorf("open changie changieFileInfo file (%s) : %w", path, err)
 		}
 
-		defer dsc.Close()
+		defer dsc.Close() //nolint:errcheck // read-only file
 		defer raw.Reset()
 
 		if _, err := io.Copy(raw, dsc); err != nil {

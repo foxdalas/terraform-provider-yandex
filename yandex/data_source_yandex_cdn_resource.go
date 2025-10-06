@@ -58,6 +58,10 @@ func resolveCDNResourceID(ctx context.Context, config *Config, d *schema.Resourc
 		}
 	}
 
+	if err := iterator.Error(); err != nil {
+		return "", fmt.Errorf("error iterating cdn resources: %w", err)
+	}
+
 	return "", fmt.Errorf("resource with cname %q not found", cname)
 }
 
@@ -95,11 +99,9 @@ func dataSourceYandexCDNResourceRead(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	if err = d.Set("options", flattenYandexCDNResourceOptions(resource.Options)); err != nil {
+	if err := d.Set("resource_id", resource.Id); err != nil {
 		return err
 	}
-
-	d.Set("resource_id", resource.Id)
 	d.SetId(resource.Id)
 
 	return nil

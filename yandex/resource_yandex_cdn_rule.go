@@ -76,23 +76,23 @@ func resourceYandexCDNRule() *schema.Resource {
 // validateCDNRulePattern validates that the pattern is a valid regex
 func validateCDNRulePattern(v interface{}, k string) (warns []string, errs []error) {
 	value := v.(string)
-	
+
 	if len(value) > 100 {
 		errs = append(errs, fmt.Errorf("rule pattern must be 100 characters or less"))
 		return
 	}
-	
+
 	if len(value) == 0 {
 		errs = append(errs, fmt.Errorf("rule pattern must not be empty"))
 		return
 	}
-	
+
 	// Try to compile the regex to validate it
 	_, err := regexp.Compile(value)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("rule pattern must be a valid regular expression: %v", err))
 	}
-	
+
 	return
 }
 
@@ -180,9 +180,9 @@ func cdnOptionsSchemaFields() map[string]*schema.Schema {
 			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"static_response_headers": {
-			Type:             schema.TypeMap,
-			Optional:         true,
-			Elem:             &schema.Schema{Type: schema.TypeString},
+			Type:     schema.TypeMap,
+			Optional: true,
+			Elem:     &schema.Schema{Type: schema.TypeString},
 			// Static response headers validation is handled by expandCDNResourceOptions
 		},
 		"custom_server_name": {
