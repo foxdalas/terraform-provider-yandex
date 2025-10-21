@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/cdn/v1"
@@ -98,7 +99,10 @@ func disableShielding(ctx context.Context, resourceID string, sdk *ycsdk.SDK) er
 		return fmt.Errorf("failed to deactivate shielding: %w", err)
 	}
 
-	if err := op.Wait(ctx); err != nil {
+	if err = op.Wait(ctx); err != nil {
+		if strings.Contains(err.Error(), "origin shielding is not activated") {
+			return nil
+		}
 		return fmt.Errorf("failed to wait for shielding deactivation: %w", err)
 	}
 
