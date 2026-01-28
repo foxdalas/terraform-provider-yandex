@@ -181,17 +181,11 @@ func expandHostOptions(opt *CDNOptionsModel, result *cdn.ResourceOptions, diags 
 }
 
 // expandQueryParamsOptions handles mutually exclusive query params options
+// Priority: explicit list (whitelist/blacklist) > boolean (ignore)
+// This handles UseStateForUnknown copying stale boolean values from state
 func expandQueryParamsOptions(ctx context.Context, opt *CDNOptionsModel, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
-	if !opt.IgnoreQueryParams.IsNull() {
-		result.QueryParamsOptions = &cdn.ResourceOptions_QueryParamsOptions{
-			QueryParamsVariant: &cdn.ResourceOptions_QueryParamsOptions_IgnoreQueryString{
-				IgnoreQueryString: &cdn.ResourceOptions_BoolOption{
-					Enabled: true,
-					Value:   opt.IgnoreQueryParams.ValueBool(),
-				},
-			},
-		}
-	} else if !opt.QueryParamsWhitelist.IsNull() && len(opt.QueryParamsWhitelist.Elements()) > 0 {
+	// 1st priority: Whitelist - user explicitly set a list of params to consider
+	if !opt.QueryParamsWhitelist.IsNull() && len(opt.QueryParamsWhitelist.Elements()) > 0 {
 		var params []string
 		diags.Append(opt.QueryParamsWhitelist.ElementsAs(ctx, &params, false)...)
 		if !diags.HasError() && len(params) > 0 {
@@ -204,7 +198,11 @@ func expandQueryParamsOptions(ctx context.Context, opt *CDNOptionsModel, result 
 				},
 			}
 		}
-	} else if !opt.QueryParamsBlacklist.IsNull() && len(opt.QueryParamsBlacklist.Elements()) > 0 {
+		return
+	}
+
+	// 2nd priority: Blacklist - user explicitly set a list of params to ignore
+	if !opt.QueryParamsBlacklist.IsNull() && len(opt.QueryParamsBlacklist.Elements()) > 0 {
 		var params []string
 		diags.Append(opt.QueryParamsBlacklist.ElementsAs(ctx, &params, false)...)
 		if !diags.HasError() && len(params) > 0 {
@@ -216,6 +214,20 @@ func expandQueryParamsOptions(ctx context.Context, opt *CDNOptionsModel, result 
 					},
 				},
 			}
+		}
+		return
+	}
+
+	// 3rd priority: IgnoreQueryString - only when explicitly true
+	// false = API default behavior, no need to send
+	if !opt.IgnoreQueryParams.IsNull() && opt.IgnoreQueryParams.ValueBool() {
+		result.QueryParamsOptions = &cdn.ResourceOptions_QueryParamsOptions{
+			QueryParamsVariant: &cdn.ResourceOptions_QueryParamsOptions_IgnoreQueryString{
+				IgnoreQueryString: &cdn.ResourceOptions_BoolOption{
+					Enabled: true,
+					Value:   true,
+				},
+			},
 		}
 	}
 }
