@@ -396,6 +396,7 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 				"gzip_on and fetched_compressed cannot both be enabled simultaneously. These are mutually exclusive compression methods. Set one of them to false.",
 			),
 			NewHostHeadersValidator(),
+			NewQueryParamsConflictValidator(),
 		},
 	}
 }

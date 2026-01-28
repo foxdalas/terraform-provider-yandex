@@ -657,3 +657,69 @@ func (v *hostHeadersValidator) Description(_ context.Context) string {
 func (v *hostHeadersValidator) MarkdownDescription(_ context.Context) string {
 	return "Validates that `custom_host_header` and `forward_host_header` are not both enabled"
 }
+
+// queryParamsConflictValidator validates mutually exclusive query params options
+type queryParamsConflictValidator struct{}
+
+func NewQueryParamsConflictValidator() validator.List {
+	return &queryParamsConflictValidator{}
+}
+
+func (v *queryParamsConflictValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() || len(req.ConfigValue.Elements()) == 0 {
+		return
+	}
+
+	var elements []types.Object
+	diags := req.ConfigValue.ElementsAs(ctx, &elements, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || len(elements) == 0 {
+		return
+	}
+
+	elem := elements[0]
+	if elem.IsNull() || elem.IsUnknown() {
+		return
+	}
+
+	var options CDNOptionsModel
+	diags = elem.As(ctx, &options, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Check values - only flag as conflict if user explicitly set ignore_query_params=true
+	ignoreSet := !options.IgnoreQueryParams.IsNull() && !options.IgnoreQueryParams.IsUnknown() && options.IgnoreQueryParams.ValueBool()
+	whitelistSet := !options.QueryParamsWhitelist.IsNull() && !options.QueryParamsWhitelist.IsUnknown() && len(options.QueryParamsWhitelist.Elements()) > 0
+	blacklistSet := !options.QueryParamsBlacklist.IsNull() && !options.QueryParamsBlacklist.IsUnknown() && len(options.QueryParamsBlacklist.Elements()) > 0
+
+	if ignoreSet && whitelistSet {
+		resp.Diagnostics.AddError(
+			"Conflicting query params options",
+			"ignore_query_params = true cannot be used with query_params_whitelist. These are mutually exclusive options.",
+		)
+	}
+
+	if ignoreSet && blacklistSet {
+		resp.Diagnostics.AddError(
+			"Conflicting query params options",
+			"ignore_query_params = true cannot be used with query_params_blacklist. These are mutually exclusive options.",
+		)
+	}
+
+	if whitelistSet && blacklistSet {
+		resp.Diagnostics.AddError(
+			"Conflicting query params options",
+			"query_params_whitelist cannot be used with query_params_blacklist. Choose one approach.",
+		)
+	}
+}
+
+func (v *queryParamsConflictValidator) Description(_ context.Context) string {
+	return "Validates that query params options are not conflicting"
+}
+
+func (v *queryParamsConflictValidator) MarkdownDescription(_ context.Context) string {
+	return "Validates that `ignore_query_params`, `query_params_whitelist`, and `query_params_blacklist` are not conflicting"
+}
