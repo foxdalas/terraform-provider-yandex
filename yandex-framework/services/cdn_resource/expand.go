@@ -218,14 +218,13 @@ func expandQueryParamsOptions(ctx context.Context, opt *CDNOptionsModel, result 
 		return
 	}
 
-	// 3rd priority: IgnoreQueryString - only when explicitly true
-	// false = API default behavior, no need to send
-	if !opt.IgnoreQueryParams.IsNull() && opt.IgnoreQueryParams.ValueBool() {
+	// 3rd priority: IgnoreQueryString
+	if !opt.IgnoreQueryParams.IsNull() {
 		result.QueryParamsOptions = &cdn.ResourceOptions_QueryParamsOptions{
 			QueryParamsVariant: &cdn.ResourceOptions_QueryParamsOptions_IgnoreQueryString{
 				IgnoreQueryString: &cdn.ResourceOptions_BoolOption{
 					Enabled: true,
-					Value:   true,
+					Value:   opt.IgnoreQueryParams.ValueBool(),
 				},
 			},
 		}
