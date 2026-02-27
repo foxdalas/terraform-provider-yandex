@@ -14,10 +14,10 @@ type CDNRawLogResource struct {
 
 // CDNRawLogDataSource описывает модель data source для CDN Raw Log
 type CDNRawLogDataSource struct {
-	ID              types.String `tfsdk:"id"`
-	ResourceID      types.String `tfsdk:"resource_id"`
-	Settings        *Settings    `tfsdk:"settings"`
-	Status          types.String `tfsdk:"status"`
+	ID         types.String `tfsdk:"id"`
+	ResourceID types.String `tfsdk:"resource_id"`
+	Settings   *Settings    `tfsdk:"settings"`
+	Status     types.String `tfsdk:"status"`
 }
 
 // Settings описывает настройки CDN Raw Log

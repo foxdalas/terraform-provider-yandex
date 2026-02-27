@@ -62,7 +62,7 @@ output "cdn_origin_group_id" {
 - `provider_type` (String) CDN provider type.
 - `secondary_hostnames` (Set of String) List of secondary hostname strings.
 - `shielding` (String) Shielding is a Cloud CDN feature that helps reduce the load on content origins from CDN servers.
-- `ssl_certificate` (Block Set) SSL certificate configuration block. (see [below for nested schema](#nestedblock--ssl_certificate))
+- `ssl_certificate` (Block List) SSL certificate configuration block. (see [below for nested schema](#nestedblock--ssl_certificate))
 - `updated_at` (String) Last update timestamp.
 
 <a id="nestedblock--options"></a>

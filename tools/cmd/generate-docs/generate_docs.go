@@ -209,8 +209,8 @@ func replaceTimeoutBlock(filePath string) error {
 		blockContent := matches[0]
 
 		for key, desc := range newDescriptions {
-			reField := regexp.MustCompile(fmt.Sprintf(`-\s*\x60` + key + `\x60\s*\(String\)(.*?)`))
-			blockContent = reField.ReplaceAllString(blockContent, fmt.Sprintf("- `%s` (String) %s", key, desc))
+			reField := regexp.MustCompile(`-\s*\x60` + key + `\x60\s*\(String\)(.*?)`)
+			blockContent = reField.ReplaceAllString(blockContent, "- `"+key+"` (String) "+desc)
 		}
 
 		content = strings.Replace(content, matches[0], blockContent, 1)
