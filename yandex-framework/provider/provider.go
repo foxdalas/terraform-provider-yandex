@@ -22,6 +22,7 @@ import (
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/airflow_cluster"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/billing_cloud_binding"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cdn_origin_group"
+	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cdn_raw_log"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cdn_resource"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cdn_rule"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cloud_desktops_desktop"
@@ -297,6 +298,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 				billing_cloud_binding.BindingServiceInstanceCloudIdFieldName)
 		},
 		cdn_origin_group.NewResource,
+		cdn_raw_log.NewResource,
 		cdn_resource.NewResource,
 		cdn_rule.NewResource,
 		datasphere_project.NewResource,
@@ -350,6 +352,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 				billing_cloud_binding.BindingServiceInstanceCloudIdFieldName)
 		},
 		cdn_origin_group.NewDataSource,
+		cdn_raw_log.NewDataSource,
 		cdn_resource.NewDataSource,
 		cdn_rule.NewDataSource,
 		airflow_cluster.NewDatasource,

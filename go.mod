@@ -1,8 +1,6 @@
 module github.com/yandex-cloud/terraform-provider-yandex
 
-go 1.23.9
-
-toolchain go1.23.10
+go 1.25.0
 
 require (
 	github.com/aws/aws-sdk-go v1.42.11
@@ -41,8 +39,8 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/objx v0.5.2
 	github.com/stretchr/testify v1.10.0
-	github.com/yandex-cloud/go-genproto v0.43.0
-	github.com/yandex-cloud/go-sdk v0.29.0
+	github.com/yandex-cloud/go-genproto v0.57.0
+	github.com/yandex-cloud/go-sdk v0.31.0
 	github.com/yandex-cloud/go-sdk/services/certificatemanager v0.0.10
 	github.com/yandex-cloud/go-sdk/services/clouddesktop v0.0.2
 	github.com/yandex-cloud/go-sdk/services/cloudregistry v0.0.12
@@ -69,15 +67,15 @@ require (
 	github.com/yandex-cloud/go-sdk/v2 v2.35.0
 	github.com/ydb-platform/terraform-provider-ydb v0.0.29
 	github.com/ydb-platform/ydb-go-genproto v0.0.0-20250519101544-1f330d77b70f
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.48.0
 	golang.org/x/exp v0.0.0-20230809150735-7b3493d9a819
-	golang.org/x/net v0.43.0
-	golang.org/x/text v0.28.0
-	golang.org/x/tools v0.35.0
-	google.golang.org/genproto v0.0.0-20241021214115-324edc3d5d38
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c
-	google.golang.org/grpc v1.75.0
-	google.golang.org/protobuf v1.36.8
+	golang.org/x/net v0.51.0
+	golang.org/x/text v0.34.0
+	golang.org/x/tools v0.41.0
+	google.golang.org/genproto v0.0.0-20260226221140-a57be14db171
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171
+	google.golang.org/grpc v1.79.1
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -299,14 +297,14 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2 // indirect
-	golang.org/x/mod v0.26.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	honnef.co/go/tools v0.4.3 // indirect
