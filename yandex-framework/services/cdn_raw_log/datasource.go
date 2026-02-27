@@ -93,4 +93,3 @@ func (d *cdnRawLogDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
-
