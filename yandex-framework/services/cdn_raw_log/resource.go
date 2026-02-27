@@ -3,7 +3,6 @@ package cdn_raw_log
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,10 +12,6 @@ import (
 	provider_config "github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/provider/config"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	yandexCDNRawLogDefaultTimeout = 10 * time.Minute
 )
 
 // Ensure provider defined types fully satisfy framework interfaces
