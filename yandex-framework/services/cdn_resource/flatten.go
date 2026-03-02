@@ -88,7 +88,7 @@ func FlattenCDNResourceOptions(ctx context.Context, options *cdn.ResourceOptions
 	if options.AllowedHttpMethods != nil && options.AllowedHttpMethods.Enabled {
 		// Check if API returned defaults - treat as "not configured"
 		// This ensures plan consistency: user doesn't specify → plan=null → result=null
-		if isDefaultAllowedHttpMethods(options.AllowedHttpMethods.Value) {
+		if isDefaultAllowedHttpMethods(options.AllowedHttpMethods.Value) && planOptionsModel.AllowedHTTPMethods.IsNull() {
 			opt.AllowedHTTPMethods = types.ListNull(types.StringType)
 		} else {
 			// User explicitly configured non-default values
