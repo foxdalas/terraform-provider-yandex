@@ -121,9 +121,6 @@ func CDNResourceSchema(ctx context.Context) schema.Schema {
 			"updated_at": schema.StringAttribute{
 				MarkdownDescription: "Last update timestamp. Computed value for read and update operations.",
 				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"origin_group_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of a specific origin group.",
