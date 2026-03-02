@@ -289,8 +289,12 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 					Optional:            true,
 				},
 				"custom_server_name": schema.StringAttribute{
-					MarkdownDescription: "Wildcard additional CNAME. If a resource has a wildcard additional CNAME, you can use your own certificate for content delivery via HTTPS.",
+					MarkdownDescription: "Wildcard additional CNAME. If a resource has a wildcard additional CNAME, you can use your own certificate for content delivery via HTTPS. This field may be automatically set by Yandex Cloud when using S3 origins.",
 					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.String{
+						stringplanmodifier.UseStateForUnknown(),
+					},
 					Validators: []validator.String{
 						stringvalidator.RegexMatches(
 							regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`),
