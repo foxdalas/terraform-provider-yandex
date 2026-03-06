@@ -1,0 +1,22 @@
+---
+subcategory: "Cloud Content Delivery Network (CDN)"
+page_title: "Yandex: {{.Name}}"
+description: |-
+  Allows management of a Yandex Cloud CDN Raw Log configuration.
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+## Example usage
+
+{{ tffile "examples/cdn_raw_log/r_cdn_raw_log_1.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+CDN Raw Log configurations can be imported using the CDN resource ID:
+
+{{ codefile "bash" "examples/cdn_raw_log/import.sh" }}

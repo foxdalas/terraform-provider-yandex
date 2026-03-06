@@ -47,11 +47,7 @@ output "origin_group_name" {
 
 Read-Only:
 
-- `backup` (Boolean) Specifies whether the origin is used in its origin group as backup. A backup origin is used when one of active origins becomes unavailable. Specifies whether the origin is used in its origin group as backup. A backup origin is used when one of active origins becomes unavailable. Default: `false`.
-
-- `enabled` (Boolean) Whether the origin is enabled and used as a source for the CDN. The origin is enabled and used as a source for the CDN. Default: `true`.
-
-- `origin_group_id` (String) The ID of the origin group this origin belongs to. The ID of the origin group that this origin belongs to.
-
-- `source` (String) IP address or domain name of your origin and the port (e.g., `example.com:8080`). IP address or Domain name of your origin and the port (e.g., `example.com:8080` or `192.0.2.1:80`).
-
+- `backup` (Boolean) Specifies whether the origin is used in its origin group as backup. A backup origin is used when one of active origins becomes unavailable.
+- `enabled` (Boolean) Whether the origin is enabled and used as a source for the CDN.
+- `origin_group_id` (String) The ID of the origin group this origin belongs to.
+- `source` (String) IP address or domain name of your origin and the port (e.g., `example.com:8080`).

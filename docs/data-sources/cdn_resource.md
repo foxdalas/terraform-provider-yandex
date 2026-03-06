@@ -63,6 +63,7 @@ output "cdn_origin_group_id" {
 - `secondary_hostnames` (Set of String) List of secondary hostname strings.
 - `shielding` (String) Shielding is a Cloud CDN feature that helps reduce the load on content origins from CDN servers.
 - `ssl_certificate` (Block List) SSL certificate configuration block. (see [below for nested schema](#nestedblock--ssl_certificate))
+- `tls_profile` (String) TLS profile of the CDN resource.
 - `updated_at` (String) Last update timestamp.
 
 <a id="nestedblock--options"></a>
@@ -70,68 +71,47 @@ output "cdn_origin_group_id" {
 
 Read-Only:
 
-- `allowed_http_methods` (List of String) Allowed HTTP methods. HTTP methods for your CDN content. By default the following methods are allowed: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS. In case some methods are not allowed to the user, they will get the 405 (Method Not Allowed) response. If the method is not supported, the user gets the 501 (Not Implemented) response.
-
-- `browser_cache_settings` (Block List) Set up a cache period for the end-users browser. Content will be cached due to origin settings. If there are no cache settings on your origin, the content will not be cached. The list of HTTP response codes that can be cached in browsers: 200, 201, 204, 206, 301, 302, 303, 304, 307, 308. Other response codes will not be cached. The default value is 4 days. **By default, browser caching is enabled in Yandex CDN.** To explicitly disable it, set `enabled = false` (provider will send `cache_time = 0` to API). Alternatively, you can set `enabled = true` with `cache_time = 0`. To remove the configuration entirely, omit this block. (see [below for nested schema](#nestedblock--options--browser_cache_settings)) (see [below for nested schema](#nestedblock--options--browser_cache_settings))
-
-- `cache_http_headers` (List of String) HTTP headers to include in cache key. List HTTP headers that must be included in responses to clients.
-
-- `cors` (List of String) CORS origins. Parameter that lets browsers get access to selected resources from a domain different to a domain from which the request is received.
-
-- `custom_host_header` (String) Custom Host header value. Custom value for the Host header. Your server must be able to process requests with the chosen header.
-
-- `custom_server_name` (String) Custom server name for TLS SNI. Wildcard additional CNAME. If a resource has a wildcard additional CNAME, you can use your own certificate for content delivery via HTTPS.
-
-- `disable_proxy_force_ranges` (Boolean) Disable proxy force ranges. Disabling proxy force ranges.
-
-- `edge_cache_settings` (Block List) Set the cache expiration time for CDN servers. Content will be cached according to origin cache settings if origin server has caching HTTP headers. **By default, edge caching is enabled in Yandex CDN.** To explicitly disable it, set `enabled = false` (provider will send cache_time = 0 to API). To remove the configuration entirely, omit this block. (see [below for nested schema](#nestedblock--options--edge_cache_settings)) (see [below for nested schema](#nestedblock--options--edge_cache_settings))
-
-- `enable_ip_url_signing` (Boolean) Enable IP/URL signing. Enable access limiting by IP addresses, option available only with setting secure_key.
-
-- `fetched_compressed` (Boolean) Fetch compressed content from origin. Option helps you to reduce the bandwidth between origin and CDN servers. Also, content delivery speed becomes higher because of reducing the time for compressing files in a CDN.
-
-- `forward_host_header` (Boolean) Forward Host header to origin. Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.
-
-- `gzip_on` (Boolean) Enable gzip compression. GZip compression at CDN servers reduces file size by 70% and can be as high as 90%.
-
-- `ignore_cookie` (Boolean) Ignore Set-Cookie header from origin. Set for ignoring cookie.
-
-- `ignore_query_params` (Boolean) Ignore query parameters. Files with different query parameters are cached as objects with the same key regardless of the parameter value. selected by default.
-
-- `ip_address_acl` (Block List) IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type. (see [below for nested schema](#nestedblock--options--ip_address_acl))
-
-- `proxy_cache_methods_set` (Boolean) Enable caching for POST/PUT/PATCH methods. Allows caching for GET, HEAD and POST requests.
-
-- `query_params_blacklist` (List of String) Blacklist of query parameters to exclude from cache key. Files with the specified query parameters are cached as objects with the same key, files with other parameters are cached as objects with different keys.
-
-- `query_params_whitelist` (List of String) Whitelist of query parameters to include in cache key. Files with the specified query parameters are cached as objects with different keys, files with other parameters are cached as objects with the same key.
-
-- `redirect_http_to_https` (Boolean) Redirect HTTP requests to HTTPS. Set up a redirect from HTTP to HTTPS.
-
-- `redirect_https_to_http` (Boolean) Redirect HTTPS requests to HTTP. Set up a redirect from HTTPS to HTTP.
-
-- `rewrite` (Block List) An option for changing or redirecting query paths. (see [below for nested schema](#nestedblock--options--rewrite))
-
-- `secure_key` (String, Sensitive) Secure key for URL signing. Set secure key for url encoding to protect content and limit access by IP addresses and time limits.
-
-- `slice` (Boolean) Enable slicing. Files larger than 10 MB will be requested and cached in parts (no larger than 10 MB each part). It reduces time to first byte. The origin must support HTTP Range requests.
-
-- `stale` (List of String) List of errors for serving stale content. List of errors which instruct CDN servers to serve stale content to clients. Possible values: `error`, `http_403`, `http_404`, `http_429`, `http_500`, `http_502`, `http_503`, `http_504`, `invalid_header`, `timeout`, `updating`.
-
-- `static_request_headers` (Map of String) Static request headers to origin. Set up custom headers that CDN servers will send in requests to origins.
-
-- `static_response_headers` (Map of String) Static response headers. Set up a static response header. The header name must be lowercase.
-
+- `allowed_http_methods` (List of String) Allowed HTTP methods.
+- `brotli_compression` (List of String) Brotli compression content-types.
+- `browser_cache_settings` (Block List) Browser cache settings. (see [below for nested schema](#nestedblock--options--browser_cache_settings))
+- `cache_http_headers` (List of String) HTTP headers to include in cache key.
+- `cors` (List of String) CORS origins.
+- `custom_host_header` (String) Custom Host header value.
+- `custom_server_name` (String) Custom server name for TLS SNI.
+- `disable_proxy_force_ranges` (Boolean) Disable proxy force ranges.
+- `edge_cache_settings` (Block List) Edge cache settings. (see [below for nested schema](#nestedblock--options--edge_cache_settings))
+- `enable_ip_url_signing` (Boolean) Enable IP/URL signing.
+- `fetched_compressed` (Boolean) Fetch compressed content from origin.
+- `follow_redirects` (Block List) Follow origin redirect settings. (see [below for nested schema](#nestedblock--options--follow_redirects))
+- `forward_host_header` (Boolean) Forward Host header to origin.
+- `geo_acl` (Block List) Geo-based access control list. (see [below for nested schema](#nestedblock--options--geo_acl))
+- `gzip_on` (Boolean) Enable gzip compression.
+- `header_filter` (Block List) Response header filter settings. (see [below for nested schema](#nestedblock--options--header_filter))
+- `ignore_cookie` (Boolean) Ignore Set-Cookie header from origin.
+- `ignore_query_params` (Boolean) Ignore query parameters.
+- `ip_address_acl` (Block List) IP address ACL settings. (see [below for nested schema](#nestedblock--options--ip_address_acl))
+- `proxy_cache_methods_set` (Boolean) Enable caching for POST/PUT/PATCH methods.
+- `query_params_blacklist` (List of String) Blacklist of query parameters to exclude from cache key.
+- `query_params_whitelist` (List of String) Whitelist of query parameters to include in cache key.
+- `redirect_http_to_https` (Boolean) Redirect HTTP requests to HTTPS.
+- `redirect_https_to_http` (Boolean) Redirect HTTPS requests to HTTP.
+- `referrer_acl` (Block List) Referrer-based access control list. (see [below for nested schema](#nestedblock--options--referrer_acl))
+- `rewrite` (Block List) URL rewrite rules. (see [below for nested schema](#nestedblock--options--rewrite))
+- `secure_key` (String, Sensitive) Secure key for URL signing.
+- `slice` (Boolean) Enable slicing.
+- `stale` (List of String) List of errors for serving stale content.
+- `static_request_headers` (Map of String) Static request headers to origin.
+- `static_response` (Block List) Static response settings. (see [below for nested schema](#nestedblock--options--static_response))
+- `static_response_headers` (Map of String) Static response headers.
+- `websockets` (Boolean) WebSocket support.
 
 <a id="nestedblock--options--browser_cache_settings"></a>
 ### Nested Schema for `options.browser_cache_settings`
 
 Read-Only:
 
-- `cache_time` (Number) Browser cache time in seconds. Cache time in seconds for browsers. Must be between 0 and 31536000 (1 year). Use `0` to explicitly disable caching. Required when `enabled = true`, must not be set when `enabled = false`.
-
-- `enabled` (Boolean) Enable browser caching. True - browser caching is enabled with `cache_time` setting. False - browser caching is disabled (provider sends `cache_time = 0` to API). Use `enabled = false` to explicitly disable browser caching (which is enabled by default in Yandex CDN). Cannot be used together with `cache_time`.
-
+- `cache_time` (Number) Browser cache time in seconds.
+- `enabled` (Boolean) Enable browser caching.
 
 
 <a id="nestedblock--options--edge_cache_settings"></a>
@@ -139,12 +119,37 @@ Read-Only:
 
 Read-Only:
 
-- `custom_values` (Map of Number) Cache time in seconds for specific HTTP status codes. Caching time for responses with specific codes. These settings have higher priority than the `value` field. Use specific HTTP codes like `"200"`, `"404"`, or use `"any"` to specify caching time for all response codes (including 4xx, 5xx). Cannot be used together with `enabled = false`.
+- `custom_values` (Map of Number) Cache time in seconds for specific HTTP status codes.
+- `enabled` (Boolean) Enable edge caching.
+- `value` (Number) Cache time in seconds for responses with codes 200, 206, 301, 302.
 
-- `enabled` (Boolean) Enable edge caching. True - caching is enabled with `value` or `custom_values` settings. False - caching is disabled (provider sends cache_time = 0 to API). Use `enabled = false` to explicitly disable edge caching (which is enabled by default in Yandex CDN). Cannot be used together with `value` or `custom_values`.
 
-- `value` (Number) Cache time in seconds for responses with codes 200, 206, 301, 302. Caching time for responses with codes 200, 206, 301, 302. Responses with codes 4xx, 5xx will NOT be cached. Use `0` to disable caching. Use `custom_values` field to specify caching time for other response codes. Cannot be used together with `enabled = false`.
+<a id="nestedblock--options--follow_redirects"></a>
+### Nested Schema for `options.follow_redirects`
 
+Read-Only:
+
+- `codes` (List of Number) HTTP redirect status codes to follow.
+- `enabled` (Boolean) Enable following redirects.
+- `use_custom_host` (Boolean) Use redirect target domain as Host header.
+
+
+<a id="nestedblock--options--geo_acl"></a>
+### Nested Schema for `options.geo_acl`
+
+Read-Only:
+
+- `countries` (List of String) List of ISO 3166-1 alpha-2 country codes.
+- `policy_type` (String) Policy type: `allow` or `deny`.
+
+
+<a id="nestedblock--options--header_filter"></a>
+### Nested Schema for `options.header_filter`
+
+Read-Only:
+
+- `enabled` (Boolean) Enable header filtering.
+- `headers` (List of String) Whitelist of response headers.
 
 
 <a id="nestedblock--options--ip_address_acl"></a>
@@ -152,10 +157,17 @@ Read-Only:
 
 Read-Only:
 
-- `excepted_values` (List of String) List of IP addresses or CIDR blocks. The list of specified IP addresses to be allowed or denied depending on acl policy type.
+- `excepted_values` (List of String) List of IP addresses or CIDR blocks.
+- `policy_type` (String) Policy type: `allow` or `deny`.
 
-- `policy_type` (String) Policy type: `allow` or `deny`. The policy type for ACL. One of `allow` or `deny` values.
 
+<a id="nestedblock--options--referrer_acl"></a>
+### Nested Schema for `options.referrer_acl`
+
+Read-Only:
+
+- `policy_type` (String) Policy type: `allow` or `deny`.
+- `referrers` (List of String) List of referrer patterns.
 
 
 <a id="nestedblock--options--rewrite"></a>
@@ -163,12 +175,19 @@ Read-Only:
 
 Read-Only:
 
-- `body` (String) Rewrite pattern. Pattern for rewrite. The value must have the following format: `<source path> <destination path>`, where both paths are regular expressions which use at least one group. E.g., `/foo/(.*) /bar/$1`.
+- `body` (String) Rewrite pattern.
+- `enabled` (Boolean) Enable rewrite.
+- `flag` (String) Rewrite flag: `last`, `break`, `redirect`, `permanent`.
 
-- `enabled` (Boolean) Enable rewrite. True - the rewrite option is enabled and its flag is applied to the resource. False - the rewrite option is disabled. Default is false.
 
-- `flag` (String) Rewrite flag: `last`, `break`, `redirect`, `permanent`. Rewrite flag. Available values: 'last', 'break', 'redirect', 'permanent'. Default is 'break'.
+<a id="nestedblock--options--static_response"></a>
+### Nested Schema for `options.static_response`
 
+Read-Only:
+
+- `code` (Number) HTTP status code.
+- `content` (String) Response content.
+- `enabled` (Boolean) Enable static response.
 
 
 
@@ -177,9 +196,6 @@ Read-Only:
 
 Read-Only:
 
-- `certificate_manager_id` (String) ID of certificate from Yandex Certificate Manager (required if type is `certificate_manager`). Certificate Manager ID.
-
-- `status` (String) Status of the SSL certificate. SSL certificate status.
-
-- `type` (String) Type of the SSL certificate. Possible values: `not_used` - do not use SSL, `certificate_manager` - certificate from Yandex Certificate Manager, `lets_encrypt` - Let's Encrypt certificate. SSL certificate type.
-
+- `certificate_manager_id` (String) ID of certificate from Yandex Certificate Manager (required if type is `certificate_manager`).
+- `status` (String) Status of the SSL certificate.
+- `type` (String) Type of the SSL certificate. Possible values: `not_used` - do not use SSL, `certificate_manager` - certificate from Yandex Certificate Manager, `lets_encrypt` - Let's Encrypt certificate.

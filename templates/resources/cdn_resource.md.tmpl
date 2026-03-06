@@ -1,0 +1,41 @@
+---
+subcategory: "Cloud Content Delivery Network (CDN)"
+page_title: "Yandex: {{.Name}}"
+description: |-
+  Allows management of a Yandex Cloud CDN Resource.
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+## Example usage
+
+### Basic CDN Resource
+
+{{ tffile "examples/cdn_resource/r_cdn_resource_1.tf" }}
+
+### SSL Certificate and HTTPS Redirect
+
+{{ tffile "examples/cdn_resource/r_cdn_resource_2.tf" }}
+
+### Access Control (geo_acl, referrer_acl, ip_address_acl)
+
+{{ tffile "examples/cdn_resource/r_cdn_resource_3.tf" }}
+
+### Advanced Caching (custom_values, browser_cache, stale)
+
+{{ tffile "examples/cdn_resource/r_cdn_resource_4.tf" }}
+
+### New Features (follow_redirects, static_response, header_filter, websockets, rewrite)
+
+{{ tffile "examples/cdn_resource/r_cdn_resource_5.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+
+## Import
+
+The resource can be imported by using their `resource ID`. For getting the resource ID you can use Yandex Cloud [Web Console](https://console.yandex.cloud) or [YC CLI](https://yandex.cloud/docs/cli/quickstart).
+
+{{ codefile "bash" "examples/cdn_resource/import.sh" }}
