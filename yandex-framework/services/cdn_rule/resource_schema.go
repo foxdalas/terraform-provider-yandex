@@ -300,6 +300,27 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 					},
 				},
 
+				// Boolean options (new)
+				"websockets": schema.BoolAttribute{
+					MarkdownDescription: "Enable WebSocket support.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.Bool{
+						boolplanmodifier.UseStateForUnknown(),
+					},
+				},
+
+				// List options (new)
+				"brotli_compression": schema.ListAttribute{
+					MarkdownDescription: "Enable Brotli compression on CDN servers. Specify content-types to compress.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.List{
+						listplanmodifier.UseStateForUnknown(),
+					},
+					ElementType: types.StringType,
+				},
+
 				// Map options
 				"static_response_headers": schema.MapAttribute{
 					MarkdownDescription: "Set up a static response header. The header name must be lowercase.",
@@ -331,6 +352,11 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 				"browser_cache_settings": cdn_resource.BrowserCacheSettingsSchema(),
 				"ip_address_acl":         cdn_resource.IPAddressACLSchema(),
 				"rewrite":                cdn_resource.RewriteSchema(),
+				"geo_acl":                cdn_resource.GeoACLSchema(),
+				"referrer_acl":           cdn_resource.ReferrerACLSchema(),
+				"header_filter":          cdn_resource.HeaderFilterSchema(),
+				"follow_redirects":       cdn_resource.FollowRedirectsSchema(),
+				"static_response":        cdn_resource.StaticResponseSchema(),
 			},
 			PlanModifiers: []planmodifier.Object{
 				objectplanmodifier.RequiresReplaceIfConfigured(),

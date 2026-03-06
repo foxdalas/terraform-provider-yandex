@@ -147,6 +147,14 @@ func ExpandCDNResourceOptions(ctx context.Context, planOptions []CDNOptionsModel
 	expandIPAddressACL(ctx, opt.IPAddressACL, result, diags)
 	expandRewrite(ctx, opt.Rewrite, result, diags)
 
+	// New options (go-genproto v0.57.0)
+	result.Websockets = expandWebsocketsOption(opt.Websockets)
+	expandGeoACL(ctx, opt.GeoACL, result, diags)
+	expandReferrerACL(ctx, opt.ReferrerACL, result, diags)
+	expandHeaderFilter(ctx, opt.HeaderFilter, result, diags)
+	expandFollowRedirects(ctx, opt.FollowRedirects, result, diags)
+	expandStaticResponse(ctx, opt.StaticResponseOpt, result, diags)
+
 	return result
 }
 
@@ -231,13 +239,14 @@ func expandQueryParamsOptions(ctx context.Context, opt *CDNOptionsModel, result 
 	}
 }
 
-// expandCompressionOptions handles mutually exclusive gzip_on and fetched_compressed
-// For oneof fields, only sends option when value is true
-// Priority: fetched_compressed=true > gzip_on=true
+// expandCompressionOptions handles mutually exclusive gzip_on, fetched_compressed, and brotli_compression
+// For oneof fields, only sends option when value is true/non-empty
+// Priority: fetched_compressed=true > brotli_compression (non-empty) > gzip_on=true
 // false/null values are NOT sent (for oneof, false means "don't select this variant")
 func expandCompressionOptions(opt *CDNOptionsModel, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
 	// Check if values are explicitly set to true
 	fetchedTrue := !opt.FetchedCompressed.IsNull() && opt.FetchedCompressed.ValueBool()
+	brotliSet := !opt.BrotliCompression.IsNull() && len(opt.BrotliCompression.Elements()) > 0
 	gzipTrue := !opt.GzipOn.IsNull() && opt.GzipOn.ValueBool()
 
 	if fetchedTrue {
@@ -250,8 +259,23 @@ func expandCompressionOptions(opt *CDNOptionsModel, result *cdn.ResourceOptions,
 				},
 			},
 		}
+	} else if brotliSet {
+		// Priority 2: brotli_compression with content-types
+		var contentTypes []string
+		d := opt.BrotliCompression.ElementsAs(context.Background(), &contentTypes, false)
+		diags.Append(d...)
+		if !diags.HasError() && len(contentTypes) > 0 {
+			result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
+				CompressionVariant: &cdn.ResourceOptions_CompressionOptions_BrotliCompression{
+					BrotliCompression: &cdn.ResourceOptions_StringsListOption{
+						Enabled: true,
+						Value:   contentTypes,
+					},
+				},
+			}
+		}
 	} else if gzipTrue {
-		// Priority 2: gzip_on=true
+		// Priority 3: gzip_on=true
 		result.CompressionOptions = &cdn.ResourceOptions_CompressionOptions{
 			CompressionVariant: &cdn.ResourceOptions_CompressionOptions_GzipOn{
 				GzipOn: &cdn.ResourceOptions_BoolOption{
@@ -261,7 +285,7 @@ func expandCompressionOptions(opt *CDNOptionsModel, result *cdn.ResourceOptions,
 			},
 		}
 	}
-	// If both false/null → don't send (API uses defaults)
+	// If all false/null → don't send (API uses defaults)
 }
 
 // expandRedirectOptions handles mutually exclusive redirect options
@@ -528,5 +552,208 @@ func expandOriginProtocol(ctx context.Context, protocolValue string, diags *diag
 			fmt.Sprintf("origin_protocol must be 'http', 'https', or 'match', got: %s", protocolValue),
 		)
 		return cdn.OriginProtocol_ORIGIN_PROTOCOL_UNSPECIFIED
+	}
+}
+
+// expandWebsocketsOption converts Terraform bool to WebsocketsOption
+func expandWebsocketsOption(value types.Bool) *cdn.ResourceOptions_WebsocketsOption {
+	if value.IsNull() {
+		return nil
+	}
+	return &cdn.ResourceOptions_WebsocketsOption{
+		Enabled: value.ValueBool(),
+	}
+}
+
+// expandTLSProfile converts Terraform string to TLS proto struct
+func expandTLSProfile(value types.String) *cdn.TLS {
+	if value.IsNull() || value.ValueString() == "" {
+		return nil
+	}
+	var profile cdn.TLS_Profile
+	switch value.ValueString() {
+	case "compatible":
+		profile = cdn.TLS_PROFILE_COMPATIBLE
+	case "legacy":
+		profile = cdn.TLS_PROFILE_LEGACY
+	case "secure":
+		profile = cdn.TLS_PROFILE_SECURE
+	case "strict":
+		profile = cdn.TLS_PROFILE_STRICT
+	default:
+		return nil
+	}
+	return &cdn.TLS{Profile: profile}
+}
+
+// expandGeoACL converts geo_acl block to API format
+func expandGeoACL(ctx context.Context, geoACLList types.List, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
+	if geoACLList.IsNull() || len(geoACLList.Elements()) == 0 {
+		return
+	}
+
+	var models []GeoACLModel
+	diags.Append(geoACLList.ElementsAs(ctx, &models, false)...)
+	if diags.HasError() || len(models) == 0 {
+		return
+	}
+
+	m := models[0]
+	var countries []string
+	diags.Append(m.Countries.ElementsAs(ctx, &countries, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	var mode cdn.ResourceOptions_GeoACLOption_Mode
+	switch m.PolicyType.ValueString() {
+	case "allow":
+		mode = cdn.ResourceOptions_GeoACLOption_MODE_ALLOW
+	case "deny":
+		mode = cdn.ResourceOptions_GeoACLOption_MODE_DENY
+	default:
+		diags.AddError("Invalid geo_acl policy_type",
+			fmt.Sprintf("policy_type must be 'allow' or 'deny', got: %s", m.PolicyType.ValueString()))
+		return
+	}
+
+	result.GeoAcl = &cdn.ResourceOptions_GeoACLOption{
+		Enabled:   true,
+		Mode:      mode,
+		Countries: countries,
+	}
+}
+
+// expandReferrerACL converts referrer_acl block to API format
+func expandReferrerACL(ctx context.Context, referrerACLList types.List, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
+	if referrerACLList.IsNull() || len(referrerACLList.Elements()) == 0 {
+		return
+	}
+
+	var models []ReferrerACLModel
+	diags.Append(referrerACLList.ElementsAs(ctx, &models, false)...)
+	if diags.HasError() || len(models) == 0 {
+		return
+	}
+
+	m := models[0]
+	var referrers []string
+	diags.Append(m.Referrers.ElementsAs(ctx, &referrers, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	var mode cdn.ResourceOptions_ReferrerACLOption_Mode
+	switch m.PolicyType.ValueString() {
+	case "allow":
+		mode = cdn.ResourceOptions_ReferrerACLOption_MODE_ALLOW
+	case "deny":
+		mode = cdn.ResourceOptions_ReferrerACLOption_MODE_DENY
+	default:
+		diags.AddError("Invalid referrer_acl policy_type",
+			fmt.Sprintf("policy_type must be 'allow' or 'deny', got: %s", m.PolicyType.ValueString()))
+		return
+	}
+
+	result.ReferrerAcl = &cdn.ResourceOptions_ReferrerACLOption{
+		Enabled:   true,
+		Mode:      mode,
+		Referrers: referrers,
+	}
+}
+
+// expandHeaderFilter converts header_filter block to API format
+func expandHeaderFilter(ctx context.Context, headerFilterList types.List, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
+	if headerFilterList.IsNull() || len(headerFilterList.Elements()) == 0 {
+		return
+	}
+
+	var models []HeaderFilterModel
+	diags.Append(headerFilterList.ElementsAs(ctx, &models, false)...)
+	if diags.HasError() || len(models) == 0 {
+		return
+	}
+
+	m := models[0]
+
+	enabled := true
+	if !m.Enabled.IsNull() {
+		enabled = m.Enabled.ValueBool()
+	}
+
+	var headers []string
+	if !m.Headers.IsNull() && len(m.Headers.Elements()) > 0 {
+		diags.Append(m.Headers.ElementsAs(ctx, &headers, false)...)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	result.HeaderFilter = &cdn.ResourceOptions_HeaderFilterOption{
+		Enabled: enabled,
+		Headers: headers,
+	}
+}
+
+// expandFollowRedirects converts follow_redirects block to API format
+func expandFollowRedirects(ctx context.Context, followRedirectsList types.List, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
+	if followRedirectsList.IsNull() || len(followRedirectsList.Elements()) == 0 {
+		return
+	}
+
+	var models []FollowRedirectsModel
+	diags.Append(followRedirectsList.ElementsAs(ctx, &models, false)...)
+	if diags.HasError() || len(models) == 0 {
+		return
+	}
+
+	m := models[0]
+	enabled := true
+	if !m.Enabled.IsNull() {
+		enabled = m.Enabled.ValueBool()
+	}
+
+	var codes []int64
+	if !m.Codes.IsNull() && len(m.Codes.Elements()) > 0 {
+		diags.Append(m.Codes.ElementsAs(ctx, &codes, false)...)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	useCustomHost := false
+	if !m.UseCustomHost.IsNull() {
+		useCustomHost = m.UseCustomHost.ValueBool()
+	}
+
+	result.FollowRedirects = &cdn.ResourceOptions_FollowRedirectsOption{
+		Enabled:       enabled,
+		Codes:         codes,
+		UseCustomHost: useCustomHost,
+	}
+}
+
+// expandStaticResponse converts static_response block to API format
+func expandStaticResponse(ctx context.Context, staticResponseList types.List, result *cdn.ResourceOptions, diags *diag.Diagnostics) {
+	if staticResponseList.IsNull() || len(staticResponseList.Elements()) == 0 {
+		return
+	}
+
+	var models []StaticResponseModel
+	diags.Append(staticResponseList.ElementsAs(ctx, &models, false)...)
+	if diags.HasError() || len(models) == 0 {
+		return
+	}
+
+	m := models[0]
+	enabled := true
+	if !m.Enabled.IsNull() {
+		enabled = m.Enabled.ValueBool()
+	}
+
+	result.StaticResponse = &cdn.ResourceOptions_StaticResponseOption{
+		Enabled: enabled,
+		Code:    m.Code.ValueInt64(),
+		Content: m.Content.ValueString(),
 	}
 }
