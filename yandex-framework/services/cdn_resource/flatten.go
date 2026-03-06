@@ -152,6 +152,14 @@ func FlattenCDNResourceOptions(ctx context.Context, options *cdn.ResourceOptions
 	flattenIPAddressACL(ctx, options.IpAddressAcl, &opt, diags)
 	flattenRewrite(ctx, options.Rewrite, &opt, diags)
 
+	// New options (go-genproto v0.57.0)
+	opt.Websockets = flattenWebsocketsOption(options.Websockets)
+	flattenGeoACL(ctx, options.GeoAcl, &opt, diags)
+	flattenReferrerACL(ctx, options.ReferrerAcl, &opt, diags)
+	flattenHeaderFilter(ctx, options.HeaderFilter, &opt, planOptionsModel, diags)
+	flattenFollowRedirects(ctx, options.FollowRedirects, &opt, planOptionsModel, diags)
+	flattenStaticResponse(ctx, options.StaticResponse, &opt, planOptionsModel, diags)
+
 	optionsList, d := types.ListValueFrom(ctx, types.ObjectType{
 		AttrTypes: GetCDNOptionsAttrTypes(),
 	}, []CDNOptionsModel{opt})
@@ -301,32 +309,35 @@ func flattenQueryParamsOptions(ctx context.Context, queryOptions *cdn.ResourceOp
 	}
 }
 
-// flattenCompressionOptions handles mutually exclusive gzip_on and fetched_compressed
-// IMPORTANT: Returns false for inactive field to match user config with coalesce()
+// flattenCompressionOptions handles mutually exclusive gzip_on, fetched_compressed, and brotli_compression
+// IMPORTANT: Returns false/null for inactive fields to match user config with coalesce()
 // expand.go only sends options with true value, so false is effectively ignored
 func flattenCompressionOptions(compressionOptions *cdn.ResourceOptions_CompressionOptions, opt *CDNOptionsModel) {
-	// Initialize both to false (zero value for bool)
-	// This matches user configs that use: coalesce(var.option, false)
+	// Initialize all to zero/null values
 	opt.GzipOn = types.BoolValue(false)
 	opt.FetchedCompressed = types.BoolValue(false)
+	opt.BrotliCompression = types.ListNull(types.StringType)
 
 	if compressionOptions == nil {
-		return // Both remain false
+		return
 	}
 
 	switch variant := compressionOptions.CompressionVariant.(type) {
 	case *cdn.ResourceOptions_CompressionOptions_GzipOn:
-		// gzip_on is active
 		if variant.GzipOn != nil && variant.GzipOn.Enabled {
 			opt.GzipOn = types.BoolValue(variant.GzipOn.Value)
 		}
-		// fetched_compressed remains false (inactive field)
 	case *cdn.ResourceOptions_CompressionOptions_FetchCompressed:
-		// fetched_compressed is active
 		if variant.FetchCompressed != nil && variant.FetchCompressed.Enabled {
 			opt.FetchedCompressed = types.BoolValue(variant.FetchCompressed.Value)
 		}
-		// gzip_on remains false (inactive field)
+	case *cdn.ResourceOptions_CompressionOptions_BrotliCompression:
+		if variant.BrotliCompression != nil && variant.BrotliCompression.Enabled && len(variant.BrotliCompression.Value) > 0 {
+			listVal, d := types.ListValueFrom(context.Background(), types.StringType, variant.BrotliCompression.Value)
+			if !d.HasError() {
+				opt.BrotliCompression = listVal
+			}
+		}
 	}
 }
 
@@ -846,6 +857,35 @@ func GetCDNOptionsAttrTypes() map[string]attr.Type {
 				},
 			},
 		},
+
+		// New options (go-genproto v0.57.0)
+		"websockets":         types.BoolType,
+		"brotli_compression": types.ListType{ElemType: types.StringType},
+		"geo_acl": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: GetGeoACLAttrTypes(),
+			},
+		},
+		"referrer_acl": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: GetReferrerACLAttrTypes(),
+			},
+		},
+		"header_filter": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: GetHeaderFilterAttrTypes(),
+			},
+		},
+		"follow_redirects": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: GetFollowRedirectsAttrTypes(),
+			},
+		},
+		"static_response": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: GetStaticResponseAttrTypes(),
+			},
+		},
 	}
 }
 
@@ -874,4 +914,233 @@ func flattenOriginProtocol(ctx context.Context, apiProtocol cdn.OriginProtocol, 
 		)
 		return types.StringNull()
 	}
+}
+
+// --- Attr type helpers for new nested blocks ---
+
+func GetGeoACLAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"policy_type": types.StringType,
+		"countries":   types.ListType{ElemType: types.StringType},
+	}
+}
+
+func GetReferrerACLAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"policy_type": types.StringType,
+		"referrers":   types.ListType{ElemType: types.StringType},
+	}
+}
+
+func GetHeaderFilterAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"enabled": types.BoolType,
+		"headers": types.ListType{ElemType: types.StringType},
+	}
+}
+
+func GetFollowRedirectsAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"enabled":         types.BoolType,
+		"codes":           types.ListType{ElemType: types.Int64Type},
+		"use_custom_host": types.BoolType,
+	}
+}
+
+func GetStaticResponseAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"enabled": types.BoolType,
+		"code":    types.Int64Type,
+		"content": types.StringType,
+	}
+}
+
+// --- Flatten functions for new options ---
+
+// flattenWebsocketsOption converts WebsocketsOption to types.Bool
+func flattenWebsocketsOption(ws *cdn.ResourceOptions_WebsocketsOption) types.Bool {
+	if ws == nil {
+		return types.BoolNull()
+	}
+	return types.BoolValue(ws.Enabled)
+}
+
+// flattenTLSProfile converts TLS proto to Terraform string
+func flattenTLSProfile(tls *cdn.TLS) types.String {
+	if tls == nil || tls.Profile == cdn.TLS_PROFILE_UNSPECIFIED {
+		return types.StringNull()
+	}
+	switch tls.Profile {
+	case cdn.TLS_PROFILE_COMPATIBLE:
+		return types.StringValue("compatible")
+	case cdn.TLS_PROFILE_LEGACY:
+		return types.StringValue("legacy")
+	case cdn.TLS_PROFILE_SECURE:
+		return types.StringValue("secure")
+	case cdn.TLS_PROFILE_STRICT:
+		return types.StringValue("strict")
+	default:
+		return types.StringNull()
+	}
+}
+
+// flattenGeoACL converts API GeoACLOption to Terraform state
+func flattenGeoACL(ctx context.Context, geoACL *cdn.ResourceOptions_GeoACLOption, opt *CDNOptionsModel, diags *diag.Diagnostics) {
+	objType := types.ObjectType{AttrTypes: GetGeoACLAttrTypes()}
+
+	if geoACL == nil || !geoACL.Enabled {
+		opt.GeoACL = types.ListNull(objType)
+		return
+	}
+
+	var policyType string
+	switch geoACL.Mode {
+	case cdn.ResourceOptions_GeoACLOption_MODE_ALLOW:
+		policyType = "allow"
+	case cdn.ResourceOptions_GeoACLOption_MODE_DENY:
+		policyType = "deny"
+	default:
+		policyType = "allow"
+	}
+
+	countriesList, d := types.ListValueFrom(ctx, types.StringType, geoACL.Countries)
+	diags.Append(d...)
+
+	model := GeoACLModel{
+		PolicyType: types.StringValue(policyType),
+		Countries:  countriesList,
+	}
+
+	list, d := types.ListValueFrom(ctx, objType, []GeoACLModel{model})
+	diags.Append(d...)
+	opt.GeoACL = list
+}
+
+// flattenReferrerACL converts API ReferrerACLOption to Terraform state
+func flattenReferrerACL(ctx context.Context, referrerACL *cdn.ResourceOptions_ReferrerACLOption, opt *CDNOptionsModel, diags *diag.Diagnostics) {
+	objType := types.ObjectType{AttrTypes: GetReferrerACLAttrTypes()}
+
+	if referrerACL == nil || !referrerACL.Enabled {
+		opt.ReferrerACL = types.ListNull(objType)
+		return
+	}
+
+	var policyType string
+	switch referrerACL.Mode {
+	case cdn.ResourceOptions_ReferrerACLOption_MODE_ALLOW:
+		policyType = "allow"
+	case cdn.ResourceOptions_ReferrerACLOption_MODE_DENY:
+		policyType = "deny"
+	default:
+		policyType = "allow"
+	}
+
+	referrersList, d := types.ListValueFrom(ctx, types.StringType, referrerACL.Referrers)
+	diags.Append(d...)
+
+	model := ReferrerACLModel{
+		PolicyType: types.StringValue(policyType),
+		Referrers:  referrersList,
+	}
+
+	list, d := types.ListValueFrom(ctx, objType, []ReferrerACLModel{model})
+	diags.Append(d...)
+	opt.ReferrerACL = list
+}
+
+// flattenHeaderFilter converts API HeaderFilterOption to Terraform state
+// planOptionsModel: optional plan options to preserve explicitly disabled blocks
+func flattenHeaderFilter(ctx context.Context, hf *cdn.ResourceOptions_HeaderFilterOption, opt *CDNOptionsModel, planOptionsModel *CDNOptionsModel, diags *diag.Diagnostics) {
+	objType := types.ObjectType{AttrTypes: GetHeaderFilterAttrTypes()}
+
+	if hf == nil || !hf.Enabled {
+		// If plan contains an explicit header_filter block (e.g. enabled=false), preserve it.
+		// Copy the plan block verbatim — it has the user's real values (headers list)
+		// which must match state to avoid "inconsistent result" errors.
+		if planOptionsModel != nil && !planOptionsModel.HeaderFilter.IsNull() &&
+			len(planOptionsModel.HeaderFilter.Elements()) > 0 {
+			opt.HeaderFilter = planOptionsModel.HeaderFilter
+			return
+		}
+		opt.HeaderFilter = types.ListNull(objType)
+		return
+	}
+
+	headersList, d := types.ListValueFrom(ctx, types.StringType, hf.Headers)
+	diags.Append(d...)
+
+	model := HeaderFilterModel{
+		Enabled: types.BoolValue(hf.Enabled),
+		Headers: headersList,
+	}
+
+	list, d := types.ListValueFrom(ctx, objType, []HeaderFilterModel{model})
+	diags.Append(d...)
+	opt.HeaderFilter = list
+}
+
+// flattenFollowRedirects converts API FollowRedirectsOption to Terraform state
+// planOptionsModel: optional plan options to preserve explicitly disabled blocks
+func flattenFollowRedirects(ctx context.Context, fr *cdn.ResourceOptions_FollowRedirectsOption, opt *CDNOptionsModel, planOptionsModel *CDNOptionsModel, diags *diag.Diagnostics) {
+	objType := types.ObjectType{AttrTypes: GetFollowRedirectsAttrTypes()}
+
+	if fr == nil || !fr.Enabled {
+		// If plan contains an explicit follow_redirects block (e.g. enabled=false), preserve it.
+		// Copy the plan block verbatim to avoid "inconsistent result" errors.
+		if planOptionsModel != nil && !planOptionsModel.FollowRedirects.IsNull() &&
+			len(planOptionsModel.FollowRedirects.Elements()) > 0 {
+			opt.FollowRedirects = planOptionsModel.FollowRedirects
+			return
+		}
+		opt.FollowRedirects = types.ListNull(objType)
+		return
+	}
+
+	var codesList types.List
+	if len(fr.Codes) > 0 {
+		var d diag.Diagnostics
+		codesList, d = types.ListValueFrom(ctx, types.Int64Type, fr.Codes)
+		diags.Append(d...)
+	} else {
+		codesList = types.ListNull(types.Int64Type)
+	}
+
+	model := FollowRedirectsModel{
+		Enabled:       types.BoolValue(fr.Enabled),
+		Codes:         codesList,
+		UseCustomHost: types.BoolValue(fr.UseCustomHost),
+	}
+
+	list, d := types.ListValueFrom(ctx, objType, []FollowRedirectsModel{model})
+	diags.Append(d...)
+	opt.FollowRedirects = list
+}
+
+// flattenStaticResponse converts API StaticResponseOption to Terraform state
+// planOptionsModel: optional plan options to preserve explicitly disabled blocks
+func flattenStaticResponse(ctx context.Context, sr *cdn.ResourceOptions_StaticResponseOption, opt *CDNOptionsModel, planOptionsModel *CDNOptionsModel, diags *diag.Diagnostics) {
+	objType := types.ObjectType{AttrTypes: GetStaticResponseAttrTypes()}
+
+	if sr == nil || !sr.Enabled {
+		// If plan contains an explicit static_response block (e.g. enabled=false), preserve it.
+		// Copy the plan block verbatim — it has the user's real values (code, content)
+		// which must match state to avoid "inconsistent result" errors.
+		if planOptionsModel != nil && !planOptionsModel.StaticResponseOpt.IsNull() &&
+			len(planOptionsModel.StaticResponseOpt.Elements()) > 0 {
+			opt.StaticResponseOpt = planOptionsModel.StaticResponseOpt
+			return
+		}
+		opt.StaticResponseOpt = types.ListNull(objType)
+		return
+	}
+
+	model := StaticResponseModel{
+		Enabled: types.BoolValue(sr.Enabled),
+		Code:    types.Int64Value(sr.Code),
+		Content: types.StringValue(sr.Content),
+	}
+
+	list, d := types.ListValueFrom(ctx, objType, []StaticResponseModel{model})
+	diags.Append(d...)
+	opt.StaticResponseOpt = list
 }

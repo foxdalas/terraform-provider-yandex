@@ -23,6 +23,7 @@ type CDNResourceModel struct {
 	Shielding          types.String   `tfsdk:"shielding"`
 	SSLCertificate     types.List     `tfsdk:"ssl_certificate"`
 	ProviderCname      types.String   `tfsdk:"provider_cname"`
+	TLSProfile         types.String   `tfsdk:"tls_profile"`
 	Options            types.List     `tfsdk:"options"`
 }
 
@@ -44,6 +45,7 @@ type CDNResourceDataSource struct {
 	Shielding          types.String `tfsdk:"shielding"`
 	SSLCertificate     types.List   `tfsdk:"ssl_certificate"`
 	ProviderCname      types.String `tfsdk:"provider_cname"`
+	TLSProfile         types.String `tfsdk:"tls_profile"`
 	Options            types.List   `tfsdk:"options"`
 }
 
@@ -86,6 +88,15 @@ type CDNOptionsModel struct {
 	// Nested objects
 	IPAddressACL types.List `tfsdk:"ip_address_acl"`
 	Rewrite      types.List `tfsdk:"rewrite"`
+
+	// New options (go-genproto v0.57.0)
+	Websockets        types.Bool `tfsdk:"websockets"`
+	BrotliCompression types.List `tfsdk:"brotli_compression"` // List of content-type strings
+	GeoACL            types.List `tfsdk:"geo_acl"`            // List of GeoACLModel (MaxItems: 1)
+	ReferrerACL       types.List `tfsdk:"referrer_acl"`       // List of ReferrerACLModel (MaxItems: 1)
+	HeaderFilter      types.List `tfsdk:"header_filter"`      // List of HeaderFilterModel (MaxItems: 1)
+	FollowRedirects   types.List `tfsdk:"follow_redirects"`   // List of FollowRedirectsModel (MaxItems: 1)
+	StaticResponseOpt types.List `tfsdk:"static_response"`    // List of StaticResponseModel (MaxItems: 1)
 }
 
 // SSLCertificateModel represents the SSL certificate block
@@ -123,4 +134,36 @@ type EdgeCacheSettingsModel struct {
 type BrowserCacheSettingsModel struct {
 	Enabled   types.Bool  `tfsdk:"enabled"`    // Controls whether browser caching is enabled
 	CacheTime types.Int64 `tfsdk:"cache_time"` // Cache time in seconds for browsers
+}
+
+// GeoACLModel represents the geo ACL block
+type GeoACLModel struct {
+	PolicyType types.String `tfsdk:"policy_type"` // "allow" or "deny"
+	Countries  types.List   `tfsdk:"countries"`   // List of ISO 3166 country codes
+}
+
+// ReferrerACLModel represents the referrer ACL block
+type ReferrerACLModel struct {
+	PolicyType types.String `tfsdk:"policy_type"` // "allow" or "deny"
+	Referrers  types.List   `tfsdk:"referrers"`   // List of referrer patterns
+}
+
+// HeaderFilterModel represents the header filter block
+type HeaderFilterModel struct {
+	Enabled types.Bool `tfsdk:"enabled"` // Enable/disable header filtering
+	Headers types.List `tfsdk:"headers"` // List of header names to whitelist
+}
+
+// FollowRedirectsModel represents the follow redirects block
+type FollowRedirectsModel struct {
+	Enabled       types.Bool `tfsdk:"enabled"`         // Enable/disable following redirects
+	Codes         types.List `tfsdk:"codes"`           // Redirect HTTP status codes (e.g., 301, 302)
+	UseCustomHost types.Bool `tfsdk:"use_custom_host"` // Use redirect target domain as Host header
+}
+
+// StaticResponseModel represents the static response block
+type StaticResponseModel struct {
+	Enabled types.Bool   `tfsdk:"enabled"` // Enable/disable static response
+	Code    types.Int64  `tfsdk:"code"`    // HTTP status code
+	Content types.String `tfsdk:"content"` // Response content (Location header for 3xx, body for others)
 }
