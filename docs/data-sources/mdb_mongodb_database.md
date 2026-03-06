@@ -1,10 +1,13 @@
 ---
 subcategory: "Managed Service for MongoDB"
+page_title: "Yandex: yandex_mdb_mongodb_database"
+description: |-
+  Get information about a Yandex Managed MongoDB database.
 ---
 
-# yandex_mdb_mongodb_database (DataSource)
+# yandex_mdb_mongodb_database (Data Source)
 
-Manages a MongoDB Database within the Yandex Cloud. For more information, see [the official documentation](https://yandex.cloud/docs/managed-mongodb/).
+Get information about a Yandex Managed MongoDB database. For more information, see [the official documentation](https://yandex.cloud/docs/managed-mongodb/).
 
 ## Example usage
 
@@ -22,10 +25,10 @@ output "owner" {
 }
 ```
 
-## Arguments & Attributes Reference
+## Argument Reference
 
-- `cluster_id` (**Required**)(String). The ID of MongoDB Cluster.
-- `id` (*Read-Only*) (String). The resource identifier.
-- `name` (**Required**)(String). The name of the database.
+The following arguments are supported:
 
+* `cluster_id` - (Required) The ID of the MongoDB cluster.
 
+* `name` - (Required) The name of the MongoDB cluster.

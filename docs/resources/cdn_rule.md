@@ -67,6 +67,7 @@ resource "yandex_cdn_rule" "my_rule" {
 Optional:
 
 - `allowed_http_methods` (List of String) HTTP methods for your CDN content. By default the following methods are allowed: GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS. In case some methods are not allowed to the user, they will get the 405 (Method Not Allowed) response. If the method is not supported, the user gets the 501 (Not Implemented) response.
+- `brotli_compression` (List of String) Enable Brotli compression on CDN servers. Specify content-types to compress.
 - `browser_cache_settings` (Block List) Set up a cache period for the end-users browser. Content will be cached due to origin settings. If there are no cache settings on your origin, the content will not be cached. The list of HTTP response codes that can be cached in browsers: 200, 201, 204, 206, 301, 302, 303, 304, 307, 308. Other response codes will not be cached. The default value is 4 days. **By default, browser caching is enabled in Yandex CDN.** To explicitly disable it, set `enabled = false` (provider will send `cache_time = 0` to API). Alternatively, you can set `enabled = true` with `cache_time = 0`. To remove the configuration entirely, omit this block. (see [below for nested schema](#nestedblock--options--browser_cache_settings))
 - `cache_http_headers` (List of String, Deprecated) List HTTP headers that must be included in responses to clients.
 - `cors` (List of String) Parameter that lets browsers get access to selected resources from a domain different to a domain from which the request is received.
@@ -76,8 +77,11 @@ Optional:
 - `edge_cache_settings` (Block List) Set the cache expiration time for CDN servers. Content will be cached according to origin cache settings if origin server has caching HTTP headers. **By default, edge caching is enabled in Yandex CDN.** To explicitly disable it, set `enabled = false` (provider will send cache_time = 0 to API). To remove the configuration entirely, omit this block. (see [below for nested schema](#nestedblock--options--edge_cache_settings))
 - `enable_ip_url_signing` (Boolean) Enable access limiting by IP addresses, option available only with setting secure_key.
 - `fetched_compressed` (Boolean) Option helps you to reduce the bandwidth between origin and CDN servers. Also, content delivery speed becomes higher because of reducing the time for compressing files in a CDN.
+- `follow_redirects` (Block List) Follow redirects from origin. CDN will follow redirect responses and cache the final content. (see [below for nested schema](#nestedblock--options--follow_redirects))
 - `forward_host_header` (Boolean) Choose the Forward Host header option if is important to send in the request to the Origin the same Host header as was sent in the request to CDN server.
+- `geo_acl` (Block List) Geo-based access control list. Restrict access to the CDN resource by country. (see [below for nested schema](#nestedblock--options--geo_acl))
 - `gzip_on` (Boolean) GZip compression at CDN servers reduces file size by 70% and can be as high as 90%.
+- `header_filter` (Block List) Filter response headers from origin. Only whitelisted headers will be passed to the client. (see [below for nested schema](#nestedblock--options--header_filter))
 - `ignore_cookie` (Boolean) Set for ignoring cookie.
 - `ignore_query_params` (Boolean) Files with different query parameters are cached as objects with the same key regardless of the parameter value. selected by default.
 - `ip_address_acl` (Block List) IP address access control list. The list of specified IP addresses to be allowed or denied depending on acl policy type. (see [below for nested schema](#nestedblock--options--ip_address_acl))
@@ -86,12 +90,15 @@ Optional:
 - `query_params_whitelist` (List of String) Files with the specified query parameters are cached as objects with different keys, files with other parameters are cached as objects with the same key.
 - `redirect_http_to_https` (Boolean) Set up a redirect from HTTP to HTTPS.
 - `redirect_https_to_http` (Boolean) Set up a redirect from HTTPS to HTTP.
+- `referrer_acl` (Block List) Referrer-based access control list. Restrict access to the CDN resource by HTTP Referer header. (see [below for nested schema](#nestedblock--options--referrer_acl))
 - `rewrite` (Block List) An option for changing or redirecting query paths. (see [below for nested schema](#nestedblock--options--rewrite))
 - `secure_key` (String, Sensitive) Set secure key for url encoding to protect content and limit access by IP addresses and time limits.
 - `slice` (Boolean) Files larger than 10 MB will be requested and cached in parts (no larger than 10 MB each part). It reduces time to first byte. The origin must support HTTP Range requests.
 - `stale` (List of String) List of errors which instruct CDN servers to serve stale content to clients. Possible values: `error`, `http_403`, `http_404`, `http_429`, `http_500`, `http_502`, `http_503`, `http_504`, `invalid_header`, `timeout`, `updating`.
 - `static_request_headers` (Map of String) Set up custom headers that CDN servers will send in requests to origins.
+- `static_response` (Block List) Return a static response instead of forwarding to origin. For 3xx codes, `content` is used as the Location header; for other codes, it is the response body. (see [below for nested schema](#nestedblock--options--static_response))
 - `static_response_headers` (Map of String) Set up a static response header. The header name must be lowercase.
+- `websockets` (Boolean) Enable WebSocket support.
 
 <a id="nestedblock--options--browser_cache_settings"></a>
 ### Nested Schema for `options.browser_cache_settings`
@@ -113,6 +120,34 @@ Optional:
 - `value` (Number) Caching time for responses with codes 200, 206, 301, 302. Responses with codes 4xx, 5xx will NOT be cached. Use `0` to disable caching. Use `custom_values` field to specify caching time for other response codes. Cannot be used together with `enabled = false`.
 
 
+<a id="nestedblock--options--follow_redirects"></a>
+### Nested Schema for `options.follow_redirects`
+
+Optional:
+
+- `codes` (List of Number) HTTP redirect status codes to follow (e.g., `301`, `302`).
+- `enabled` (Boolean) Enable or disable following redirects from origin.
+- `use_custom_host` (Boolean) Use the redirect target domain as Host header instead of the value from Change Host Header option.
+
+
+<a id="nestedblock--options--geo_acl"></a>
+### Nested Schema for `options.geo_acl`
+
+Required:
+
+- `countries` (List of String) List of ISO 3166-1 alpha-2 country codes (uppercase, e.g., `US`, `DE`, `RU`).
+- `policy_type` (String) The policy type for Geo ACL. One of `allow` or `deny` values.
+
+
+<a id="nestedblock--options--header_filter"></a>
+### Nested Schema for `options.header_filter`
+
+Optional:
+
+- `enabled` (Boolean) Enable or disable header filtering.
+- `headers` (List of String) Whitelist of response headers to pass through. Required when enabled=true.
+
+
 <a id="nestedblock--options--ip_address_acl"></a>
 ### Nested Schema for `options.ip_address_acl`
 
@@ -120,6 +155,15 @@ Required:
 
 - `excepted_values` (List of String) The list of specified IP addresses to be allowed or denied depending on acl policy type.
 - `policy_type` (String) The policy type for ACL. One of `allow` or `deny` values.
+
+
+<a id="nestedblock--options--referrer_acl"></a>
+### Nested Schema for `options.referrer_acl`
+
+Required:
+
+- `policy_type` (String) The policy type for Referrer ACL. One of `allow` or `deny` values.
+- `referrers` (List of String) List of referrer patterns. Supports: domains (e.g., `google.com`), wildcards (e.g., `*.hello.com`), and regex starting with `~` (e.g., `~^prod\..*\.company.org`).
 
 
 <a id="nestedblock--options--rewrite"></a>
@@ -135,13 +179,26 @@ Optional:
 - `flag` (String) Rewrite flag. Available values: 'last', 'break', 'redirect', 'permanent'. Default is 'break'.
 
 
+<a id="nestedblock--options--static_response"></a>
+### Nested Schema for `options.static_response`
+
+Required:
+
+- `code` (Number) HTTP status code for the static response.
+- `content` (String) Response content. For 3xx codes this is the Location header value; for other codes it is the response body.
+
+Optional:
+
+- `enabled` (Boolean) Enable or disable static response.
+
+
 
 <a id="nestedblock--timeouts"></a>
 ### Nested Schema for `timeouts`
 
 Optional:
 
-- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
+- `create` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).
 - `delete` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Setting a timeout for a Delete operation is only applicable if changes are saved into state before the destroy operation occurs.
 - `read` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours). Read operations occur during any refresh or planning operation when refresh is enabled.
 - `update` (String) A string that can be [parsed as a duration](https://pkg.go.dev/time#ParseDuration) consisting of numbers and unit suffixes, such as "30s" or "2h45m". Valid time units are "s" (seconds), "m" (minutes), "h" (hours).

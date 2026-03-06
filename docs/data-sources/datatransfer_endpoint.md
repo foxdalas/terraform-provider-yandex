@@ -100,7 +100,7 @@ Read-Only:
 - `security_groups` (List of String) List of security groups that the transfer associated with this endpoint should
  use
 - `subnet_id` (String) Identifier of the Yandex Cloud VPC subnetwork to user for accessing the
- database. 
+ database.
  If omitted, the server has to be accessible via Internet
 
 <a id="nestedatt--settings--clickhouse_source--connection"></a>
@@ -213,7 +213,7 @@ Read-Only:
  use
 - `sharding` (Attributes List) Shard selection rules for the data being transferred (see [below for nested schema](#nestedatt--settings--clickhouse_target--sharding))
 - `subnet_id` (String) Identifier of the Yandex Cloud VPC subnetwork to user for accessing the
- database. 
+ database.
  If omitted, the server has to be accessible via Internet
 
 <a id="nestedatt--settings--clickhouse_target--alt_names"></a>
