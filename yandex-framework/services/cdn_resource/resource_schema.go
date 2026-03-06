@@ -152,6 +152,17 @@ func CDNResourceSchema(ctx context.Context) schema.Schema {
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"tls_profile": schema.StringAttribute{
+				MarkdownDescription: "TLS profile for the CDN resource. Possible values: `compatible` (TLSv1.2+, less secure), `legacy` (TLSv1+, excluding most vulnerable), `secure` (TLSv1.2+, most secure), `strict` (TLSv1.3 only).",
+				Optional:            true,
+				Computed:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("compatible", "legacy", "secure", "strict"),
+				},
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"ssl_certificate": SSLCertificateSchema(),
@@ -355,6 +366,23 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 					},
 				},
 
+				// Boolean options (new)
+				"websockets": schema.BoolAttribute{
+					MarkdownDescription: "Enable WebSocket support for the CDN resource.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.Bool{
+						boolplanmodifier.UseStateForUnknown(),
+					},
+				},
+
+				// List options (new)
+				"brotli_compression": schema.ListAttribute{
+					MarkdownDescription: "Enable Brotli compression on CDN servers. Specify content-types to compress (e.g., `text/html`, `application/javascript`). Mutually exclusive with `gzip_on` and `fetched_compressed`.",
+					Optional:            true,
+					ElementType:         types.StringType,
+				},
+
 				// Map options
 				"static_response_headers": schema.MapAttribute{
 					MarkdownDescription: "Set up a static response header. The header name must be lowercase.",
@@ -378,6 +406,11 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 				"browser_cache_settings": BrowserCacheSettingsSchema(),
 				"ip_address_acl":         IPAddressACLSchema(),
 				"rewrite":                RewriteSchema(),
+				"geo_acl":                GeoACLSchema(),
+				"referrer_acl":           ReferrerACLSchema(),
+				"header_filter":          HeaderFilterSchema(),
+				"follow_redirects":       FollowRedirectsSchema(),
+				"static_response":        StaticResponseSchema(),
 			},
 		},
 		Validators: []validator.List{
@@ -398,6 +431,7 @@ func CDNOptionsSchema() schema.ListNestedBlock {
 			),
 			NewHostHeadersValidator(),
 			NewQueryParamsConflictValidator(),
+			NewCompressionConflictValidator(),
 		},
 	}
 }
@@ -527,6 +561,156 @@ func BrowserCacheSettingsSchema() schema.ListNestedBlock {
 		Validators: []validator.List{
 			listvalidator.SizeAtMost(1),
 			NewBrowserCacheSettingsValidator(),
+		},
+	}
+}
+
+// GeoACLSchema returns the schema for geo_acl block
+func GeoACLSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		MarkdownDescription: "Geo-based access control list. Restrict access to the CDN resource by country.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"policy_type": schema.StringAttribute{
+					MarkdownDescription: "The policy type for Geo ACL. One of `allow` or `deny` values.",
+					Required:            true,
+					Validators: []validator.String{
+						stringvalidator.OneOf("allow", "deny"),
+					},
+				},
+				"countries": schema.ListAttribute{
+					MarkdownDescription: "List of ISO 3166-1 alpha-2 country codes (uppercase, e.g., `US`, `DE`, `RU`).",
+					Required:            true,
+					ElementType:         types.StringType,
+					Validators: []validator.List{
+						listvalidator.SizeAtLeast(1),
+					},
+				},
+			},
+		},
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+	}
+}
+
+// ReferrerACLSchema returns the schema for referrer_acl block
+func ReferrerACLSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		MarkdownDescription: "Referrer-based access control list. Restrict access to the CDN resource by HTTP Referer header.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"policy_type": schema.StringAttribute{
+					MarkdownDescription: "The policy type for Referrer ACL. One of `allow` or `deny` values.",
+					Required:            true,
+					Validators: []validator.String{
+						stringvalidator.OneOf("allow", "deny"),
+					},
+				},
+				"referrers": schema.ListAttribute{
+					MarkdownDescription: "List of referrer patterns. Supports: domains (e.g., `google.com`), wildcards (e.g., `*.hello.com`), and regex starting with `~` (e.g., `~^prod\\..*\\.company.org`).",
+					Required:            true,
+					ElementType:         types.StringType,
+					Validators: []validator.List{
+						listvalidator.SizeAtLeast(1),
+					},
+				},
+			},
+		},
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+	}
+}
+
+// HeaderFilterSchema returns the schema for header_filter block
+func HeaderFilterSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		MarkdownDescription: "Filter response headers from origin. Only whitelisted headers will be passed to the client.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					MarkdownDescription: "Enable or disable header filtering.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.Bool{
+						boolplanmodifier.UseStateForUnknown(),
+					},
+				},
+				"headers": schema.ListAttribute{
+					MarkdownDescription: "Whitelist of response headers to pass through. Required when enabled=true.",
+					Optional:            true,
+					ElementType:         types.StringType,
+				},
+			},
+		},
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+			NewHeaderFilterValidator(),
+		},
+	}
+}
+
+// FollowRedirectsSchema returns the schema for follow_redirects block
+func FollowRedirectsSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		MarkdownDescription: "Follow redirects from origin. CDN will follow redirect responses and cache the final content.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					MarkdownDescription: "Enable or disable following redirects from origin.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.Bool{
+						boolplanmodifier.UseStateForUnknown(),
+					},
+				},
+				"codes": schema.ListAttribute{
+					MarkdownDescription: "HTTP redirect status codes to follow (e.g., `301`, `302`).",
+					Optional:            true,
+					ElementType:         types.Int64Type,
+				},
+				"use_custom_host": schema.BoolAttribute{
+					MarkdownDescription: "Use the redirect target domain as Host header instead of the value from Change Host Header option.",
+					Optional:            true,
+				},
+			},
+		},
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
+		},
+	}
+}
+
+// StaticResponseSchema returns the schema for static_response block
+func StaticResponseSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		MarkdownDescription: "Return a static response instead of forwarding to origin. For 3xx codes, `content` is used as the Location header; for other codes, it is the response body.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					MarkdownDescription: "Enable or disable static response.",
+					Optional:            true,
+					Computed:            true,
+					PlanModifiers: []planmodifier.Bool{
+						boolplanmodifier.UseStateForUnknown(),
+					},
+				},
+				"code": schema.Int64Attribute{
+					MarkdownDescription: "HTTP status code for the static response.",
+					Required:            true,
+					Validators: []validator.Int64{
+						int64validator.Between(100, 599),
+					},
+				},
+				"content": schema.StringAttribute{
+					MarkdownDescription: "Response content. For 3xx codes this is the Location header value; for other codes it is the response body.",
+					Required:            true,
+				},
+			},
+		},
+		Validators: []validator.List{
+			listvalidator.SizeAtMost(1),
 		},
 	}
 }

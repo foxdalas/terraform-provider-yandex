@@ -199,6 +199,9 @@ func (d *cdnResourceDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 	state.Shielding = flattenShielding(shieldingLocation)
 
+	// TLS profile
+	state.TLSProfile = flattenTLSProfile(resource.Tls)
+
 	// Flatten options using existing function
 	// Pass null plan options for data source (no disabled block preservation needed)
 	state.Options = FlattenCDNResourceOptions(ctx, resource.Options, types.List{}, &resp.Diagnostics)

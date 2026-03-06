@@ -331,7 +331,24 @@ func (r *cdnRuleResource) Update(ctx context.Context, req resource.UpdateRequest
 				if (mergedOptions.Rewrite.IsNull() || mergedOptions.Rewrite.IsUnknown()) && !stateOpt.Rewrite.IsNull() {
 					mergedOptions.Rewrite = stateOpt.Rewrite
 				}
-				// Add other fields as needed...
+				if (mergedOptions.Websockets.IsNull() || mergedOptions.Websockets.IsUnknown()) && !stateOpt.Websockets.IsNull() {
+					mergedOptions.Websockets = stateOpt.Websockets
+				}
+				if (mergedOptions.GeoACL.IsNull() || mergedOptions.GeoACL.IsUnknown()) && !stateOpt.GeoACL.IsNull() {
+					mergedOptions.GeoACL = stateOpt.GeoACL
+				}
+				if (mergedOptions.ReferrerACL.IsNull() || mergedOptions.ReferrerACL.IsUnknown()) && !stateOpt.ReferrerACL.IsNull() {
+					mergedOptions.ReferrerACL = stateOpt.ReferrerACL
+				}
+				if (mergedOptions.HeaderFilter.IsNull() || mergedOptions.HeaderFilter.IsUnknown()) && !stateOpt.HeaderFilter.IsNull() {
+					mergedOptions.HeaderFilter = stateOpt.HeaderFilter
+				}
+				if (mergedOptions.FollowRedirects.IsNull() || mergedOptions.FollowRedirects.IsUnknown()) && !stateOpt.FollowRedirects.IsNull() {
+					mergedOptions.FollowRedirects = stateOpt.FollowRedirects
+				}
+				if (mergedOptions.StaticResponseOpt.IsNull() || mergedOptions.StaticResponseOpt.IsUnknown()) && !stateOpt.StaticResponseOpt.IsNull() {
+					mergedOptions.StaticResponseOpt = stateOpt.StaticResponseOpt
+				}
 			}
 
 			// Pack merged options back into mergedPlan

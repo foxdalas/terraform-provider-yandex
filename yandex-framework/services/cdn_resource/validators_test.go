@@ -103,6 +103,23 @@ func createCDNOptionsModel(slice, fetchedCompressed types.Bool) CDNOptionsModel 
 				"flag":    types.StringType,
 			},
 		}),
+		Websockets:        types.BoolNull(),
+		BrotliCompression: types.ListNull(types.StringType),
+		GeoACL: types.ListNull(types.ObjectType{
+			AttrTypes: GetGeoACLAttrTypes(),
+		}),
+		ReferrerACL: types.ListNull(types.ObjectType{
+			AttrTypes: GetReferrerACLAttrTypes(),
+		}),
+		HeaderFilter: types.ListNull(types.ObjectType{
+			AttrTypes: GetHeaderFilterAttrTypes(),
+		}),
+		FollowRedirects: types.ListNull(types.ObjectType{
+			AttrTypes: GetFollowRedirectsAttrTypes(),
+		}),
+		StaticResponseOpt: types.ListNull(types.ObjectType{
+			AttrTypes: GetStaticResponseAttrTypes(),
+		}),
 	}
 }
 
@@ -415,6 +432,112 @@ func TestGzipOnFetchedCompressedValidator_BothNull(t *testing.T) {
 	v.ValidateList(ctx, req, resp)
 
 	assert.False(t, resp.Diagnostics.HasError(), "Validation should pass when both values are null")
+}
+
+func TestHeaderFilterValidator(t *testing.T) {
+	ctx := context.Background()
+
+	testCases := []struct {
+		name        string
+		enabled     basetypes.BoolValue
+		headers     basetypes.ListValue
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name:        "enabled=true with headers",
+			enabled:     types.BoolValue(true),
+			headers:     types.ListValueMust(types.StringType, []attr.Value{types.StringValue("Content-Type")}),
+			expectError: false,
+		},
+		{
+			name:        "enabled=true without headers (null)",
+			enabled:     types.BoolValue(true),
+			headers:     types.ListNull(types.StringType),
+			expectError: true,
+			errorMsg:    "Invalid header_filter configuration",
+		},
+		{
+			name:        "enabled=true with empty headers",
+			enabled:     types.BoolValue(true),
+			headers:     types.ListValueMust(types.StringType, []attr.Value{}),
+			expectError: true,
+			errorMsg:    "Invalid header_filter configuration",
+		},
+		{
+			name:        "enabled=false without headers (null)",
+			enabled:     types.BoolValue(false),
+			headers:     types.ListNull(types.StringType),
+			expectError: false,
+		},
+		{
+			name:        "enabled=false with empty headers",
+			enabled:     types.BoolValue(false),
+			headers:     types.ListValueMust(types.StringType, []attr.Value{}),
+			expectError: false,
+		},
+		{
+			name:        "enabled=false with headers (allowed)",
+			enabled:     types.BoolValue(false),
+			headers:     types.ListValueMust(types.StringType, []attr.Value{types.StringValue("X-Custom")}),
+			expectError: false,
+		},
+		{
+			name:        "enabled=null without headers",
+			enabled:     types.BoolNull(),
+			headers:     types.ListNull(types.StringType),
+			expectError: true,
+			errorMsg:    "Invalid header_filter configuration",
+		},
+		{
+			name:        "enabled=null with headers",
+			enabled:     types.BoolNull(),
+			headers:     types.ListValueMust(types.StringType, []attr.Value{types.StringValue("Accept")}),
+			expectError: false,
+		},
+		{
+			name:        "enabled=unknown, headers=null (skip validation)",
+			enabled:     types.BoolUnknown(),
+			headers:     types.ListNull(types.StringType),
+			expectError: false,
+		},
+		{
+			name:        "enabled=true, headers=unknown (skip validation)",
+			enabled:     types.BoolValue(true),
+			headers:     types.ListUnknown(types.StringType),
+			expectError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			headerFilterList := types.ListValueMust(
+				types.ObjectType{AttrTypes: GetHeaderFilterAttrTypes()},
+				[]attr.Value{
+					types.ObjectValueMust(GetHeaderFilterAttrTypes(), map[string]attr.Value{
+						"enabled": tc.enabled,
+						"headers": tc.headers,
+					}),
+				},
+			)
+
+			req := validator.ListRequest{
+				Path:        path.Root("header_filter"),
+				ConfigValue: headerFilterList,
+			}
+			resp := &validator.ListResponse{Diagnostics: diag.Diagnostics{}}
+
+			v := NewHeaderFilterValidator()
+			v.ValidateList(ctx, req, resp)
+
+			if tc.expectError {
+				require.True(t, resp.Diagnostics.HasError(), "Expected error but got none")
+				assert.Contains(t, resp.Diagnostics.Errors()[0].Summary(), tc.errorMsg)
+			} else {
+				assert.False(t, resp.Diagnostics.HasError(), "Expected no error but got: %v", resp.Diagnostics)
+			}
+		})
+	}
 }
 
 func TestEdgeCacheSettingsValidator(t *testing.T) {

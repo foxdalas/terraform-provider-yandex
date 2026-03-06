@@ -204,6 +204,9 @@ func (r *cdnResourceResource) Create(ctx context.Context, req resource.CreateReq
 		createReq.Options = options
 	}
 
+	// Add TLS profile if specified
+	createReq.Tls = expandTLSProfile(plan.TLSProfile)
+
 	tflog.Debug(ctx, "Creating CDN resource", map[string]interface{}{
 		"cname":           createReq.Cname,
 		"origin_protocol": createReq.OriginProtocol,
@@ -387,6 +390,12 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 		}
 	}
 
+	// Handle TLS profile update
+	if !plan.TLSProfile.Equal(state.TLSProfile) {
+		updateReq.Tls = expandTLSProfile(plan.TLSProfile)
+		hasChanges = true
+	}
+
 	// Handle options update
 	// CRITICAL: API uses "replace" semantics for Options - when we send Options, API replaces ALL options
 	// Therefore we MUST send COMPLETE options block with ALL fields, not just changed ones
@@ -493,13 +502,17 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 				}
 
 				allCompressionEmpty := (mergedOptions.GzipOn.IsNull() || mergedOptions.GzipOn.IsUnknown()) &&
-					(mergedOptions.FetchedCompressed.IsNull() || mergedOptions.FetchedCompressed.IsUnknown())
+					(mergedOptions.FetchedCompressed.IsNull() || mergedOptions.FetchedCompressed.IsUnknown()) &&
+					(mergedOptions.BrotliCompression.IsNull() || mergedOptions.BrotliCompression.IsUnknown())
 				if allCompressionEmpty {
 					if !stateOpt.GzipOn.IsNull() {
 						mergedOptions.GzipOn = stateOpt.GzipOn
 					}
 					if !stateOpt.FetchedCompressed.IsNull() {
 						mergedOptions.FetchedCompressed = stateOpt.FetchedCompressed
+					}
+					if !stateOpt.BrotliCompression.IsNull() {
+						mergedOptions.BrotliCompression = stateOpt.BrotliCompression
 					}
 				}
 
@@ -520,6 +533,26 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 				}
 				if (mergedOptions.Rewrite.IsNull() || mergedOptions.Rewrite.IsUnknown()) && !stateOpt.Rewrite.IsNull() {
 					mergedOptions.Rewrite = stateOpt.Rewrite
+				}
+
+				// New options - merge from state if plan is null/unknown
+				if (mergedOptions.Websockets.IsNull() || mergedOptions.Websockets.IsUnknown()) && !stateOpt.Websockets.IsNull() {
+					mergedOptions.Websockets = stateOpt.Websockets
+				}
+				if (mergedOptions.GeoACL.IsNull() || mergedOptions.GeoACL.IsUnknown()) && !stateOpt.GeoACL.IsNull() {
+					mergedOptions.GeoACL = stateOpt.GeoACL
+				}
+				if (mergedOptions.ReferrerACL.IsNull() || mergedOptions.ReferrerACL.IsUnknown()) && !stateOpt.ReferrerACL.IsNull() {
+					mergedOptions.ReferrerACL = stateOpt.ReferrerACL
+				}
+				if (mergedOptions.HeaderFilter.IsNull() || mergedOptions.HeaderFilter.IsUnknown()) && !stateOpt.HeaderFilter.IsNull() {
+					mergedOptions.HeaderFilter = stateOpt.HeaderFilter
+				}
+				if (mergedOptions.FollowRedirects.IsNull() || mergedOptions.FollowRedirects.IsUnknown()) && !stateOpt.FollowRedirects.IsNull() {
+					mergedOptions.FollowRedirects = stateOpt.FollowRedirects
+				}
+				if (mergedOptions.StaticResponseOpt.IsNull() || mergedOptions.StaticResponseOpt.IsUnknown()) && !stateOpt.StaticResponseOpt.IsNull() {
+					mergedOptions.StaticResponseOpt = stateOpt.StaticResponseOpt
 				}
 			}
 		} else if len(stateOptionsModels) > 0 {
@@ -584,6 +617,11 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 		)
 		return
 	}
+
+	// Preserve plan value for updated_at to avoid "inconsistent result" error.
+	// UseStateForUnknown() freezes the old timestamp in plan, but API always returns a new one.
+	// The actual value will be picked up on next refresh (Read).
+	newState.UpdatedAt = plan.UpdatedAt
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
@@ -694,6 +732,9 @@ func (r *cdnResourceResource) readResourceToState(ctx context.Context, state *CD
 		return false
 	}
 	state.Shielding = flattenShielding(shieldingLocation)
+
+	// TLS profile
+	state.TLSProfile = flattenTLSProfile(resource.Tls)
 
 	// Options - CRITICAL: Pass plan options to preserve disabled cache blocks
 	state.Options = FlattenCDNResourceOptions(ctx, resource.Options, planOptionsForDisabledBlocks, diags)
