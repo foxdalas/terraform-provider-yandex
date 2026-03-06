@@ -104,6 +104,11 @@ func DataSourceCDNResourceSchema() schema.Schema {
 				MarkdownDescription: "Last update timestamp.",
 				Computed:            true,
 			},
+			"tls_profile": schema.StringAttribute{
+				Description:         "TLS profile of the CDN resource.",
+				MarkdownDescription: "TLS profile of the CDN resource.",
+				Computed:            true,
+			},
 		},
 		Blocks: map[string]schema.Block{
 			"ssl_certificate": SSLCertificateDataSourceSchema(),
@@ -263,6 +268,21 @@ func CDNOptionsDataSourceSchema() schema.ListNestedBlock {
 					Computed:            true,
 				},
 
+				// Boolean options (new)
+				"websockets": schema.BoolAttribute{
+					Description:         "WebSocket support.",
+					MarkdownDescription: "WebSocket support.",
+					Computed:            true,
+				},
+
+				// List options (new)
+				"brotli_compression": schema.ListAttribute{
+					Description:         "Brotli compression content-types.",
+					MarkdownDescription: "Brotli compression content-types.",
+					ElementType:         types.StringType,
+					Computed:            true,
+				},
+
 				// Map options
 				"static_response_headers": schema.MapAttribute{
 					Description:         "Static response headers.",
@@ -282,6 +302,11 @@ func CDNOptionsDataSourceSchema() schema.ListNestedBlock {
 				"browser_cache_settings": BrowserCacheSettingsDataSourceSchema(),
 				"ip_address_acl":         IPAddressACLDataSourceSchema(),
 				"rewrite":                RewriteDataSourceSchema(),
+				"geo_acl":                GeoACLDataSourceSchema(),
+				"referrer_acl":           ReferrerACLDataSourceSchema(),
+				"header_filter":          HeaderFilterDataSourceSchema(),
+				"follow_redirects":       FollowRedirectsDataSourceSchema(),
+				"static_response":        StaticResponseDataSourceSchema(),
 			},
 		},
 	}
@@ -380,6 +405,130 @@ func RewriteDataSourceSchema() schema.ListNestedBlock {
 				"flag": schema.StringAttribute{
 					Description:         "Rewrite flag: `last`, `break`, `redirect`, `permanent`.",
 					MarkdownDescription: "Rewrite flag: `last`, `break`, `redirect`, `permanent`.",
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+// GeoACLDataSourceSchema returns the schema for geo ACL in data source
+func GeoACLDataSourceSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Description:         "Geo-based access control list.",
+		MarkdownDescription: "Geo-based access control list.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"policy_type": schema.StringAttribute{
+					Description:         "Policy type: `allow` or `deny`.",
+					MarkdownDescription: "Policy type: `allow` or `deny`.",
+					Computed:            true,
+				},
+				"countries": schema.ListAttribute{
+					Description:         "List of ISO 3166-1 alpha-2 country codes.",
+					MarkdownDescription: "List of ISO 3166-1 alpha-2 country codes.",
+					ElementType:         types.StringType,
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+// ReferrerACLDataSourceSchema returns the schema for referrer ACL in data source
+func ReferrerACLDataSourceSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Description:         "Referrer-based access control list.",
+		MarkdownDescription: "Referrer-based access control list.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"policy_type": schema.StringAttribute{
+					Description:         "Policy type: `allow` or `deny`.",
+					MarkdownDescription: "Policy type: `allow` or `deny`.",
+					Computed:            true,
+				},
+				"referrers": schema.ListAttribute{
+					Description:         "List of referrer patterns.",
+					MarkdownDescription: "List of referrer patterns.",
+					ElementType:         types.StringType,
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+// HeaderFilterDataSourceSchema returns the schema for header filter in data source
+func HeaderFilterDataSourceSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Description:         "Response header filter settings.",
+		MarkdownDescription: "Response header filter settings.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					Description:         "Enable header filtering.",
+					MarkdownDescription: "Enable header filtering.",
+					Computed:            true,
+				},
+				"headers": schema.ListAttribute{
+					Description:         "Whitelist of response headers.",
+					MarkdownDescription: "Whitelist of response headers.",
+					ElementType:         types.StringType,
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+// FollowRedirectsDataSourceSchema returns the schema for follow redirects in data source
+func FollowRedirectsDataSourceSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Description:         "Follow origin redirect settings.",
+		MarkdownDescription: "Follow origin redirect settings.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					Description:         "Enable following redirects.",
+					MarkdownDescription: "Enable following redirects.",
+					Computed:            true,
+				},
+				"codes": schema.ListAttribute{
+					Description:         "HTTP redirect status codes to follow.",
+					MarkdownDescription: "HTTP redirect status codes to follow.",
+					ElementType:         types.Int64Type,
+					Computed:            true,
+				},
+				"use_custom_host": schema.BoolAttribute{
+					Description:         "Use redirect target domain as Host header.",
+					MarkdownDescription: "Use redirect target domain as Host header.",
+					Computed:            true,
+				},
+			},
+		},
+	}
+}
+
+// StaticResponseDataSourceSchema returns the schema for static response in data source
+func StaticResponseDataSourceSchema() schema.ListNestedBlock {
+	return schema.ListNestedBlock{
+		Description:         "Static response settings.",
+		MarkdownDescription: "Static response settings.",
+		NestedObject: schema.NestedBlockObject{
+			Attributes: map[string]schema.Attribute{
+				"enabled": schema.BoolAttribute{
+					Description:         "Enable static response.",
+					MarkdownDescription: "Enable static response.",
+					Computed:            true,
+				},
+				"code": schema.Int64Attribute{
+					Description:         "HTTP status code.",
+					MarkdownDescription: "HTTP status code.",
+					Computed:            true,
+				},
+				"content": schema.StringAttribute{
+					Description:         "Response content.",
+					MarkdownDescription: "Response content.",
 					Computed:            true,
 				},
 			},

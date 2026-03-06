@@ -723,3 +723,123 @@ func (v *queryParamsConflictValidator) Description(_ context.Context) string {
 func (v *queryParamsConflictValidator) MarkdownDescription(_ context.Context) string {
 	return "Validates that `ignore_query_params`, `query_params_whitelist`, and `query_params_blacklist` are not conflicting"
 }
+
+// headerFilterValidator validates header_filter logic:
+// - enabled=true (or null/unknown) → headers must be set with at least 1 element
+// - enabled=false → headers can be null/empty
+type headerFilterValidator struct{}
+
+func NewHeaderFilterValidator() validator.List {
+	return &headerFilterValidator{}
+}
+
+func (v *headerFilterValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() || len(req.ConfigValue.Elements()) == 0 {
+		return
+	}
+
+	var elements []types.Object
+	diags := req.ConfigValue.ElementsAs(ctx, &elements, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || len(elements) == 0 {
+		return
+	}
+
+	elem := elements[0]
+	if elem.IsNull() || elem.IsUnknown() {
+		return
+	}
+
+	var model HeaderFilterModel
+	diags = elem.As(ctx, &model, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Skip validation when values are not yet resolved (e.g. from variables/expressions)
+	if model.Enabled.IsUnknown() || model.Headers.IsUnknown() {
+		return
+	}
+
+	isExplicitlyDisabled := !model.Enabled.IsNull() && !model.Enabled.ValueBool()
+	hasHeaders := !model.Headers.IsNull() && len(model.Headers.Elements()) > 0
+
+	if isExplicitlyDisabled {
+		return
+	}
+
+	// enabled=true or null → headers required with at least 1 element
+	if !hasHeaders {
+		resp.Diagnostics.AddError(
+			"Invalid header_filter configuration",
+			"When enabled=true (or not set), headers must be specified with at least 1 element",
+		)
+	}
+}
+
+func (v *headerFilterValidator) Description(_ context.Context) string {
+	return "Validates header_filter: headers must be set when enabled=true"
+}
+
+func (v *headerFilterValidator) MarkdownDescription(_ context.Context) string {
+	return "Validates `header_filter`: `headers` must be set when `enabled=true`"
+}
+
+// compressionConflictValidator validates mutually exclusive compression options
+type compressionConflictValidator struct{}
+
+func NewCompressionConflictValidator() validator.List {
+	return &compressionConflictValidator{}
+}
+
+func (v *compressionConflictValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() || len(req.ConfigValue.Elements()) == 0 {
+		return
+	}
+
+	var elements []types.Object
+	diags := req.ConfigValue.ElementsAs(ctx, &elements, false)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() || len(elements) == 0 {
+		return
+	}
+
+	elem := elements[0]
+	if elem.IsNull() || elem.IsUnknown() {
+		return
+	}
+
+	var options CDNOptionsModel
+	diags = elem.As(ctx, &options, basetypes.ObjectAsOptions{})
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	brotliSet := !options.BrotliCompression.IsNull() && !options.BrotliCompression.IsUnknown() && len(options.BrotliCompression.Elements()) > 0
+	gzipTrue := !options.GzipOn.IsNull() && !options.GzipOn.IsUnknown() && options.GzipOn.ValueBool()
+	fetchedTrue := !options.FetchedCompressed.IsNull() && !options.FetchedCompressed.IsUnknown() && options.FetchedCompressed.ValueBool()
+
+	if brotliSet && gzipTrue {
+		resp.Diagnostics.AddError(
+			"Incompatible CDN compression options",
+			"brotli_compression and gzip_on cannot both be enabled simultaneously. These are mutually exclusive compression methods.",
+		)
+	}
+
+	if brotliSet && fetchedTrue {
+		resp.Diagnostics.AddError(
+			"Incompatible CDN compression options",
+			"brotli_compression and fetched_compressed cannot both be enabled simultaneously. These are mutually exclusive compression methods.",
+		)
+	}
+}
+
+func (v *compressionConflictValidator) Description(_ context.Context) string {
+	return "Validates that brotli_compression, gzip_on, and fetched_compressed are not conflicting"
+}
+
+func (v *compressionConflictValidator) MarkdownDescription(_ context.Context) string {
+	return "Validates that `brotli_compression`, `gzip_on`, and `fetched_compressed` are not conflicting"
+}
