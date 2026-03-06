@@ -70,6 +70,7 @@ output "rule_options" {
 Read-Only:
 
 - `allowed_http_methods` (List of String) Allowed HTTP methods.
+- `brotli_compression` (List of String) Brotli compression content-types.
 - `browser_cache_settings` (Block List) Browser cache settings. (see [below for nested schema](#nestedblock--options--browser_cache_settings))
 - `cache_http_headers` (List of String) HTTP headers to include in cache key.
 - `cors` (List of String) CORS origins.
@@ -79,8 +80,11 @@ Read-Only:
 - `edge_cache_settings` (Block List) Edge cache settings. (see [below for nested schema](#nestedblock--options--edge_cache_settings))
 - `enable_ip_url_signing` (Boolean) Enable IP/URL signing.
 - `fetched_compressed` (Boolean) Fetch compressed content from origin.
+- `follow_redirects` (Block List) Follow origin redirect settings. (see [below for nested schema](#nestedblock--options--follow_redirects))
 - `forward_host_header` (Boolean) Forward Host header to origin.
+- `geo_acl` (Block List) Geo-based access control list. (see [below for nested schema](#nestedblock--options--geo_acl))
 - `gzip_on` (Boolean) Enable gzip compression.
+- `header_filter` (Block List) Response header filter settings. (see [below for nested schema](#nestedblock--options--header_filter))
 - `ignore_cookie` (Boolean) Ignore Set-Cookie header from origin.
 - `ignore_query_params` (Boolean) Ignore query parameters.
 - `ip_address_acl` (Block List) IP address ACL settings. (see [below for nested schema](#nestedblock--options--ip_address_acl))
@@ -89,12 +93,15 @@ Read-Only:
 - `query_params_whitelist` (List of String) Whitelist of query parameters to include in cache key.
 - `redirect_http_to_https` (Boolean) Redirect HTTP requests to HTTPS.
 - `redirect_https_to_http` (Boolean) Redirect HTTPS requests to HTTP.
+- `referrer_acl` (Block List) Referrer-based access control list. (see [below for nested schema](#nestedblock--options--referrer_acl))
 - `rewrite` (Block List) URL rewrite rules. (see [below for nested schema](#nestedblock--options--rewrite))
 - `secure_key` (String, Sensitive) Secure key for URL signing.
 - `slice` (Boolean) Enable slicing.
 - `stale` (List of String) List of errors for serving stale content.
 - `static_request_headers` (Map of String) Static request headers to origin.
+- `static_response` (Block List) Static response settings. (see [below for nested schema](#nestedblock--options--static_response))
 - `static_response_headers` (Map of String) Static response headers.
+- `websockets` (Boolean) WebSocket support.
 
 <a id="nestedblock--options--browser_cache_settings"></a>
 ### Nested Schema for `options.browser_cache_settings`
@@ -115,6 +122,34 @@ Read-Only:
 - `value` (Number) Cache time in seconds for responses with codes 200, 206, 301, 302.
 
 
+<a id="nestedblock--options--follow_redirects"></a>
+### Nested Schema for `options.follow_redirects`
+
+Read-Only:
+
+- `codes` (List of Number) HTTP redirect status codes to follow.
+- `enabled` (Boolean) Enable following redirects.
+- `use_custom_host` (Boolean) Use redirect target domain as Host header.
+
+
+<a id="nestedblock--options--geo_acl"></a>
+### Nested Schema for `options.geo_acl`
+
+Read-Only:
+
+- `countries` (List of String) List of ISO 3166-1 alpha-2 country codes.
+- `policy_type` (String) Policy type: `allow` or `deny`.
+
+
+<a id="nestedblock--options--header_filter"></a>
+### Nested Schema for `options.header_filter`
+
+Read-Only:
+
+- `enabled` (Boolean) Enable header filtering.
+- `headers` (List of String) Whitelist of response headers.
+
+
 <a id="nestedblock--options--ip_address_acl"></a>
 ### Nested Schema for `options.ip_address_acl`
 
@@ -122,6 +157,15 @@ Read-Only:
 
 - `excepted_values` (List of String) List of IP addresses or CIDR blocks.
 - `policy_type` (String) Policy type: `allow` or `deny`.
+
+
+<a id="nestedblock--options--referrer_acl"></a>
+### Nested Schema for `options.referrer_acl`
+
+Read-Only:
+
+- `policy_type` (String) Policy type: `allow` or `deny`.
+- `referrers` (List of String) List of referrer patterns.
 
 
 <a id="nestedblock--options--rewrite"></a>
@@ -132,3 +176,13 @@ Read-Only:
 - `body` (String) Rewrite pattern.
 - `enabled` (Boolean) Enable rewrite.
 - `flag` (String) Rewrite flag: `last`, `break`, `redirect`, `permanent`.
+
+
+<a id="nestedblock--options--static_response"></a>
+### Nested Schema for `options.static_response`
+
+Read-Only:
+
+- `code` (Number) HTTP status code.
+- `content` (String) Response content.
+- `enabled` (Boolean) Enable static response.
