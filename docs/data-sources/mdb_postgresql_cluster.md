@@ -32,6 +32,7 @@ output "fqdn" {
 ### Optional
 
 - `cluster_id` (String) The ID of the PostgreSQL cluster.
+- `folder_id` (String) The folder identifier that resource belongs to. If it is not provided, the default provider `folder-id` is used.
 - `name` (String) The name of PostgreSQL cluster.
 
 ### Read-Only
@@ -43,7 +44,6 @@ output "fqdn" {
 - `description` (String) The resource description.
 - `disk_encryption_key_id` (String) ID of the KMS key used for cluster disk encryption. Encryption can`t be disabled for an existing cluster. If the source cluster is encrypted and you leave this field empty when restoring, the restored cluster will be created without encryption.
 - `environment` (String) Deployment environment of the PostgreSQL cluster.
-- `folder_id` (String) The folder identifier that resource belongs to. If it is not provided, the default provider `folder-id` is used.
 - `health` (String) Aggregated health of the cluster.
 - `host` (List of Object) A host of the PostgreSQL cluster. (see [below for nested schema](#nestedatt--host))
 - `host_group_ids` (Set of String) Host Group IDs.

@@ -52,6 +52,7 @@ output "my_node_group.status" {
 - `node_taints` (List of String) A list of Kubernetes taints, that are applied to all the nodes of this Kubernetes node group.
 - `scale_policy` (List of Object) Scale policy of the node group. (see [below for nested schema](#nestedatt--scale_policy))
 - `status` (String) Status of the Kubernetes node group.
+- `variables` (Map of String) Variables for templating as key/value pairs.
 - `version_info` (List of Object) Information about Kubernetes node group version. (see [below for nested schema](#nestedatt--version_info))
 - `workload_identity_federation` (List of Object) Workload Identity Federation configuration. (see [below for nested schema](#nestedatt--workload_identity_federation))
 
@@ -98,6 +99,7 @@ Read-Only:
 - `network_interface` (List of Object) (see [below for nested schema](#nestedobjatt--instance_template--network_interface))
 - `placement_policy` (List of Object) (see [below for nested schema](#nestedobjatt--instance_template--placement_policy))
 - `platform_id` (String)
+- `reserved_instance_pool_id` (String)
 - `resources` (List of Object) (see [below for nested schema](#nestedobjatt--instance_template--resources))
 - `scheduling_policy` (List of Object) (see [below for nested schema](#nestedobjatt--instance_template--scheduling_policy))
 

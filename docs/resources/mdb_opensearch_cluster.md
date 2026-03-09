@@ -312,6 +312,8 @@ New thread pools use the updated value.
 For details, see [OpenSearch documentation](https://docs.opensearch.org/latest/install-and-configure/configuring-opensearch/index-settings/#dynamic-cluster-level-index-settings).
 - `reindex_remote_whitelist` (String) Allowed remote hosts
 For details, see [OpenSearch documentation](https://docs.opensearch.org/latest/api-reference/document-apis/reindex/#remote-cluster-allow-list).
+- `search_max_buckets` (Number) The maximum number of aggregation buckets allowed in a single response. Default is 65535
+For details, see [OpenSearch documentation](https://docs.opensearch.org/latest/install-and-configure/configuring-opensearch/search-settings).
 
 
 <a id="nestedblock--config--opensearch--node_groups"></a>
