@@ -108,6 +108,7 @@ resource "yandex_kubernetes_node_group" "my_node_group" {
 - `node_labels` (Map of String) A set of key/value label pairs, that are assigned to all the nodes of this Kubernetes node group.
 - `node_taints` (List of String) A list of Kubernetes taints, that are applied to all the nodes of this Kubernetes node group.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
+- `variables` (Map of String) Variables for templating as key/value pairs.
 - `version` (String) Version of Kubernetes that will be used for Kubernetes node group.
 - `workload_identity_federation` (Block List, Max: 1) Workload Identity Federation configuration. (see [below for nested schema](#nestedblock--workload_identity_federation))
 
@@ -143,6 +144,7 @@ Optional:
 - `network_interface` (Block List) An array with the network interfaces that will be attached to the instance. (see [below for nested schema](#nestedblock--instance_template--network_interface))
 - `placement_policy` (Block List, Max: 1) The placement policy configuration. (see [below for nested schema](#nestedblock--instance_template--placement_policy))
 - `platform_id` (String) The ID of the hardware platform configuration for the node group compute instances.
+- `reserved_instance_pool_id` (String) ID of the reserved instance pool.
 - `resources` (Block List, Max: 1) Instance resource configuration. (see [below for nested schema](#nestedblock--instance_template--resources))
 - `scheduling_policy` (Block List, Max: 1) The scheduling policy for the instances in node group. (see [below for nested schema](#nestedblock--instance_template--scheduling_policy))
 
