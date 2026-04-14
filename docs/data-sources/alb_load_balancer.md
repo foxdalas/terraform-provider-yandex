@@ -219,12 +219,12 @@ Read-Only:
 Read-Only:
 
 - `allow_http10` (Boolean)
-- `http2_options` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--default_handler--stream_handler--http2_options))
+- `http2_options` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--default_handler--http_handler--http2_options))
 - `http_router_id` (String)
 - `rewrite_request_id` (Boolean)
 
-<a id="nestedobjatt--listener--tls--default_handler--stream_handler--http2_options"></a>
-### Nested Schema for `listener.tls.default_handler.stream_handler.http2_options`
+<a id="nestedobjatt--listener--tls--default_handler--http_handler--http2_options"></a>
+### Nested Schema for `listener.tls.default_handler.http_handler.http2_options`
 
 Read-Only:
 
@@ -257,21 +257,21 @@ Read-Only:
 Read-Only:
 
 - `certificate_ids` (Set of String)
-- `http_handler` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--server_names--http_handler))
-- `stream_handler` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--server_names--stream_handler))
+- `http_handler` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--handler--http_handler))
+- `stream_handler` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--handler--stream_handler))
 
-<a id="nestedobjatt--listener--tls--sni_handler--server_names--http_handler"></a>
-### Nested Schema for `listener.tls.sni_handler.server_names.http_handler`
+<a id="nestedobjatt--listener--tls--sni_handler--handler--http_handler"></a>
+### Nested Schema for `listener.tls.sni_handler.handler.http_handler`
 
 Read-Only:
 
 - `allow_http10` (Boolean)
-- `http2_options` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--server_names--http_handler--http2_options))
+- `http2_options` (List of Object) (see [below for nested schema](#nestedobjatt--listener--tls--sni_handler--handler--http_handler--http2_options))
 - `http_router_id` (String)
 - `rewrite_request_id` (Boolean)
 
-<a id="nestedobjatt--listener--tls--sni_handler--server_names--http_handler--http2_options"></a>
-### Nested Schema for `listener.tls.sni_handler.server_names.http_handler.http2_options`
+<a id="nestedobjatt--listener--tls--sni_handler--handler--http_handler--http2_options"></a>
+### Nested Schema for `listener.tls.sni_handler.handler.http_handler.http2_options`
 
 Read-Only:
 
@@ -279,8 +279,8 @@ Read-Only:
 
 
 
-<a id="nestedobjatt--listener--tls--sni_handler--server_names--stream_handler"></a>
-### Nested Schema for `listener.tls.sni_handler.server_names.stream_handler`
+<a id="nestedobjatt--listener--tls--sni_handler--handler--stream_handler"></a>
+### Nested Schema for `listener.tls.sni_handler.handler.stream_handler`
 
 Read-Only:
 

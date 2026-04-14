@@ -201,19 +201,19 @@ Read-Only:
 
 Read-Only:
 
-- `automatic` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--automatic))
-- `gradient` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--gradient))
-- `standard` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--standard))
+- `automatic` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--automatic))
+- `gradient` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--gradient))
+- `standard` (List of Object) (see [below for nested schema](#nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--standard))
 
-<a id="nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--automatic"></a>
-### Nested Schema for `widgets.chart.visualization_settings.yaxis_settings.automatic`
+<a id="nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--automatic"></a>
+### Nested Schema for `widgets.chart.visualization_settings.color_scheme_settings.automatic`
 
 Read-Only:
 
 
 
-<a id="nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--gradient"></a>
-### Nested Schema for `widgets.chart.visualization_settings.yaxis_settings.gradient`
+<a id="nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--gradient"></a>
+### Nested Schema for `widgets.chart.visualization_settings.color_scheme_settings.gradient`
 
 Read-Only:
 
@@ -223,8 +223,8 @@ Read-Only:
 - `yellow_value` (String)
 
 
-<a id="nestedobjatt--widgets--chart--visualization_settings--yaxis_settings--standard"></a>
-### Nested Schema for `widgets.chart.visualization_settings.yaxis_settings.standard`
+<a id="nestedobjatt--widgets--chart--visualization_settings--color_scheme_settings--standard"></a>
+### Nested Schema for `widgets.chart.visualization_settings.color_scheme_settings.standard`
 
 Read-Only:
 

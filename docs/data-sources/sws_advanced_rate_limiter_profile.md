@@ -110,10 +110,10 @@ Read-Only:
 
 Read-Only:
 
-- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--authorities))
+- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--authority--authorities))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--authorities"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.authorities`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--authority--authorities"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.authority.authorities`
 
 Read-Only:
 
@@ -132,10 +132,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--headers--value))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--value"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.value`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--headers--value"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.headers.value`
 
 Read-Only:
 
@@ -153,10 +153,10 @@ Read-Only:
 
 Read-Only:
 
-- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--http_methods))
+- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--http_method--http_methods))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--http_methods"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.http_methods`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--http_method--http_methods"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.http_method.http_methods`
 
 Read-Only:
 
@@ -174,11 +174,11 @@ Read-Only:
 
 Read-Only:
 
-- `path` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--path))
-- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--queries))
+- `path` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--path))
+- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--queries))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--path"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.path`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--path"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.request_uri.path`
 
 Read-Only:
 
@@ -190,16 +190,16 @@ Read-Only:
 - `prefix_not_match` (String)
 
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--queries"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.queries`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--queries"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.request_uri.queries`
 
 Read-Only:
 
 - `key` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--queries--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--queries--value))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--source_ip--queries--value"></a>
-### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.source_ip.queries.value`
+<a id="nestedobjatt--advanced_rate_limiter_rule--dynamic_quota--condition--request_uri--queries--value"></a>
+### Nested Schema for `advanced_rate_limiter_rule.dynamic_quota.condition.request_uri.queries.value`
 
 Read-Only:
 
@@ -284,10 +284,10 @@ Read-Only:
 
 Read-Only:
 
-- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--authorities))
+- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--authority--authorities))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--authorities"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.authorities`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--authority--authorities"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.authority.authorities`
 
 Read-Only:
 
@@ -306,10 +306,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--headers--value))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--value"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.value`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--headers--value"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.headers.value`
 
 Read-Only:
 
@@ -327,10 +327,10 @@ Read-Only:
 
 Read-Only:
 
-- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--http_methods))
+- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--http_method--http_methods))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--http_methods"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.http_methods`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--http_method--http_methods"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.http_method.http_methods`
 
 Read-Only:
 
@@ -348,11 +348,11 @@ Read-Only:
 
 Read-Only:
 
-- `path` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--path))
-- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--queries))
+- `path` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--path))
+- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--queries))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--path"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.path`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--path"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.request_uri.path`
 
 Read-Only:
 
@@ -364,16 +364,16 @@ Read-Only:
 - `prefix_not_match` (String)
 
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--queries"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.queries`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--queries"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.request_uri.queries`
 
 Read-Only:
 
 - `key` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--queries--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--queries--value))
 
-<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--source_ip--queries--value"></a>
-### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.source_ip.queries.value`
+<a id="nestedobjatt--advanced_rate_limiter_rule--static_quota--condition--request_uri--queries--value"></a>
+### Nested Schema for `advanced_rate_limiter_rule.static_quota.condition.request_uri.queries.value`
 
 Read-Only:
 

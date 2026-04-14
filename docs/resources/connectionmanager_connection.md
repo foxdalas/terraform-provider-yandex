@@ -145,10 +145,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--clickhouse--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--clickhouse--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--clickhouse--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.clickhouse.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--clickhouse--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.clickhouse.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -291,10 +291,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--greenplum--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--greenplum--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--greenplum--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.greenplum.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--greenplum--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.greenplum.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -429,10 +429,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--kafka--auth--sasl--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--kafka--auth--sasl--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--kafka--auth--sasl--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.kafka.auth.sasl.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--kafka--auth--sasl--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.kafka.auth.sasl.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -561,10 +561,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--mongodb--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--mongodb--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--mongodb--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.mongodb.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--mongodb--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.mongodb.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -695,10 +695,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--mysql--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--mysql--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--mysql--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.mysql.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--mysql--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.mysql.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -825,10 +825,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--opensearch--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--opensearch--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--opensearch--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.opensearch.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--opensearch--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.opensearch.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -957,10 +957,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--postgresql--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--postgresql--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--postgresql--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.postgresql.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--postgresql--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.postgresql.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -1089,10 +1089,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--redis--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--redis--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--redis--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.redis.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--redis--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.redis.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -1227,10 +1227,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--storedoc--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--storedoc--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--storedoc--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.storedoc.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--storedoc--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.storedoc.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -1357,10 +1357,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--trino--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--trino--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--trino--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.trino.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--trino--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.trino.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 
@@ -1485,10 +1485,10 @@ Optional:
  PasswordGenerationOptions, the password will be re-generated. If the
  same cookie is passed, the password will not change.
 - `lockbox_password_generation_options` (Attributes) package: yandex.cloud.connectionmanager.v1
-filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--valkey--auth--user_password--password--raw--lockbox_password_generation_options))
+filename: yandex/cloud/connectionmanager/v1/common.proto (see [below for nested schema](#nestedatt--params--valkey--auth--user_password--password--password_generation_options--lockbox_password_generation_options))
 
-<a id="nestedatt--params--valkey--auth--user_password--password--raw--lockbox_password_generation_options"></a>
-### Nested Schema for `params.valkey.auth.user_password.password.raw.lockbox_password_generation_options`
+<a id="nestedatt--params--valkey--auth--user_password--password--password_generation_options--lockbox_password_generation_options"></a>
+### Nested Schema for `params.valkey.auth.user_password.password.password_generation_options.lockbox_password_generation_options`
 
 Optional:
 

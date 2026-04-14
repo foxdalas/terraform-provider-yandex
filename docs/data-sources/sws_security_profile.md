@@ -96,10 +96,10 @@ Read-Only:
 
 Read-Only:
 
-- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--authorities))
+- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--authority--authorities))
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--authorities"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.authorities`
+<a id="nestedobjatt--security_rule--rule_condition--condition--authority--authorities"></a>
+### Nested Schema for `security_rule.rule_condition.condition.authority.authorities`
 
 Read-Only:
 
@@ -118,10 +118,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--headers--value))
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--value"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.value`
+<a id="nestedobjatt--security_rule--rule_condition--condition--headers--value"></a>
+### Nested Schema for `security_rule.rule_condition.condition.headers.value`
 
 Read-Only:
 
@@ -139,10 +139,10 @@ Read-Only:
 
 Read-Only:
 
-- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--http_methods))
+- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--http_method--http_methods))
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--http_methods"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.http_methods`
+<a id="nestedobjatt--security_rule--rule_condition--condition--http_method--http_methods"></a>
+### Nested Schema for `security_rule.rule_condition.condition.http_method.http_methods`
 
 Read-Only:
 
@@ -160,11 +160,11 @@ Read-Only:
 
 Read-Only:
 
-- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--path))
-- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--queries))
+- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--request_uri--path))
+- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--request_uri--queries))
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--path"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.path`
+<a id="nestedobjatt--security_rule--rule_condition--condition--request_uri--path"></a>
+### Nested Schema for `security_rule.rule_condition.condition.request_uri.path`
 
 Read-Only:
 
@@ -176,16 +176,16 @@ Read-Only:
 - `prefix_not_match` (String)
 
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--queries"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.queries`
+<a id="nestedobjatt--security_rule--rule_condition--condition--request_uri--queries"></a>
+### Nested Schema for `security_rule.rule_condition.condition.request_uri.queries`
 
 Read-Only:
 
 - `key` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--source_ip--queries--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--rule_condition--condition--request_uri--queries--value))
 
-<a id="nestedobjatt--security_rule--rule_condition--condition--source_ip--queries--value"></a>
-### Nested Schema for `security_rule.rule_condition.condition.source_ip.queries.value`
+<a id="nestedobjatt--security_rule--rule_condition--condition--request_uri--queries--value"></a>
+### Nested Schema for `security_rule.rule_condition.condition.request_uri.queries.value`
 
 Read-Only:
 
@@ -268,10 +268,10 @@ Read-Only:
 
 Read-Only:
 
-- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--authorities))
+- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--authority--authorities))
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--authorities"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.authorities`
+<a id="nestedobjatt--security_rule--smart_protection--condition--authority--authorities"></a>
+### Nested Schema for `security_rule.smart_protection.condition.authority.authorities`
 
 Read-Only:
 
@@ -290,10 +290,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--headers--value))
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--value"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.value`
+<a id="nestedobjatt--security_rule--smart_protection--condition--headers--value"></a>
+### Nested Schema for `security_rule.smart_protection.condition.headers.value`
 
 Read-Only:
 
@@ -311,10 +311,10 @@ Read-Only:
 
 Read-Only:
 
-- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--http_methods))
+- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--http_method--http_methods))
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--http_methods"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.http_methods`
+<a id="nestedobjatt--security_rule--smart_protection--condition--http_method--http_methods"></a>
+### Nested Schema for `security_rule.smart_protection.condition.http_method.http_methods`
 
 Read-Only:
 
@@ -332,11 +332,11 @@ Read-Only:
 
 Read-Only:
 
-- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--path))
-- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--queries))
+- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--request_uri--path))
+- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--request_uri--queries))
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--path"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.path`
+<a id="nestedobjatt--security_rule--smart_protection--condition--request_uri--path"></a>
+### Nested Schema for `security_rule.smart_protection.condition.request_uri.path`
 
 Read-Only:
 
@@ -348,16 +348,16 @@ Read-Only:
 - `prefix_not_match` (String)
 
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--queries"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.queries`
+<a id="nestedobjatt--security_rule--smart_protection--condition--request_uri--queries"></a>
+### Nested Schema for `security_rule.smart_protection.condition.request_uri.queries`
 
 Read-Only:
 
 - `key` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--source_ip--queries--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--smart_protection--condition--request_uri--queries--value))
 
-<a id="nestedobjatt--security_rule--smart_protection--condition--source_ip--queries--value"></a>
-### Nested Schema for `security_rule.smart_protection.condition.source_ip.queries.value`
+<a id="nestedobjatt--security_rule--smart_protection--condition--request_uri--queries--value"></a>
+### Nested Schema for `security_rule.smart_protection.condition.request_uri.queries.value`
 
 Read-Only:
 
@@ -441,10 +441,10 @@ Read-Only:
 
 Read-Only:
 
-- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--authorities))
+- `authorities` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--authority--authorities))
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--authorities"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.authorities`
+<a id="nestedobjatt--security_rule--waf--condition--authority--authorities"></a>
+### Nested Schema for `security_rule.waf.condition.authority.authorities`
 
 Read-Only:
 
@@ -463,10 +463,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--headers--value))
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--value"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.value`
+<a id="nestedobjatt--security_rule--waf--condition--headers--value"></a>
+### Nested Schema for `security_rule.waf.condition.headers.value`
 
 Read-Only:
 
@@ -484,10 +484,10 @@ Read-Only:
 
 Read-Only:
 
-- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--http_methods))
+- `http_methods` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--http_method--http_methods))
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--http_methods"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.http_methods`
+<a id="nestedobjatt--security_rule--waf--condition--http_method--http_methods"></a>
+### Nested Schema for `security_rule.waf.condition.http_method.http_methods`
 
 Read-Only:
 
@@ -505,11 +505,11 @@ Read-Only:
 
 Read-Only:
 
-- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--path))
-- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--queries))
+- `path` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--request_uri--path))
+- `queries` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--request_uri--queries))
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--path"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.path`
+<a id="nestedobjatt--security_rule--waf--condition--request_uri--path"></a>
+### Nested Schema for `security_rule.waf.condition.request_uri.path`
 
 Read-Only:
 
@@ -521,16 +521,16 @@ Read-Only:
 - `prefix_not_match` (String)
 
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--queries"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.queries`
+<a id="nestedobjatt--security_rule--waf--condition--request_uri--queries"></a>
+### Nested Schema for `security_rule.waf.condition.request_uri.queries`
 
 Read-Only:
 
 - `key` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--source_ip--queries--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--security_rule--waf--condition--request_uri--queries--value))
 
-<a id="nestedobjatt--security_rule--waf--condition--source_ip--queries--value"></a>
-### Nested Schema for `security_rule.waf.condition.source_ip.queries.value`
+<a id="nestedobjatt--security_rule--waf--condition--request_uri--queries--value"></a>
+### Nested Schema for `security_rule.waf.condition.request_uri.queries.value`
 
 Read-Only:
 

@@ -14,19 +14,23 @@ For more information, see [official documentation](https://yandex.cloud/marketpl
 
 ```terraform
 //
-// Create a new Kubernetes Marketplace Helm Release. 
+// Create a new Kubernetes Marketplace Helm Release.
 //
-resource "yandex_kubernetes_marketplace_helm_release" "gatekeeper_helm_release" {
+resource "yandex_kubernetes_marketplace_helm_release" "gwin_helm_release" {
   cluster_id = yandex_kubernetes_cluster.cluster_resource_name.id
 
-  product_version = "f2ecif2vt62k2637tgus" // Gatekeeper 3.12.0
+  product_version = "f2e04077v04sobds7gkt" // Gwin v1.1.0
 
-  name      = "gatekeeper"
-  namespace = kubernetes_namespace.namespace_resource_name.name
+  name      = "gwin"
+  namespace = kubernetes_namespace.namespace_resource_name.metadata[0].name
 
   user_values = {
-    auditInterval             = "90"
-    constraintViolationsLimit = "30"
+    "controller.folderId" = yandex_resourcemanager_folder.folder_resource_name.id
+    "controller.ycServiceAccount.workloadIdentityFederation.serviceAccountID" = yandex_iam_service_account.service_account_resource_name.id
+    "controller.defaultBalancerSubnets" = yamlencode([
+      yandex_vpc_subnet.subnet_resource_name_1.id,
+      yandex_vpc_subnet.subnet_resource_name_2.id
+    ])
   }
 }
 ```
@@ -69,6 +73,6 @@ Optional:
 The resource can be imported by using their `resource ID`. For getting the resource ID you can use Yandex Cloud [Web Console](https://console.yandex.cloud) or [YC CLI](https://yandex.cloud/docs/cli/quickstart).
 
 ```bash
-# terraform import yandex_kubernetes_marketpalce_helm_release.<resource Name> <resource Id>
-terraform import yandex_kubernetes_marketpalce_helm_release.default ...
+# terraform import yandex_kubernetes_marketplace_helm_release.<resource Name> <resource Id>
+terraform import yandex_kubernetes_marketplace_helm_release.default ...
 ```

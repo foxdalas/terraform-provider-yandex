@@ -244,11 +244,11 @@ Read-Only:
 
 Read-Only:
 
-- `all_requests` (List of Object) (see [below for nested schema](#nestedobjatt--route--http_route--http_route_action--upgrade_types--all_requests))
-- `requests_per_ip` (List of Object) (see [below for nested schema](#nestedobjatt--route--http_route--http_route_action--upgrade_types--requests_per_ip))
+- `all_requests` (List of Object) (see [below for nested schema](#nestedobjatt--route--http_route--http_route_action--rate_limit--all_requests))
+- `requests_per_ip` (List of Object) (see [below for nested schema](#nestedobjatt--route--http_route--http_route_action--rate_limit--requests_per_ip))
 
-<a id="nestedobjatt--route--http_route--http_route_action--upgrade_types--all_requests"></a>
-### Nested Schema for `route.http_route.http_route_action.upgrade_types.all_requests`
+<a id="nestedobjatt--route--http_route--http_route_action--rate_limit--all_requests"></a>
+### Nested Schema for `route.http_route.http_route_action.rate_limit.all_requests`
 
 Read-Only:
 
@@ -256,8 +256,8 @@ Read-Only:
 - `per_second` (Number)
 
 
-<a id="nestedobjatt--route--http_route--http_route_action--upgrade_types--requests_per_ip"></a>
-### Nested Schema for `route.http_route.http_route_action.upgrade_types.requests_per_ip`
+<a id="nestedobjatt--route--http_route--http_route_action--rate_limit--requests_per_ip"></a>
+### Nested Schema for `route.http_route.http_route_action.rate_limit.requests_per_ip`
 
 Read-Only:
 
@@ -329,10 +329,10 @@ Read-Only:
 Read-Only:
 
 - `name` (String)
-- `value` (List of Object) (see [below for nested schema](#nestedobjatt--route--route_options--rbac--principals--and_principals--remote_ip--value))
+- `value` (List of Object) (see [below for nested schema](#nestedobjatt--route--route_options--rbac--principals--and_principals--headers--value))
 
-<a id="nestedobjatt--route--route_options--rbac--principals--and_principals--remote_ip--value"></a>
-### Nested Schema for `route.route_options.rbac.principals.and_principals.remote_ip.value`
+<a id="nestedobjatt--route--route_options--rbac--principals--and_principals--headers--value"></a>
+### Nested Schema for `route.route_options.rbac.principals.and_principals.headers.value`
 
 Read-Only:
 
