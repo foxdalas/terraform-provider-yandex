@@ -1,0 +1,18 @@
+{
+  "step": "07_get_after_delete",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "originGroupId": "2637811640980909910"
+  },
+  "response": {
+    "folderId": "",
+    "id": "0",
+    "name": "",
+    "origins": [],
+    "providerType": "",
+    "resourcesMetadata": [],
+    "useNext": false
+  },
+  "grpc_code": "Internal",
+  "error": "rpc error: code = Internal desc = Internal"
+}

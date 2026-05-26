@@ -1,0 +1,35 @@
+{
+  "step": "04_get_after_update",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "originGroupId": "2637811640980909910"
+  },
+  "response": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "id": "2637811640980909910",
+    "name": "tf-capture-1779798146-v2",
+    "origins": [
+      {
+        "backup": false,
+        "enabled": true,
+        "id": "89454",
+        "meta": null,
+        "originGroupId": "2637811640980909910",
+        "providerType": "ourcdn",
+        "source": "a.example.com"
+      },
+      {
+        "backup": false,
+        "enabled": true,
+        "id": "89455",
+        "meta": null,
+        "originGroupId": "2637811640980909910",
+        "providerType": "ourcdn",
+        "source": "c.example.com"
+      }
+    ],
+    "providerType": "ourcdn",
+    "resourcesMetadata": [],
+    "useNext": false
+  }
+}

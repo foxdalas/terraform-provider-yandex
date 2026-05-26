@@ -1,0 +1,26 @@
+{
+  "step": "06_delete",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "originGroupId": "2637811640980909910"
+  },
+  "response": {
+    "createdAt": "2026-05-26T12:22:32.021812Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Delete origin group",
+    "done": true,
+    "id": "bc8vrfpzc3422laxqebf",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.DeleteOriginGroupMetadata",
+      "originGroupId": "2637811640980909910"
+    },
+    "modifiedAt": "2026-05-26T12:22:32.021812Z",
+    "response": {
+      "@type": "type.googleapis.com/google.protobuf.Any",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.Empty",
+        "value": {}
+      }
+    }
+  }
+}

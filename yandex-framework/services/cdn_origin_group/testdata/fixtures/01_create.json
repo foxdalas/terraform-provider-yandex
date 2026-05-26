@@ -1,0 +1,64 @@
+{
+  "step": "01_create",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "name": "tf-capture-1779798146",
+    "origins": [
+      {
+        "backup": false,
+        "enabled": true,
+        "meta": null,
+        "source": "a.example.com"
+      },
+      {
+        "backup": true,
+        "enabled": true,
+        "meta": null,
+        "source": "b.example.com"
+      }
+    ],
+    "providerType": "ourcdn",
+    "useNext": true
+  },
+  "response": {
+    "createdAt": "2026-05-26T12:22:29.227972Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Create origin group",
+    "done": true,
+    "id": "bc8xceuzwr3fowsycuhn",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.CreateOriginGroupMetadata",
+      "originGroupId": "2637811640980909910"
+    },
+    "modifiedAt": "2026-05-26T12:22:29.227972Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.OriginGroup",
+      "folderId": "b1gafb9nb9otk1snp8g7",
+      "id": "2637811640980909910",
+      "name": "tf-capture-1779798146",
+      "origins": [
+        {
+          "backup": false,
+          "enabled": true,
+          "id": "89452",
+          "meta": null,
+          "originGroupId": "2637811640980909910",
+          "providerType": "ourcdn",
+          "source": "a.example.com"
+        },
+        {
+          "backup": true,
+          "enabled": true,
+          "id": "89453",
+          "meta": null,
+          "originGroupId": "2637811640980909910",
+          "providerType": "ourcdn",
+          "source": "b.example.com"
+        }
+      ],
+      "providerType": "ourcdn",
+      "resourcesMetadata": [],
+      "useNext": true
+    }
+  }
+}

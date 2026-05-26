@@ -31,11 +31,21 @@ var (
 
 type cdnOriginGroupResource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived
+	// from providerConfig. Set by tests; nil in production.
+	backend originGroupBackend
 }
 
 // NewResource creates a new CDN origin group resource
 func NewResource() resource.Resource {
 	return &cdnOriginGroupResource{}
+}
+
+func (r *cdnOriginGroupResource) api() originGroupBackend {
+	if r.backend != nil {
+		return r.backend
+	}
+	return newSDKBackend(r.providerConfig)
 }
 
 func (r *cdnOriginGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -79,26 +89,22 @@ func (r *cdnOriginGroupResource) Create(ctx context.Context, req resource.Create
 	ctx, cancel := context.WithTimeout(ctx, createTimeout)
 	defer cancel()
 
-	// Get folder ID
 	folderID := r.getFolderID(&plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Determine provider type
 	providerType := "ourcdn"
 	if !plan.ProviderType.IsNull() && plan.ProviderType.ValueString() != "" {
 		providerType = plan.ProviderType.ValueString()
 	}
 
-	// Extract origins
 	var origins []OriginModel
 	resp.Diagnostics.Append(plan.Origins.ElementsAs(ctx, &origins, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create request
 	createReq := &cdn.CreateOriginGroupRequest{
 		FolderId:     folderID,
 		Name:         plan.Name.ValueString(),
@@ -113,35 +119,20 @@ func (r *cdnOriginGroupResource) Create(ctx context.Context, req resource.Create
 		"provider_type": createReq.ProviderType,
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(r.providerConfig.SDK.CDN().OriginGroup().Create(ctx, createReq))
+	createdID, err := r.api().Create(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create CDN origin group", err.Error())
 		return
 	}
 
-	// Wait for operation
-	if err := op.Wait(ctx); err != nil {
-		resp.Diagnostics.AddError("Error waiting for CDN origin group creation", err.Error())
+	plan.ID = types.StringValue(strconv.FormatInt(createdID, 10))
+
+	// Read the created resource to populate computed fields.
+	if status, err := r.readOriginGroupInto(ctx, &plan); err != nil {
+		resp.Diagnostics.AddError("Failed to read CDN origin group after create", err.Error())
 		return
-	}
-
-	// Get metadata
-	md, err := op.Metadata()
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get operation metadata", err.Error())
-		return
-	}
-
-	metadata, ok := md.(*cdn.CreateOriginGroupMetadata)
-	if !ok {
-		resp.Diagnostics.AddError("Unexpected metadata type", "Expected *cdn.CreateOriginGroupMetadata")
-		return
-	}
-
-	plan.ID = types.StringValue(strconv.FormatInt(metadata.OriginGroupId, 10))
-
-	// Read the created resource to populate computed fields
-	if !r.readResourceToState(ctx, &plan, &resp.Diagnostics) {
+	} else if status == readNotFound {
+		resp.Diagnostics.AddError("CDN origin group disappeared right after create", fmt.Sprintf("id=%d", createdID))
 		return
 	}
 
@@ -155,7 +146,14 @@ func (r *cdnOriginGroupResource) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	if !r.readResourceToState(ctx, &state, &resp.Diagnostics) {
+	switch result, err := r.readOriginGroupInto(ctx, &state); {
+	case err != nil:
+		// Real error — surface it, do NOT wipe state.
+		resp.Diagnostics.AddError("Failed to read CDN origin group", err.Error())
+		return
+	case result == readNotFound:
+		// Drift: API says the group is gone; clear it from state so the next
+		// plan recreates it.
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -179,27 +177,23 @@ func (r *cdnOriginGroupResource) Update(ctx context.Context, req resource.Update
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
 
-	// Get folder ID
 	folderID := r.getFolderID(&plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Parse origin group ID
 	groupID, err := strconv.ParseInt(plan.ID.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid origin group ID", err.Error())
 		return
 	}
 
-	// Extract origins
 	var origins []OriginModel
 	resp.Diagnostics.Append(plan.Origins.ElementsAs(ctx, &origins, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update request
 	updateReq := &cdn.UpdateOriginGroupRequest{
 		FolderId:      folderID,
 		OriginGroupId: groupID,
@@ -213,20 +207,16 @@ func (r *cdnOriginGroupResource) Update(ctx context.Context, req resource.Update
 		"name": updateReq.GroupName.Value,
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(r.providerConfig.SDK.CDN().OriginGroup().Update(ctx, updateReq))
-	if err != nil {
+	if err := r.api().Update(ctx, updateReq); err != nil {
 		resp.Diagnostics.AddError("Failed to update CDN origin group", err.Error())
 		return
 	}
 
-	// Wait for operation
-	if err := op.Wait(ctx); err != nil {
-		resp.Diagnostics.AddError("Error waiting for CDN origin group update", err.Error())
+	if status, err := r.readOriginGroupInto(ctx, &plan); err != nil {
+		resp.Diagnostics.AddError("Failed to read CDN origin group after update", err.Error())
 		return
-	}
-
-	// Read updated resource
-	if !r.readResourceToState(ctx, &plan, &resp.Diagnostics) {
+	} else if status == readNotFound {
+		resp.Diagnostics.AddError("CDN origin group disappeared right after update", fmt.Sprintf("id=%d", groupID))
 		return
 	}
 
@@ -249,29 +239,25 @@ func (r *cdnOriginGroupResource) Delete(ctx context.Context, req resource.Delete
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	// Get folder ID
 	folderID := r.getFolderID(&state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Parse origin group ID
 	groupID, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
 	if err != nil {
 		resp.Diagnostics.AddError("Invalid origin group ID", err.Error())
 		return
 	}
 
-	deleteReq := &cdn.DeleteOriginGroupRequest{
-		FolderId:      folderID,
-		OriginGroupId: groupID,
-	}
-
 	tflog.Debug(ctx, "Deleting CDN origin group", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(r.providerConfig.SDK.CDN().OriginGroup().Delete(ctx, deleteReq))
+	err = r.api().Delete(ctx, &cdn.DeleteOriginGroupRequest{
+		FolderId:      folderID,
+		OriginGroupId: groupID,
+	})
 	if err != nil {
 		if st, ok := status.FromError(err); ok && st.Code() == codes.NotFound {
 			tflog.Info(ctx, "CDN origin group already deleted", map[string]interface{}{
@@ -283,21 +269,13 @@ func (r *cdnOriginGroupResource) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	// Wait for operation
-	if err := op.Wait(ctx); err != nil {
-		resp.Diagnostics.AddError("Error waiting for CDN origin group deletion", err.Error())
-		return
-	}
-
 	tflog.Info(ctx, "CDN origin group deleted", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 }
 
 func (r *cdnOriginGroupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// Validate ID format (must be a valid int64)
-	_, err := strconv.ParseInt(req.ID, 10, 64)
-	if err != nil {
+	if _, err := strconv.ParseInt(req.ID, 10, 64); err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID",
 			fmt.Sprintf("Expected origin group ID to be a number, got: %s", req.ID),
@@ -308,7 +286,7 @@ func (r *cdnOriginGroupResource) ImportState(ctx context.Context, req resource.I
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-// getFolderID returns folder ID from model or provider config
+// getFolderID returns folder ID from model or provider config.
 func (r *cdnOriginGroupResource) getFolderID(model *CDNOriginGroupModel, diags *diag.Diagnostics) string {
 	if !model.FolderID.IsNull() && model.FolderID.ValueString() != "" {
 		return model.FolderID.ValueString()
@@ -320,43 +298,53 @@ func (r *cdnOriginGroupResource) getFolderID(model *CDNOriginGroupModel, diags *
 	return ""
 }
 
-// readResourceToState reads the origin group from API and updates the state
-// Returns false if the resource was not found (should be removed from state)
-func (r *cdnOriginGroupResource) readResourceToState(ctx context.Context, state *CDNOriginGroupModel, diags *diag.Diagnostics) bool {
-	// Get folder ID
-	folderID := r.getFolderID(state, diags)
-	if diags.HasError() {
-		return false
+type readResult int
+
+const (
+	readOK readResult = iota
+	readNotFound
+)
+
+// readOriginGroupInto reads the origin group from the API and merges it into
+// the supplied model. It separates "drift, drop from state" (readNotFound +
+// nil error) from "transport / unmarshal failure" (non-nil error) so callers
+// can react correctly — wiping state on a transient API error would be wrong.
+func (r *cdnOriginGroupResource) readOriginGroupInto(ctx context.Context, state *CDNOriginGroupModel) (readResult, error) {
+	folderID := state.FolderID.ValueString()
+	if folderID == "" {
+		folderID = r.providerConfig.ProviderState.FolderID.ValueString()
+	}
+	if folderID == "" {
+		return readOK, fmt.Errorf("folder_id is not set on state and no default is configured on the provider")
 	}
 
-	// Parse origin group ID
 	groupID, err := strconv.ParseInt(state.ID.ValueString(), 10, 64)
 	if err != nil {
-		diags.AddError("Invalid origin group ID", err.Error())
-		return false
-	}
-
-	getReq := &cdn.GetOriginGroupRequest{
-		FolderId:      folderID,
-		OriginGroupId: groupID,
+		return readOK, fmt.Errorf("invalid origin group ID %q: %w", state.ID.ValueString(), err)
 	}
 
 	tflog.Debug(ctx, "Reading CDN origin group", map[string]interface{}{
 		"id": state.ID.ValueString(),
 	})
 
-	originGroup, err := r.providerConfig.SDK.CDN().OriginGroup().Get(ctx, getReq)
+	originGroup, err := r.api().Get(ctx, &cdn.GetOriginGroupRequest{
+		FolderId:      folderID,
+		OriginGroupId: groupID,
+	})
 	if err != nil {
 		if st, ok := status.FromError(err); ok && st.Code() == codes.NotFound {
 			tflog.Info(ctx, "CDN origin group not found", map[string]interface{}{
 				"id": state.ID.ValueString(),
 			})
-			return false
+			return readNotFound, nil
 		}
-		diags.AddError("Failed to read CDN origin group", err.Error())
-		return false
+		return readOK, err
 	}
 
-	flattenCDNOriginGroup(ctx, state, originGroup, diags)
-	return true
+	var diags diag.Diagnostics
+	flattenCDNOriginGroup(ctx, state, originGroup, &diags)
+	if diags.HasError() {
+		return readOK, fmt.Errorf("flatten origin group: %v", diags.Errors())
+	}
+	return readOK, nil
 }

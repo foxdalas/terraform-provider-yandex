@@ -23,11 +23,21 @@ var (
 
 type cdnOriginGroupDataSource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived
+	// from providerConfig. Set by tests; nil in production.
+	backend originGroupBackend
 }
 
 // NewDataSource creates a new CDN origin group data source
 func NewDataSource() datasource.DataSource {
 	return &cdnOriginGroupDataSource{}
+}
+
+func (d *cdnOriginGroupDataSource) api() originGroupBackend {
+	if d.backend != nil {
+		return d.backend
+	}
+	return newSDKBackend(d.providerConfig)
 }
 
 func (d *cdnOriginGroupDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -115,7 +125,7 @@ func (d *cdnOriginGroupDataSource) Read(ctx context.Context, req datasource.Read
 		"origin_group_id": originGroupID,
 	})
 
-	originGroup, err := d.providerConfig.SDK.CDN().OriginGroup().Get(ctx, &cdn.GetOriginGroupRequest{
+	originGroup, err := d.api().Get(ctx, &cdn.GetOriginGroupRequest{
 		FolderId:      folderID,
 		OriginGroupId: originGroupID,
 	})
@@ -162,7 +172,7 @@ func (d *cdnOriginGroupDataSource) Read(ctx context.Context, req datasource.Read
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// resolveCDNOriginGroupIDByName resolves origin group ID by name using iterator
+// resolveCDNOriginGroupIDByName resolves origin group ID by name.
 func (d *cdnOriginGroupDataSource) resolveCDNOriginGroupIDByName(ctx context.Context, folderID, name string) (int64, error) {
 	if name == "" {
 		return 0, fmt.Errorf("empty name for origin group")
@@ -173,23 +183,19 @@ func (d *cdnOriginGroupDataSource) resolveCDNOriginGroupIDByName(ctx context.Con
 		"name":      name,
 	})
 
-	iterator := d.providerConfig.SDK.CDN().OriginGroup().OriginGroupIterator(ctx, &cdn.ListOriginGroupsRequest{
-		FolderId: folderID,
-	})
-
-	for iterator.Next() {
-		originGroup := iterator.Value()
-		if name == originGroup.Name {
-			tflog.Debug(ctx, "Found matching origin group", map[string]interface{}{
-				"name": name,
-				"id":   originGroup.Id,
-			})
-			return originGroup.Id, nil
-		}
+	groups, err := d.api().ListAll(ctx, &cdn.ListOriginGroupsRequest{FolderId: folderID})
+	if err != nil {
+		return 0, fmt.Errorf("error listing origin groups: %w", err)
 	}
 
-	if err := iterator.Error(); err != nil {
-		return 0, fmt.Errorf("error iterating origin groups: %w", err)
+	for _, og := range groups {
+		if og.Name == name {
+			tflog.Debug(ctx, "Found matching origin group", map[string]interface{}{
+				"name": name,
+				"id":   og.Id,
+			})
+			return og.Id, nil
+		}
 	}
 
 	return 0, fmt.Errorf("origin group with name %q not found in folder %s", name, folderID)

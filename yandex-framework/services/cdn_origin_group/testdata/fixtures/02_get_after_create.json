@@ -1,0 +1,35 @@
+{
+  "step": "02_get_after_create",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "originGroupId": "2637811640980909910"
+  },
+  "response": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "id": "2637811640980909910",
+    "name": "tf-capture-1779798146",
+    "origins": [
+      {
+        "backup": false,
+        "enabled": true,
+        "id": "89452",
+        "meta": null,
+        "originGroupId": "2637811640980909910",
+        "providerType": "ourcdn",
+        "source": "a.example.com"
+      },
+      {
+        "backup": true,
+        "enabled": true,
+        "id": "89453",
+        "meta": null,
+        "originGroupId": "2637811640980909910",
+        "providerType": "ourcdn",
+        "source": "b.example.com"
+      }
+    ],
+    "providerType": "ourcdn",
+    "resourcesMetadata": [],
+    "useNext": true
+  }
+}

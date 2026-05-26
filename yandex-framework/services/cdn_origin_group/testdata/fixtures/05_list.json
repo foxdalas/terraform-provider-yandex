@@ -1,0 +1,2692 @@
+{
+  "step": "05_list",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "pageSize": "100",
+    "pageToken": ""
+  },
+  "response": {
+    "nextPageToken": "",
+    "originGroups": [
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "9205497168649945496",
+        "name": "www-aviasales-it",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68372",
+            "meta": null,
+            "originGroupId": "9205497168649945496",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.it",
+            "id": "bc8rnwcg6dh7o5fl76ys"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "9167452457238745848",
+        "name": "aviasales-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "69430",
+            "meta": null,
+            "originGroupId": "9167452457238745848",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.com",
+            "id": "bc8rc5dmyxujw5bfcnws"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8996864284471408036",
+        "name": "www-aviasales-at",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68366",
+            "meta": null,
+            "originGroupId": "8996864284471408036",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.at",
+            "id": "bc8rhd5kpkzz6e6lchus"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8877722503028902162",
+        "name": "static",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "61689",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "d19s7pokjuiffo.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61690",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61691",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61692",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61693",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61694",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61695",
+            "meta": null,
+            "originGroupId": "8877722503028902162",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "static.aviasales.com",
+            "id": "bc8rqn74z5nbcueaimsd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8798020047641589769",
+        "name": "aviasales-it",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "70851",
+            "meta": null,
+            "originGroupId": "8798020047641589769",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.it",
+            "id": "bc8rmg32dbe5p7tzs4gd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8463933736756722425",
+        "name": "www-aviasales-kz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68380",
+            "meta": null,
+            "originGroupId": "8463933736756722425",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.kz",
+            "id": "bc8rn6wro4dnc4o2g77m"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8399694088523901401",
+        "name": "www-aviasales-pl",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68364",
+            "meta": null,
+            "originGroupId": "8399694088523901401",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.pl",
+            "id": "bc8rhlhhgrbjhtssovs6"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8392201694524635532",
+        "name": "search-history-api-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "80111",
+            "meta": null,
+            "originGroupId": "8392201694524635532",
+            "providerType": "ourcdn",
+            "source": "search-history-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "search-history-api.aviasales.com",
+            "id": "bc8rns3h5i6o2pv3a6pm"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8369461591621301578",
+        "name": "aviasales-at",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68992",
+            "meta": null,
+            "originGroupId": "8369461591621301578",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.at",
+            "id": "bc8rl2eshmef7d626vhd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8358863453955487640",
+        "name": "aviasales-es",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68980",
+            "meta": null,
+            "originGroupId": "8358863453955487640",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.es",
+            "id": "bc8rxc6z27w66by535pi"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8314898994984827099",
+        "name": "video",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "60844",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "d1clhhyxcq95x6.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60845",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60846",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60847",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60848",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60849",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60850",
+            "meta": null,
+            "originGroupId": "8314898994984827099",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "video.avs.io",
+            "id": "bc8rugwqrs7423c7r53b"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "8044327407191405597",
+        "name": "aviasales-fr",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68984",
+            "meta": null,
+            "originGroupId": "8044327407191405597",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.fr",
+            "id": "bc8rmjzx4u7bp7omxha5"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7826738614845900944",
+        "name": "www-aviasales-es",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68375",
+            "meta": null,
+            "originGroupId": "7826738614845900944",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.es",
+            "id": "bc8rb5lutsgfr43yo7gd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7660352197894227513",
+        "name": "aviasales-md",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68982",
+            "meta": null,
+            "originGroupId": "7660352197894227513",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.md",
+            "id": "bc8rmwvqhyxi35743rts"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7659357789293000548",
+        "name": "aviasales-az",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68995",
+            "meta": null,
+            "originGroupId": "7659357789293000548",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.az",
+            "id": "bc8r6x3lixxqh6i7tyqk"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7543239060978264731",
+        "name": "configs-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "72107",
+            "meta": null,
+            "originGroupId": "7543239060978264731",
+            "providerType": "ourcdn",
+            "source": "config-external.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "configs.aviasales.com",
+            "id": "bc8r6rtydxhx5zuts4sx"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7437882156218436718",
+        "name": "www-aviasales-in",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68373",
+            "meta": null,
+            "originGroupId": "7437882156218436718",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.in",
+            "id": "bc8ruik2fdez7xgr3xsy"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "7080136050984287948",
+        "name": "auth-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68572",
+            "meta": null,
+            "originGroupId": "7080136050984287948",
+            "providerType": "ourcdn",
+            "source": "guestia.mp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "auth.aviasales.com",
+            "id": "bc8rrk4n2vjbpbixkklc"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6980000865665447223",
+        "name": "aviasales-kz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68996",
+            "meta": null,
+            "originGroupId": "6980000865665447223",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.kz",
+            "id": "bc8rf3ftcxsks7bss6v6"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6892123765443258486",
+        "name": "aviasales-kg",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68986",
+            "meta": null,
+            "originGroupId": "6892123765443258486",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.kg",
+            "id": "bc8rwcl6fmptiocrj647"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6874555255003064687",
+        "name": "aviasales-ua",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68979",
+            "meta": null,
+            "originGroupId": "6874555255003064687",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.ua",
+            "id": "bc8r2bu2kvzk6jvidf2a"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6834992003890054213",
+        "name": "imgwwayio",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "75516",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "d2aqe8a2mwd7le.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75517",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75518",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75519",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75520",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75521",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "75522",
+            "meta": null,
+            "originGroupId": "6834992003890054213",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "img.wway.io",
+            "id": "bc8rh73niajtlpkiy74j"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6623737012262797577",
+        "name": "mobile-explore-yandex",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "31685",
+            "meta": null,
+            "originGroupId": "6623737012262797577",
+            "providerType": "ourcdn",
+            "source": "mobile-explore.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "mobile-explore.aviasales.ru",
+            "id": "bc8r4ikxyxkmcq2osepx"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6581043395930186597",
+        "name": "aviasales-am",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68971",
+            "meta": null,
+            "originGroupId": "6581043395930186597",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.am",
+            "id": "bc8rzro2n27o3gpvqefb"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6487422907446028549",
+        "name": "www-aviasales-co-tz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68374",
+            "meta": null,
+            "originGroupId": "6487422907446028549",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.co.tz",
+            "id": "bc8rjb2xlkhcpe5dtiyw"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6449443193391812084",
+        "name": "mego-travel",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "67471",
+            "meta": null,
+            "originGroupId": "6449443193391812084",
+            "providerType": "ourcdn",
+            "source": "ota-frontend.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "mego.travel",
+            "id": "bc8ratq4rloapr7ma7tu"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6418924744143098832",
+        "name": "www-aviasales-am",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68371",
+            "meta": null,
+            "originGroupId": "6418924744143098832",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.am",
+            "id": "bc8rrplawudq534sc5mo"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6359593603700984804",
+        "name": "mobile-explore",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "60253",
+            "meta": null,
+            "originGroupId": "6359593603700984804",
+            "providerType": "ourcdn",
+            "source": "mobile-explore.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "mobile-explore.aviasales.com",
+            "id": "bc8rmwkh5a4cjhkccfm5"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6304721391912794787",
+        "name": "cdn-avs-io",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "35649",
+            "meta": null,
+            "originGroupId": "6304721391912794787",
+            "providerType": "ourcdn",
+            "source": "cdn-origin.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "cdn.avs.io",
+            "id": "bc8rd2divbcamb5gttry"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6265685133377365039",
+        "name": "www2",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "13412",
+            "meta": {
+              "website": {
+                "name": "salo-ru-www-ru-central-1"
+              }
+            },
+            "originGroupId": "6265685133377365039",
+            "providerType": "ourcdn",
+            "source": "salo-ru-www-ru-central-1.website.yandexcloud.net"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www2.aviasales.ru",
+            "id": "bc8rzybpeu2o3ha7jo65"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "6050756007865425105",
+        "name": "iavsoio",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "61673",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "d1d9uvahtcdfvo.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61674",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61675",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61676",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61677",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61678",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61679",
+            "meta": null,
+            "originGroupId": "6050756007865425105",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "i.avs.io",
+            "id": "bc8rdqybnie6rkjd4yk3"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5619779440467086069",
+        "name": "www-aviasales-tj",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68384",
+            "meta": null,
+            "originGroupId": "5619779440467086069",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.tj",
+            "id": "bc8rwjunmeawlfy6ulen"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5547192923899383095",
+        "name": "www-aviasales-pt",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68385",
+            "meta": null,
+            "originGroupId": "5547192923899383095",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.pt",
+            "id": "bc8rpdtqjlajjgxrabpx"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5511000855904659422",
+        "name": "www-aviasales-fr",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68381",
+            "meta": null,
+            "originGroupId": "5511000855904659422",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.fr",
+            "id": "bc8r5lfs65skuxvvry6u"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5458543489487227142",
+        "name": "aviasales-co-tz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68987",
+            "meta": null,
+            "originGroupId": "5458543489487227142",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.co.tz",
+            "id": "bc8rr2spezde52uzuzt3"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5448712382773478986",
+        "name": "www-aviasales-nl",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68368",
+            "meta": null,
+            "originGroupId": "5448712382773478986",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.nl",
+            "id": "bc8rwszehxghksi73dpn"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5422259691505411853",
+        "name": "seo-currency-config-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "72444",
+            "meta": null,
+            "originGroupId": "5422259691505411853",
+            "providerType": "ourcdn",
+            "source": "seo-currency-config.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "seo-currency-config.aviasales.com",
+            "id": "bc8rg4kbhkmxco3mahqo"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5403767333045838095",
+        "name": "partner-static-qatl-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "77383",
+            "meta": null,
+            "originGroupId": "5403767333045838095",
+            "providerType": "ourcdn",
+            "source": "partner-static.qatl.ru"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "b2b-images-dev.avs.io",
+            "id": "bc8rbtxkhaugmn4qhqoo"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5112870985578642608",
+        "name": "www-aviasales-uz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68387",
+            "meta": null,
+            "originGroupId": "5112870985578642608",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.uz",
+            "id": "bc8rcdsxk3rmayf4rndd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5098328970027262408",
+        "name": "www-aviasales-co-ke",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68376",
+            "meta": null,
+            "originGroupId": "5098328970027262408",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.co.ke",
+            "id": "bc8r3fe3ddff2ov2kuyw"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5078149562988044237",
+        "name": "www-aviasales-az",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68365",
+            "meta": null,
+            "originGroupId": "5078149562988044237",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.az",
+            "id": "bc8rnacaxn54el5tvjyr"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "5054073296449484920",
+        "name": "ariadne-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "67611",
+            "meta": null,
+            "originGroupId": "5054073296449484920",
+            "providerType": "ourcdn",
+            "source": "ariadne.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "ariadne.aviasales.com",
+            "id": "bc8rqh6kwdcpai4w47us"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4965458995820494090",
+        "name": "guides-walks-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "71374",
+            "meta": null,
+            "originGroupId": "4965458995820494090",
+            "providerType": "ourcdn",
+            "source": "guides-walks.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "guides-walks.aviasales.com",
+            "id": "bc8rt6zs5n36oyfsdxol"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4837471548547061926",
+        "name": "aviasales-co-za",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68989",
+            "meta": null,
+            "originGroupId": "4837471548547061926",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.co.za",
+            "id": "bc8rlbbqb6kweqasnxqu"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4762010927889900127",
+        "name": "aviasales-gr",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68988",
+            "meta": null,
+            "originGroupId": "4762010927889900127",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.gr",
+            "id": "bc8rnqq3qv2hn6axsspd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4745013667431730502",
+        "name": "auth-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68573",
+            "meta": null,
+            "originGroupId": "4745013667431730502",
+            "providerType": "ourcdn",
+            "source": "guestia.mp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "auth.aviasales.ru",
+            "id": "bc8rxgi3nvazlbz5kdlg"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4712666656779797476",
+        "name": "partner-static-tlintegration-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "37793",
+            "meta": null,
+            "originGroupId": "4712666656779797476",
+            "providerType": "ourcdn",
+            "source": "partner-static.tlintegration.com"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "b2b-images.avs.io",
+            "id": "bc8rrxjk72azgew5gcta"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4476293255709903334",
+        "name": "www-aviasales-ua",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68386",
+            "meta": null,
+            "originGroupId": "4476293255709903334",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.ua",
+            "id": "bc8r5jf6roxunpyr3fc2"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4347241280782317372",
+        "name": "search-history-api-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "80110",
+            "meta": null,
+            "originGroupId": "4347241280782317372",
+            "providerType": "ourcdn",
+            "source": "search-history-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "search-history-api.aviasales.ru",
+            "id": "bc8r4pffrpi44n2otfmo"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4319827885766935751",
+        "name": "b2b-aviasales-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "65539",
+            "meta": null,
+            "originGroupId": "4319827885766935751",
+            "providerType": "ourcdn",
+            "source": "b2b.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "b2b.aviasales.ru",
+            "id": "bc8rmln4ojipngy6wqd5"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "4195160706550700718",
+        "name": "coyote-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "71025",
+            "meta": null,
+            "originGroupId": "4195160706550700718",
+            "providerType": "ourcdn",
+            "source": "coyote.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "coyote.aviasales.com",
+            "id": "bc8rid2hvrly223k6z7l"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3885392062199076660",
+        "name": "www-aviasales-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68363",
+            "meta": null,
+            "originGroupId": "3885392062199076660",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.com",
+            "id": "bc8rhwb2koqnlowzgpgj"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3860617799872579904",
+        "name": "suggest-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "65022",
+            "meta": null,
+            "originGroupId": "3860617799872579904",
+            "providerType": "ourcdn",
+            "source": "suggest.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "suggest.aviasales.ru",
+            "id": "bc8r67k5pudojayfwvf7"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3774191461515872442",
+        "name": "aviasales-co-il",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68991",
+            "meta": null,
+            "originGroupId": "3774191461515872442",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.co.il",
+            "id": "bc8rdlxkqvtb5dmmvftb"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3680057265995965287",
+        "name": "suggest-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "65023",
+            "meta": null,
+            "originGroupId": "3680057265995965287",
+            "providerType": "ourcdn",
+            "source": "suggest.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "suggest.aviasales.com",
+            "id": "bc8rsqrdafjueyvhqt3m"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3611092518573680436",
+        "name": "aviasales-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "69429",
+            "meta": null,
+            "originGroupId": "3611092518573680436",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.ru",
+            "id": "bc8rjpbrkpcfcqihrupr"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3595808654442476251",
+        "name": "guides-walks-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "71373",
+            "meta": null,
+            "originGroupId": "3595808654442476251",
+            "providerType": "ourcdn",
+            "source": "guides-walks.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "guides-walks.aviasales.ru",
+            "id": "bc8rd37g2cpycvxgj6ls"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3577904212571387880",
+        "name": "aviasales-pt",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68985",
+            "meta": null,
+            "originGroupId": "3577904212571387880",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.pt",
+            "id": "bc8rb5yrw6kt2gdgvh6r"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3454704849036569559",
+        "name": "aviasales-ge",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68993",
+            "meta": null,
+            "originGroupId": "3454704849036569559",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.ge",
+            "id": "bc8rpvhixfi7ardjzuvy"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3435260283177860787",
+        "name": "www-aviasales-ro",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68383",
+            "meta": null,
+            "originGroupId": "3435260283177860787",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.ro",
+            "id": "bc8rqjitokbb33gsmnhw"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3374185430926780263",
+        "name": "explore-api-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "34243",
+            "meta": null,
+            "originGroupId": "3374185430926780263",
+            "providerType": "ourcdn",
+            "source": "explore-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "explore-api.aviasales.com",
+            "id": "bc8rhown4l6as2m6qt52"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3368542523379345914",
+        "name": "explore-api-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "34150",
+            "meta": null,
+            "originGroupId": "3368542523379345914",
+            "providerType": "ourcdn",
+            "source": "explore-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "explore-api.aviasales.ru",
+            "id": "bc8rllww46zof6tyui2q"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3353826248958577637",
+        "name": "aviasales-ro",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "70870",
+            "meta": null,
+            "originGroupId": "3353826248958577637",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.ro",
+            "id": "bc8r44fuxibd5hyg22kd"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3238423112964688056",
+        "name": "flagr-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68780",
+            "meta": null,
+            "originGroupId": "3238423112964688056",
+            "providerType": "ourcdn",
+            "source": "flagr.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "flagr.aviasales.com",
+            "id": "bc8repsqxrhvdtt54q3p"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3141930060212012728",
+        "name": "www-aviasales-gr",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68379",
+            "meta": null,
+            "originGroupId": "3141930060212012728",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.gr",
+            "id": "bc8rwilji53rkolwlsr7"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3072331135916871963",
+        "name": "repin-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "76957",
+            "meta": null,
+            "originGroupId": "3072331135916871963",
+            "providerType": "ourcdn",
+            "source": "repin.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "repin.aviasales.com",
+            "id": "bc8rjxsjm6liftfjrrpf"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "3034562137949192121",
+        "name": "www-aviasales-by",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68362",
+            "meta": null,
+            "originGroupId": "3034562137949192121",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.by",
+            "id": "bc8rjgpuhpmeumktx53v"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2984196995231223980",
+        "name": "www-aviasales-co-za",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68369",
+            "meta": null,
+            "originGroupId": "2984196995231223980",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.co.za",
+            "id": "bc8ri32r7cdf3bp3gyz5"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2641149210293241295",
+        "name": "aviasales-tj",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "70868",
+            "meta": null,
+            "originGroupId": "2641149210293241295",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.tj",
+            "id": "bc8rggf5mbyzhwkbf65h"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2637811640980909910",
+        "name": "tf-capture-1779798146-v2",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "89454",
+            "meta": null,
+            "originGroupId": "2637811640980909910",
+            "providerType": "ourcdn",
+            "source": "a.example.com"
+          },
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "89455",
+            "meta": null,
+            "originGroupId": "2637811640980909910",
+            "providerType": "ourcdn",
+            "source": "c.example.com"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [],
+        "useNext": false
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2551364367702467639",
+        "name": "aviasales-in",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "70852",
+            "meta": null,
+            "originGroupId": "2551364367702467639",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.in",
+            "id": "bc8r5yoytktglyymelqv"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2542332964068827738",
+        "name": "flight-statistics-api-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "43444",
+            "meta": null,
+            "originGroupId": "2542332964068827738",
+            "providerType": "ourcdn",
+            "source": "flight-statistics-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "flight-statistics-api.aviasales.com",
+            "id": "bc8rjxakjaplg3ti6osl"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2534442779939563717",
+        "name": "img",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "60908",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "dezlf9dtt1hie.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60909",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60910",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60911",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60912",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60913",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "60914",
+            "meta": null,
+            "originGroupId": "2534442779939563717",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "img.avs.io",
+            "id": "bc8rgvpt66ecyelgrqwh"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2529562869436853946",
+        "name": "www3",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "67375",
+            "meta": null,
+            "originGroupId": "2529562869436853946",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www3.aviasales.ru",
+            "id": "bc8regxvcaqwoqepjwbl"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2438433219397808150",
+        "name": "www-aviasales-ge",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68377",
+            "meta": null,
+            "originGroupId": "2438433219397808150",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.ge",
+            "id": "bc8rwndbtnz7ash3xmpj"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2386179709859120488",
+        "name": "flight-statistics-api-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "43445",
+            "meta": null,
+            "originGroupId": "2386179709859120488",
+            "providerType": "ourcdn",
+            "source": "flight-statistics-api.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "flight-statistics-api.aviasales.ru",
+            "id": "bc8rqxtqonpbcl6y33zc"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2366547790511009783",
+        "name": "www-aviasales-co-il",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68370",
+            "meta": null,
+            "originGroupId": "2366547790511009783",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.co.il",
+            "id": "bc8rxsxvdyuwnxsm5ba2"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2073864081699819642",
+        "name": "auth-avs-io",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "72707",
+            "meta": null,
+            "originGroupId": "2073864081699819642",
+            "providerType": "ourcdn",
+            "source": "guestia.mp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "auth.avs.io",
+            "id": "bc8rkax4tqzjdnme5yrg"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2008755250404221313",
+        "name": "flagr-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68779",
+            "meta": null,
+            "originGroupId": "2008755250404221313",
+            "providerType": "ourcdn",
+            "source": "flagr.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "flagr.aviasales.ru",
+            "id": "bc8r5kpqu24ofn3jnwpj"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "2008339830006479041",
+        "name": "iwway",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "61680",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "d157b5ol4cpxa.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61681",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61682",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61683",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61684",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61685",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "61686",
+            "meta": null,
+            "originGroupId": "2008339830006479041",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "i.wway.io",
+            "id": "bc8rdxrmdw35dckgici4"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1974914118508279102",
+        "name": "www-aviasales-kg",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68378",
+            "meta": null,
+            "originGroupId": "1974914118508279102",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.kg",
+            "id": "bc8rj33e3ds5nk7gaosy"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1862024731206162809",
+        "name": "img2",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "74429",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "dezlf9dtt1hie.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74430",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "88.212.241.234"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74431",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "88.212.254.7"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74432",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "23.105.252.246"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74433",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "23.111.108.202"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74434",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "88.212.241.242"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "74435",
+            "meta": null,
+            "originGroupId": "1862024731206162809",
+            "providerType": "ourcdn",
+            "source": "88.212.254.15"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "img2.avs.io",
+            "id": "bc8r3dsxgjcy7v7jap5s"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1838290102554053419",
+        "name": "aviasales-by",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "69609",
+            "meta": null,
+            "originGroupId": "1838290102554053419",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.by",
+            "id": "bc8rezn3bvww3lioeyqj"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1484873311394685358",
+        "name": "aviasales-nl",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68983",
+            "meta": null,
+            "originGroupId": "1484873311394685358",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.nl",
+            "id": "bc8rcrm4yuzsp5p6zbdm"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1259470439014814713",
+        "name": "tass-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "71026",
+            "meta": null,
+            "originGroupId": "1259470439014814713",
+            "providerType": "ourcdn",
+            "source": "tass.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "tass.aviasales.com",
+            "id": "bc8rwob7mnyyi7z4mkz3"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1198984834887680813",
+        "name": "aviasales-uz",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68990",
+            "meta": null,
+            "originGroupId": "1198984834887680813",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.uz",
+            "id": "bc8ryafdfj2qomwtdpkr"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1043764766748930932",
+        "name": "common-a-com",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "73145",
+            "meta": null,
+            "originGroupId": "1043764766748930932",
+            "providerType": "ourcdn",
+            "source": "a.com"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "1005521879742580678",
+        "name": "aviasales-co-ke",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68994",
+            "meta": null,
+            "originGroupId": "1005521879742580678",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.co.ke",
+            "id": "bc8rludcexeedwa2aic3"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "891214707556984570",
+        "name": "stavsplow",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "67215",
+            "meta": null,
+            "originGroupId": "891214707556984570",
+            "providerType": "ourcdn",
+            "source": "d3uz3lfjm2nvoj.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "67216",
+            "meta": null,
+            "originGroupId": "891214707556984570",
+            "providerType": "ourcdn",
+            "source": "158.160.192.207"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "st.avsplow.com",
+            "id": "bc8rpnhxhujlch2zxycp"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "673884607893639766",
+        "name": "common-test-prod-k8s-ext-avs-io",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "65143",
+            "meta": null,
+            "originGroupId": "673884607893639766",
+            "providerType": "ourcdn",
+            "source": "test.prod.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "test2.aviasales.ru",
+            "id": "bc8rrgahi2d4w3vgfyrw"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "637820963767665427",
+        "name": "aviasales-pl",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68981",
+            "meta": null,
+            "originGroupId": "637820963767665427",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "aviasales.pl",
+            "id": "bc8rkgskgfluffa6mhgg"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "599465334193767451",
+        "name": "seo-currency-config-ru",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "74699",
+            "meta": null,
+            "originGroupId": "599465334193767451",
+            "providerType": "ourcdn",
+            "source": "seo-currency-config.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "seo-currency-config.aviasales.ru",
+            "id": "bc8rsmkhqok6t5sihw6l"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "479542945024678769",
+        "name": "www-aviasales-md",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "68367",
+            "meta": null,
+            "originGroupId": "479542945024678769",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.md",
+            "id": "bc8rqw3ofiqaguxgoung"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "342856171292123206",
+        "name": "photoshotellook",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "67217",
+            "meta": null,
+            "originGroupId": "342856171292123206",
+            "providerType": "ourcdn",
+            "source": "d2due22s9xkghn.cloudfront.net"
+          },
+          {
+            "backup": true,
+            "enabled": true,
+            "id": "67218",
+            "meta": null,
+            "originGroupId": "342856171292123206",
+            "providerType": "ourcdn",
+            "source": "158.160.192.207"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "photo.hotellook.com",
+            "id": "bc8rvkanusozv4rfrk7u"
+          }
+        ],
+        "useNext": true
+      },
+      {
+        "folderId": "b1gafb9nb9otk1snp8g7",
+        "id": "244192102836485752",
+        "name": "www",
+        "origins": [
+          {
+            "backup": false,
+            "enabled": true,
+            "id": "65075",
+            "meta": null,
+            "originGroupId": "244192102836485752",
+            "providerType": "ourcdn",
+            "source": "web-proxy.gp.ru-central-1.k8s.ext.avs.io"
+          }
+        ],
+        "providerType": "ourcdn",
+        "resourcesMetadata": [
+          {
+            "cname": "www.aviasales.ru",
+            "id": "bc8rrb7eg3m2xunpo3le"
+          }
+        ],
+        "useNext": true
+      }
+    ]
+  }
+}

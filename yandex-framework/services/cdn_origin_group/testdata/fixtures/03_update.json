@@ -1,0 +1,64 @@
+{
+  "step": "03_update",
+  "request": {
+    "folderId": "b1gafb9nb9otk1snp8g7",
+    "groupName": "tf-capture-1779798146-v2",
+    "originGroupId": "2637811640980909910",
+    "origins": [
+      {
+        "backup": false,
+        "enabled": true,
+        "meta": null,
+        "source": "a.example.com"
+      },
+      {
+        "backup": false,
+        "enabled": true,
+        "meta": null,
+        "source": "c.example.com"
+      }
+    ],
+    "useNext": false
+  },
+  "response": {
+    "createdAt": "2026-05-26T12:22:30.366889Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Update origin group",
+    "done": true,
+    "id": "bc8oidpy2mhxz2j3ufzr",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.UpdateOriginGroupMetadata",
+      "originGroupId": "2637811640980909910"
+    },
+    "modifiedAt": "2026-05-26T12:22:30.366889Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.OriginGroup",
+      "folderId": "b1gafb9nb9otk1snp8g7",
+      "id": "2637811640980909910",
+      "name": "tf-capture-1779798146-v2",
+      "origins": [
+        {
+          "backup": false,
+          "enabled": true,
+          "id": "89454",
+          "meta": null,
+          "originGroupId": "2637811640980909910",
+          "providerType": "ourcdn",
+          "source": "a.example.com"
+        },
+        {
+          "backup": false,
+          "enabled": true,
+          "id": "89455",
+          "meta": null,
+          "originGroupId": "2637811640980909910",
+          "providerType": "ourcdn",
+          "source": "c.example.com"
+        }
+      ],
+      "providerType": "ourcdn",
+      "resourcesMetadata": [],
+      "useNext": false
+    }
+  }
+}
