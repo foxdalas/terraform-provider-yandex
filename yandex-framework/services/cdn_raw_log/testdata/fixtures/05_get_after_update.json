@@ -1,0 +1,14 @@
+{
+  "step": "05_get_after_update",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65"
+  },
+  "response": {
+    "settings": {
+      "bucketName": "avs-cdn-logs",
+      "bucketRegion": "ru-central1",
+      "filePrefix": "capture-v2"
+    },
+    "status": "RAW_LOGS_STATUS_OK"
+  }
+}

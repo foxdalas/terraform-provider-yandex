@@ -1,0 +1,25 @@
+{
+  "step": "06_deactivate",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65"
+  },
+  "response": {
+    "createdAt": "2026-05-26T09:28:05.862586Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Deactivate Raw Logs",
+    "done": true,
+    "id": "bc847u3zat3k4cmlyvjv",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.DeactivateRawLogsMetadata",
+      "resourceId": "bc8rzybpeu2o3ha7jo65"
+    },
+    "modifiedAt": "2026-05-26T09:28:05.862586Z",
+    "response": {
+      "@type": "type.googleapis.com/google.protobuf.Any",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.Empty",
+        "value": {}
+      }
+    }
+  }
+}

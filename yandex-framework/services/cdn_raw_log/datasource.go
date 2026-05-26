@@ -19,10 +19,20 @@ var (
 
 type cdnRawLogDataSource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived from
+	// providerConfig. Set by tests; nil in production.
+	backend rawLogsBackend
 }
 
 func NewDataSource() datasource.DataSource {
 	return &cdnRawLogDataSource{}
+}
+
+func (d *cdnRawLogDataSource) api() rawLogsBackend {
+	if d.backend != nil {
+		return d.backend
+	}
+	return newSDKBackend(d.providerConfig)
 }
 
 func (d *cdnRawLogDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -64,9 +74,7 @@ func (d *cdnRawLogDataSource) Read(ctx context.Context, req datasource.ReadReque
 		"resource_id": resourceID,
 	})
 
-	rawLog, err := d.providerConfig.SDK.CDN().RawLogs().Get(ctx, &cdn.GetRawLogsRequest{
-		ResourceId: resourceID,
-	})
+	rawLog, err := d.api().Get(ctx, &cdn.GetRawLogsRequest{ResourceId: resourceID})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading CDN Raw Log",

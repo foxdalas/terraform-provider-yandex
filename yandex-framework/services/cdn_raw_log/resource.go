@@ -23,10 +23,35 @@ var (
 
 type cdnRawLogResource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived from
+	// providerConfig. Set by tests; nil in production.
+	backend rawLogsBackend
 }
 
 func NewResource() resource.Resource {
 	return &cdnRawLogResource{}
+}
+
+func (r *cdnRawLogResource) api() rawLogsBackend {
+	if r.backend != nil {
+		return r.backend
+	}
+	return newSDKBackend(r.providerConfig)
+}
+
+func rawLogsSettingsFromPlan(s *Settings) *cdn.RawLogsSettings {
+	if s == nil {
+		return nil
+	}
+	region := s.BucketRegion.ValueString()
+	if s.BucketRegion.IsNull() {
+		region = "ru-central1"
+	}
+	return &cdn.RawLogsSettings{
+		BucketName:   s.BucketName.ValueString(),
+		BucketRegion: region,
+		FilePrefix:   s.FilePrefix.ValueString(),
+	}
 }
 
 func (r *cdnRawLogResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -64,51 +89,25 @@ func (r *cdnRawLogResource) Create(ctx context.Context, req resource.CreateReque
 
 	resourceID := plan.ResourceID.ValueString()
 
-	activateReq := &cdn.ActivateRawLogsRequest{
-		ResourceId: resourceID,
-	}
-
-	if plan.Settings != nil {
-		activateReq.Settings = &cdn.RawLogsSettings{
-			BucketName: plan.Settings.BucketName.ValueString(),
-			BucketRegion: func() string {
-				if !plan.Settings.BucketRegion.IsNull() {
-					return plan.Settings.BucketRegion.ValueString()
-				}
-				return "ru-central1"
-			}(),
-			FilePrefix: plan.Settings.FilePrefix.ValueString(),
-		}
-	}
-
 	tflog.Debug(ctx, "Creating CDN Raw Log", map[string]interface{}{
 		"resource_id": resourceID,
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(
-		r.providerConfig.SDK.CDN().RawLogs().Activate(ctx, activateReq),
-	)
+	err := r.api().Activate(ctx, &cdn.ActivateRawLogsRequest{
+		ResourceId: resourceID,
+		Settings:   rawLogsSettingsFromPlan(plan.Settings),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error activating CDN Raw Logs",
-			fmt.Sprintf("Error while requesting API to activate CDN Raw Logs: %s", err),
-		)
-		return
-	}
-
-	err = op.Wait(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error activating CDN Raw Logs",
-			fmt.Sprintf("Error while waiting for operation to complete: %s", err),
+			fmt.Sprintf("Error while activating CDN Raw Logs: %s", err),
 		)
 		return
 	}
 
 	plan.ID = types.StringValue(resourceID)
 
-	// Get the current status
-	rawLog, err := r.getRawLog(ctx, resourceID)
+	rawLog, err := r.api().Get(ctx, &cdn.GetRawLogsRequest{ResourceId: resourceID})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading CDN Raw Log",
@@ -136,7 +135,7 @@ func (r *cdnRawLogResource) Read(ctx context.Context, req resource.ReadRequest, 
 		"resource_id": resourceID,
 	})
 
-	rawLog, err := r.getRawLog(ctx, resourceID)
+	rawLog, err := r.api().Get(ctx, &cdn.GetRawLogsRequest{ResourceId: resourceID})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			resp.State.RemoveResource(ctx)
@@ -165,56 +164,23 @@ func (r *cdnRawLogResource) Update(ctx context.Context, req resource.UpdateReque
 
 	resourceID := plan.ResourceID.ValueString()
 
-	updateReq := &cdn.UpdateRawLogsRequest{
-		ResourceId: resourceID,
-	}
-
-	if plan.Settings != nil {
-		updateReq.Settings = &cdn.RawLogsSettings{
-			BucketName: plan.Settings.BucketName.ValueString(),
-			BucketRegion: func() string {
-				if !plan.Settings.BucketRegion.IsNull() {
-					return plan.Settings.BucketRegion.ValueString()
-				}
-				return "ru-central1"
-			}(),
-			FilePrefix: plan.Settings.FilePrefix.ValueString(),
-		}
-	}
-
 	tflog.Debug(ctx, "Updating CDN Raw Log", map[string]interface{}{
 		"resource_id": resourceID,
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(
-		r.providerConfig.SDK.CDN().RawLogs().Update(ctx, updateReq),
-	)
+	err := r.api().Update(ctx, &cdn.UpdateRawLogsRequest{
+		ResourceId: resourceID,
+		Settings:   rawLogsSettingsFromPlan(plan.Settings),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating CDN Raw Logs",
-			fmt.Sprintf("Error while requesting API to update CDN Raw Logs: %s", err),
+			fmt.Sprintf("Error while updating CDN Raw Logs: %s", err),
 		)
 		return
 	}
 
-	err = op.Wait(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating CDN Raw Logs",
-			fmt.Sprintf("Error while waiting for operation to complete: %s", err),
-		)
-		return
-	}
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error updating CDN Raw Logs",
-			fmt.Sprintf("Error while waiting for operation to complete: %s", err),
-		)
-		return
-	}
-
-	// Get the updated status
-	rawLog, err := r.getRawLog(ctx, resourceID)
+	rawLog, err := r.api().Get(ctx, &cdn.GetRawLogsRequest{ResourceId: resourceID})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error reading CDN Raw Log",
@@ -242,27 +208,14 @@ func (r *cdnRawLogResource) Delete(ctx context.Context, req resource.DeleteReque
 		"resource_id": resourceID,
 	})
 
-	op, err := r.providerConfig.SDK.WrapOperation(
-		r.providerConfig.SDK.CDN().RawLogs().Deactivate(ctx, &cdn.DeactivateRawLogsRequest{
-			ResourceId: resourceID,
-		}),
-	)
+	err := r.api().Deactivate(ctx, &cdn.DeactivateRawLogsRequest{ResourceId: resourceID})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
 			return
 		}
 		resp.Diagnostics.AddError(
 			"Error deactivating CDN Raw Logs",
-			fmt.Sprintf("Error while requesting API to deactivate CDN Raw Logs: %s", err),
-		)
-		return
-	}
-
-	err = op.Wait(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deactivating CDN Raw Logs",
-			fmt.Sprintf("Error while waiting for operation to complete: %s", err),
+			fmt.Sprintf("Error while deactivating CDN Raw Logs: %s", err),
 		)
 		return
 	}
@@ -270,12 +223,6 @@ func (r *cdnRawLogResource) Delete(ctx context.Context, req resource.DeleteReque
 
 func (r *cdnRawLogResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("resource_id"), req, resp)
-}
-
-func (r *cdnRawLogResource) getRawLog(ctx context.Context, resourceID string) (*cdn.GetRawLogsResponse, error) {
-	return r.providerConfig.SDK.CDN().RawLogs().Get(ctx, &cdn.GetRawLogsRequest{
-		ResourceId: resourceID,
-	})
 }
 
 func (r *cdnRawLogResource) updateStateFromRawLog(state *CDNRawLogResource, rawLog *cdn.GetRawLogsResponse) {

@@ -1,0 +1,32 @@
+{
+  "step": "02_activate",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65",
+    "settings": {
+      "bucketName": "avs-cdn-logs",
+      "bucketRegion": "ru-central1",
+      "filePrefix": "capture"
+    }
+  },
+  "response": {
+    "createdAt": "2026-05-26T09:28:04.480318Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Activate Raw Logs",
+    "done": true,
+    "id": "bc8xy4izrsrd56o3t6hc",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.ActivateRawLogsMetadata",
+      "resourceId": "bc8rzybpeu2o3ha7jo65"
+    },
+    "modifiedAt": "2026-05-26T09:28:04.480318Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.ActivateRawLogsResponse",
+      "settings": {
+        "bucketName": "avs-cdn-logs",
+        "bucketRegion": "ru-central1",
+        "filePrefix": "capture"
+      },
+      "status": "RAW_LOGS_STATUS_OK"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "step": "01_get_initial",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65"
+  },
+  "response": {
+    "settings": null,
+    "status": "RAW_LOGS_STATUS_NOT_ACTIVATED"
+  }
+}

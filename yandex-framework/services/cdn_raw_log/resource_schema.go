@@ -2,13 +2,21 @@ package cdn_raw_log
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
+
+// filePrefixNoTrailingSlash matches the empty string or any string whose last
+// character is not '/'. The CDN Raw Logs API rejects file_prefix values that
+// end with '/' (returns InvalidArgument at Activate/Update time); validating
+// up front surfaces the problem during `terraform plan` instead of `apply`.
+var filePrefixNoTrailingSlash = regexp.MustCompile(`^(.*[^/]|)$`)
 
 func CDNRawLogResourceSchema(ctx context.Context) schema.Schema {
 	return schema.Schema{
@@ -49,12 +57,24 @@ func CDNRawLogResourceSchema(ctx context.Context) schema.Schema {
 						},
 					},
 					"bucket_region": schema.StringAttribute{
-						Optional:            true,
-						MarkdownDescription: "Object Storage bucket region (default: ru-central1)",
+						Optional: true,
+						// Computed + Default lets us populate ru-central1 during plan
+						// rather than silently substituting it during apply — without
+						// Computed, Terraform reports "inconsistent result after apply"
+						// when the user omits the attribute.
+						Computed:            true,
+						Default:             stringdefault.StaticString("ru-central1"),
+						MarkdownDescription: "Object Storage bucket region (defaults to `ru-central1`)",
 					},
 					"file_prefix": schema.StringAttribute{
 						Optional:            true,
-						MarkdownDescription: "Prefix for log files in the bucket",
+						MarkdownDescription: "Prefix for log files in the bucket. Must not end with `/` — the CDN API rejects such values.",
+						Validators: []validator.String{
+							stringvalidator.RegexMatches(
+								filePrefixNoTrailingSlash,
+								"file_prefix must not end with '/'",
+							),
+						},
 					},
 				},
 			},

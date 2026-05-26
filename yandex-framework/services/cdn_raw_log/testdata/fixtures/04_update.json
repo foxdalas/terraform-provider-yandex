@@ -1,0 +1,32 @@
+{
+  "step": "04_update",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65",
+    "settings": {
+      "bucketName": "avs-cdn-logs",
+      "bucketRegion": "ru-central1",
+      "filePrefix": "capture-v2"
+    }
+  },
+  "response": {
+    "createdAt": "2026-05-26T09:28:05.132858Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Update Raw Logs",
+    "done": true,
+    "id": "bc8gjpgn2vicen3m5fev",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.UpdateRawLogsMetadata",
+      "resourceId": "bc8rzybpeu2o3ha7jo65"
+    },
+    "modifiedAt": "2026-05-26T09:28:05.132858Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.UpdateRawLogsResponse",
+      "settings": {
+        "bucketName": "avs-cdn-logs",
+        "bucketRegion": "ru-central1",
+        "filePrefix": "capture-v2"
+      },
+      "status": "RAW_LOGS_STATUS_OK"
+    }
+  }
+}
