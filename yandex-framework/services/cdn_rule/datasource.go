@@ -23,11 +23,21 @@ var (
 
 type cdnRuleDataSource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived
+	// from providerConfig. Set by tests; nil in production.
+	backend ruleBackend
 }
 
 // NewDataSource creates a new CDN rule data source
 func NewDataSource() datasource.DataSource {
 	return &cdnRuleDataSource{}
+}
+
+func (d *cdnRuleDataSource) api() ruleBackend {
+	if d.backend != nil {
+		return d.backend
+	}
+	return newSDKBackend(d.providerConfig)
 }
 
 func (d *cdnRuleDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -121,7 +131,7 @@ func (d *cdnRuleDataSource) Read(ctx context.Context, req datasource.ReadRequest
 		"rule_id":     ruleID,
 	})
 
-	rule, err := d.providerConfig.SDK.CDN().ResourceRules().Get(ctx, &cdn.GetResourceRuleRequest{
+	rule, err := d.api().Get(ctx, &cdn.GetResourceRuleRequest{
 		ResourceId: resourceID,
 		RuleId:     ruleID,
 	})
@@ -177,7 +187,7 @@ func (d *cdnRuleDataSource) resolveCDNRuleIDByName(ctx context.Context, resource
 	})
 
 	// List all rules for the resource
-	listResp, err := d.providerConfig.SDK.CDN().ResourceRules().List(ctx, &cdn.ListResourceRulesRequest{
+	listResp, err := d.api().List(ctx, &cdn.ListResourceRulesRequest{
 		ResourceId: resourceID,
 	})
 	if err != nil {

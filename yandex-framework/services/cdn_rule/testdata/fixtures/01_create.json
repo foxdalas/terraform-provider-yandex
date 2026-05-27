@@ -1,0 +1,97 @@
+{
+  "step": "01_create",
+  "request": {
+    "name": "tf-capture-1779799751",
+    "options": null,
+    "resourceId": "bc8rzybpeu2o3ha7jo65",
+    "rulePattern": "^/api/.*",
+    "weight": "5"
+  },
+  "response": {
+    "createdAt": "2026-05-26T12:49:14.867095Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Create resource rule",
+    "done": true,
+    "id": "bc8obhcbhvpvycfnczqh",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.CreateResourceRuleMetadata",
+      "resourceId": "bc8rzybpeu2o3ha7jo65",
+      "ruleId": "16677"
+    },
+    "modifiedAt": "2026-05-26T12:49:14.867095Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.Rule",
+      "id": "16677",
+      "name": "tf-capture-1779799751",
+      "options": {
+        "allowedHttpMethods": null,
+        "browserCacheSettings": {
+          "enabled": false,
+          "value": "0"
+        },
+        "cacheHttpHeaders": null,
+        "compressionOptions": null,
+        "cors": null,
+        "customServerName": {
+          "enabled": false,
+          "value": ""
+        },
+        "disableCache": null,
+        "disableProxyForceRanges": null,
+        "edgeCacheSettings": {
+          "defaultValue": "86400",
+          "enabled": true
+        },
+        "followRedirects": null,
+        "geoAcl": null,
+        "headerFilter": null,
+        "hostOptions": {
+          "forwardHostHeader": {
+            "enabled": true,
+            "value": true
+          }
+        },
+        "ignoreCookie": {
+          "enabled": true,
+          "value": true
+        },
+        "ipAddressAcl": null,
+        "proxyCacheMethodsSet": null,
+        "queryParamsOptions": {
+          "ignoreQueryString": {
+            "enabled": true,
+            "value": true
+          }
+        },
+        "redirectOptions": null,
+        "referrerAcl": null,
+        "rewrite": null,
+        "secureKey": {
+          "enabled": false,
+          "key": "",
+          "type": "DISABLE_IP_SIGNING"
+        },
+        "slice": {
+          "enabled": false,
+          "value": false
+        },
+        "stale": {
+          "enabled": false,
+          "value": []
+        },
+        "staticHeaders": {
+          "enabled": true,
+          "value": {}
+        },
+        "staticRequestHeaders": {
+          "enabled": true,
+          "value": {}
+        },
+        "staticResponse": null,
+        "websockets": null
+      },
+      "rulePattern": "^/api/.*",
+      "weight": "5"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "step": "06_delete",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65",
+    "ruleId": "16677"
+  },
+  "response": {
+    "createdAt": "2026-05-26T12:49:16.754695Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Delete resource rule",
+    "done": true,
+    "id": "bc8fvsrlbiwssohqmpce",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.DeleteResourceRuleMetadata",
+      "resourceId": "bc8rzybpeu2o3ha7jo65",
+      "ruleId": "16677"
+    },
+    "modifiedAt": "2026-05-26T12:49:16.754695Z",
+    "response": {
+      "@type": "type.googleapis.com/google.protobuf.Any",
+      "value": {
+        "@type": "type.googleapis.com/google.protobuf.Empty",
+        "value": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,539 @@
+{
+  "step": "05_list",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65"
+  },
+  "response": {
+    "rules": [
+      {
+        "id": "16682",
+        "name": "tf-capture-1779799751-v2",
+        "options": {
+          "allowedHttpMethods": null,
+          "browserCacheSettings": {
+            "enabled": false,
+            "value": "0"
+          },
+          "cacheHttpHeaders": null,
+          "compressionOptions": null,
+          "cors": null,
+          "customServerName": {
+            "enabled": false,
+            "value": ""
+          },
+          "disableCache": null,
+          "disableProxyForceRanges": null,
+          "edgeCacheSettings": {
+            "defaultValue": "86400",
+            "enabled": true
+          },
+          "followRedirects": null,
+          "geoAcl": null,
+          "headerFilter": null,
+          "hostOptions": {
+            "forwardHostHeader": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "ignoreCookie": {
+            "enabled": true,
+            "value": true
+          },
+          "ipAddressAcl": null,
+          "proxyCacheMethodsSet": null,
+          "queryParamsOptions": {
+            "ignoreQueryString": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "redirectOptions": null,
+          "referrerAcl": null,
+          "rewrite": null,
+          "secureKey": {
+            "enabled": false,
+            "key": "",
+            "type": "DISABLE_IP_SIGNING"
+          },
+          "slice": {
+            "enabled": false,
+            "value": false
+          },
+          "stale": {
+            "enabled": false,
+            "value": []
+          },
+          "staticHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticRequestHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticResponse": null,
+          "websockets": null
+        },
+        "rulePattern": "^/api/.*",
+        "weight": "5"
+      },
+      {
+        "id": "16681",
+        "name": "main",
+        "options": {
+          "allowedHttpMethods": {
+            "enabled": true,
+            "value": [
+              "GET",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "browserCacheSettings": {
+            "enabled": false,
+            "value": "0"
+          },
+          "cacheHttpHeaders": null,
+          "compressionOptions": {
+            "gzipOn": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "cors": null,
+          "customServerName": {
+            "enabled": false,
+            "value": ""
+          },
+          "disableCache": null,
+          "disableProxyForceRanges": {
+            "enabled": false,
+            "value": false
+          },
+          "edgeCacheSettings": {
+            "enabled": true,
+            "value": {
+              "customValues": {},
+              "simpleValue": "345600"
+            }
+          },
+          "followRedirects": null,
+          "geoAcl": {
+            "countries": [],
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED"
+          },
+          "headerFilter": {
+            "enabled": false,
+            "headers": []
+          },
+          "hostOptions": null,
+          "ignoreCookie": {
+            "enabled": true,
+            "value": false
+          },
+          "ipAddressAcl": null,
+          "proxyCacheMethodsSet": {
+            "enabled": false,
+            "value": false
+          },
+          "queryParamsOptions": {
+            "ignoreQueryString": {
+              "enabled": false,
+              "value": false
+            }
+          },
+          "redirectOptions": null,
+          "referrerAcl": {
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED",
+            "referrers": []
+          },
+          "rewrite": {
+            "body": "^/$ /index.html",
+            "enabled": true,
+            "flag": "BREAK"
+          },
+          "secureKey": {
+            "enabled": false,
+            "key": "",
+            "type": "DISABLE_IP_SIGNING"
+          },
+          "slice": {
+            "enabled": true,
+            "value": false
+          },
+          "stale": {
+            "enabled": false,
+            "value": []
+          },
+          "staticHeaders": {
+            "enabled": true,
+            "value": {
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+              "Via": "",
+              "X-Amz-Cf-Id": "",
+              "X-Amz-Cf-pop": "",
+              "X-Amz-Server-Side-Encryption": "",
+              "X-Cache": ""
+            }
+          },
+          "staticRequestHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticResponse": {
+            "code": "0",
+            "content": "",
+            "enabled": false
+          },
+          "websockets": null
+        },
+        "rulePattern": "^/$",
+        "weight": "50"
+      },
+      {
+        "id": "16678",
+        "name": "my",
+        "options": {
+          "allowedHttpMethods": {
+            "enabled": true,
+            "value": [
+              "GET",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "browserCacheSettings": {
+            "enabled": false,
+            "value": "0"
+          },
+          "cacheHttpHeaders": null,
+          "compressionOptions": {
+            "gzipOn": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "cors": null,
+          "customServerName": {
+            "enabled": false,
+            "value": ""
+          },
+          "disableCache": null,
+          "disableProxyForceRanges": {
+            "enabled": false,
+            "value": false
+          },
+          "edgeCacheSettings": {
+            "enabled": true,
+            "value": {
+              "customValues": {},
+              "simpleValue": "345600"
+            }
+          },
+          "followRedirects": null,
+          "geoAcl": {
+            "countries": [],
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED"
+          },
+          "headerFilter": {
+            "enabled": false,
+            "headers": []
+          },
+          "hostOptions": null,
+          "ignoreCookie": {
+            "enabled": true,
+            "value": false
+          },
+          "ipAddressAcl": null,
+          "proxyCacheMethodsSet": {
+            "enabled": false,
+            "value": false
+          },
+          "queryParamsOptions": {
+            "ignoreQueryString": {
+              "enabled": false,
+              "value": false
+            }
+          },
+          "redirectOptions": null,
+          "referrerAcl": {
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED",
+            "referrers": []
+          },
+          "rewrite": {
+            "body": "^(.*)$ /my.html",
+            "enabled": true,
+            "flag": "BREAK"
+          },
+          "secureKey": {
+            "enabled": false,
+            "key": "",
+            "type": "DISABLE_IP_SIGNING"
+          },
+          "slice": {
+            "enabled": true,
+            "value": false
+          },
+          "stale": {
+            "enabled": false,
+            "value": []
+          },
+          "staticHeaders": {
+            "enabled": true,
+            "value": {
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+              "Via": "",
+              "X-Amz-Cf-Id": "",
+              "X-Amz-Cf-pop": "",
+              "X-Amz-Server-Side-Encryption": "",
+              "X-Cache": ""
+            }
+          },
+          "staticRequestHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticResponse": {
+            "code": "0",
+            "content": "",
+            "enabled": false
+          },
+          "websockets": null
+        },
+        "rulePattern": "^/my(/.*)?$",
+        "weight": "150"
+      },
+      {
+        "id": "16680",
+        "name": "assisted_3ds",
+        "options": {
+          "allowedHttpMethods": {
+            "enabled": true,
+            "value": [
+              "GET",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "browserCacheSettings": {
+            "enabled": false,
+            "value": "0"
+          },
+          "cacheHttpHeaders": null,
+          "compressionOptions": {
+            "gzipOn": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "cors": null,
+          "customServerName": {
+            "enabled": false,
+            "value": ""
+          },
+          "disableCache": null,
+          "disableProxyForceRanges": {
+            "enabled": false,
+            "value": false
+          },
+          "edgeCacheSettings": {
+            "enabled": true,
+            "value": {
+              "customValues": {},
+              "simpleValue": "345600"
+            }
+          },
+          "followRedirects": null,
+          "geoAcl": {
+            "countries": [],
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED"
+          },
+          "headerFilter": {
+            "enabled": false,
+            "headers": []
+          },
+          "hostOptions": null,
+          "ignoreCookie": {
+            "enabled": true,
+            "value": false
+          },
+          "ipAddressAcl": null,
+          "proxyCacheMethodsSet": {
+            "enabled": false,
+            "value": false
+          },
+          "queryParamsOptions": {
+            "ignoreQueryString": {
+              "enabled": false,
+              "value": false
+            }
+          },
+          "redirectOptions": null,
+          "referrerAcl": {
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED",
+            "referrers": []
+          },
+          "rewrite": null,
+          "secureKey": {
+            "enabled": false,
+            "key": "",
+            "type": "DISABLE_IP_SIGNING"
+          },
+          "slice": {
+            "enabled": true,
+            "value": false
+          },
+          "stale": {
+            "enabled": false,
+            "value": []
+          },
+          "staticHeaders": {
+            "enabled": true,
+            "value": {
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+              "Via": "",
+              "X-Amz-Cf-Id": "",
+              "X-Amz-Cf-pop": "",
+              "X-Amz-Server-Side-Encryption": "",
+              "X-Cache": ""
+            }
+          },
+          "staticRequestHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticResponse": {
+            "code": "0",
+            "content": "",
+            "enabled": false
+          },
+          "websockets": null
+        },
+        "rulePattern": "^/assisted_3ds.html$",
+        "weight": "200"
+      },
+      {
+        "id": "16679",
+        "name": "default",
+        "options": {
+          "allowedHttpMethods": {
+            "enabled": true,
+            "value": [
+              "GET",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "browserCacheSettings": {
+            "enabled": false,
+            "value": "0"
+          },
+          "cacheHttpHeaders": null,
+          "compressionOptions": {
+            "gzipOn": {
+              "enabled": true,
+              "value": true
+            }
+          },
+          "cors": null,
+          "customServerName": {
+            "enabled": false,
+            "value": ""
+          },
+          "disableCache": null,
+          "disableProxyForceRanges": {
+            "enabled": false,
+            "value": false
+          },
+          "edgeCacheSettings": {
+            "enabled": true,
+            "value": {
+              "customValues": {},
+              "simpleValue": "345600"
+            }
+          },
+          "followRedirects": null,
+          "geoAcl": {
+            "countries": [],
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED"
+          },
+          "headerFilter": {
+            "enabled": false,
+            "headers": []
+          },
+          "hostOptions": null,
+          "ignoreCookie": {
+            "enabled": true,
+            "value": false
+          },
+          "ipAddressAcl": null,
+          "proxyCacheMethodsSet": {
+            "enabled": false,
+            "value": false
+          },
+          "queryParamsOptions": {
+            "ignoreQueryString": {
+              "enabled": false,
+              "value": false
+            }
+          },
+          "redirectOptions": null,
+          "referrerAcl": {
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED",
+            "referrers": []
+          },
+          "rewrite": {
+            "body": "^(.*)$ $1.html",
+            "enabled": true,
+            "flag": "BREAK"
+          },
+          "secureKey": {
+            "enabled": false,
+            "key": "",
+            "type": "DISABLE_IP_SIGNING"
+          },
+          "slice": {
+            "enabled": true,
+            "value": false
+          },
+          "stale": {
+            "enabled": false,
+            "value": []
+          },
+          "staticHeaders": {
+            "enabled": true,
+            "value": {
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+              "Via": "",
+              "X-Amz-Cf-Id": "",
+              "X-Amz-Cf-pop": "",
+              "X-Amz-Server-Side-Encryption": "",
+              "X-Cache": ""
+            }
+          },
+          "staticRequestHeaders": {
+            "enabled": true,
+            "value": {}
+          },
+          "staticResponse": {
+            "code": "0",
+            "content": "",
+            "enabled": false
+          },
+          "websockets": null
+        },
+        "rulePattern": "^/.*",
+        "weight": "9999"
+      }
+    ]
+  }
+}

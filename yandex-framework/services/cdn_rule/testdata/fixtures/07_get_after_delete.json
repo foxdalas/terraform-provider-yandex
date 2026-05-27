@@ -1,0 +1,16 @@
+{
+  "step": "07_get_after_delete",
+  "request": {
+    "resourceId": "bc8rzybpeu2o3ha7jo65",
+    "ruleId": "16677"
+  },
+  "response": {
+    "id": "0",
+    "name": "",
+    "options": null,
+    "rulePattern": "",
+    "weight": "0"
+  },
+  "grpc_code": "NotFound",
+  "error": "rpc error: code = NotFound desc = entity not found"
+}
