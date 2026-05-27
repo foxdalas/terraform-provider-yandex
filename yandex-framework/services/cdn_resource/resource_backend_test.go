@@ -459,6 +459,49 @@ func TestResourceRead_NotFound_RemovesResource(t *testing.T) {
 // Update
 // -----------------------------------------------------------------------------
 
+// TestResourceUpdate_PreservesUpdatedAtFromAPI pins down issue [1] from
+// CDN_PROVIDER_TEST_ISSUES.md: after Update, updated_at must reflect the
+// fresh value from the API Get, not plan.UpdatedAt (which is `unknown`
+// because the schema dropped UseStateForUnknown — so propagating it into
+// state would trip Terraform's "provider returned unknown value" error).
+func TestResourceUpdate_PreservesUpdatedAtFromAPI(t *testing.T) {
+	ctx := context.Background()
+	freshTime := time.Date(2026, 5, 27, 12, 34, 56, 0, time.UTC)
+	be := &fakeResourceBackend{
+		getFn: func(_ context.Context, _ *cdn.GetResourceRequest) (*cdn.Resource, error) {
+			res := cannedResource("res-1", "a", "test-folder", 1, false)
+			res.UpdatedAt = timestamppb.New(freshTime)
+			return res, nil
+		},
+	}
+	r := newResourceForTest(be)
+
+	plan := newResourcePlan(t, CDNResourceModel{
+		ID:             types.StringValue("res-1"),
+		Cname:          types.StringValue("a"),
+		OriginGroupID:  types.StringValue("1"),
+		Active:         types.BoolValue(false),
+		OriginProtocol: types.StringValue("http"),
+	})
+	state := newResourceState(t, CDNResourceModel{
+		ID:             types.StringValue("res-1"),
+		Cname:          types.StringValue("a"),
+		OriginGroupID:  types.StringValue("1"),
+		Active:         types.BoolValue(true),
+		OriginProtocol: types.StringValue("http"),
+	})
+
+	resp := resource.UpdateResponse{State: state}
+	r.Update(ctx, resource.UpdateRequest{Plan: plan, State: state}, &resp)
+
+	require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+	got := readResourceModel(t, resp.State)
+	assert.False(t, got.UpdatedAt.IsUnknown(), "updated_at must NOT be unknown after Update")
+	assert.False(t, got.UpdatedAt.IsNull(), "updated_at must be populated from API response")
+	assert.Equal(t, freshTime.Format(time.RFC3339), got.UpdatedAt.ValueString(),
+		"updated_at must come from API Get, not from plan")
+}
+
 func TestResourceUpdate_ActiveFlip(t *testing.T) {
 	ctx := context.Background()
 	be := &fakeResourceBackend{

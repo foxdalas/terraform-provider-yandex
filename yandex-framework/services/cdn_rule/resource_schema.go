@@ -62,6 +62,10 @@ func CDNRuleSchema(ctx context.Context) schema.Schema {
 					stringvalidator.LengthBetween(1, 50),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[^-]*$`), "Rule name cannot contain dash (-) character"),
 				},
+				// YC's UpdateResourceRule has clone-with-new-id semantics — an
+				// "in-place" change actually recreates the rule under a new id
+				// (see TestUpdate_RenumberFromMetadata). Forcing recreation in
+				// the plan keeps Terraform's intent honest.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplaceIfConfigured(),
 				},

@@ -13,6 +13,47 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+// shieldingLocationValidator validates a Yandex Cloud CDN shielding location
+// ID. The framework-validators stringvalidator.OneOf formats its expected
+// values with %q on types.String values whose String() method already adds
+// quotes — yielding the unreadable `["\"1\"" "\"130\""]` message. This
+// validator renders the list cleanly as `1, 130`.
+type shieldingLocationValidator struct {
+	allowed []string
+}
+
+// NewShieldingLocationValidator returns a validator restricting the value to
+// the listed shielding location IDs. The IDs map to specific Yandex Cloud CDN
+// shielding sites (see the docs link in the schema description).
+func NewShieldingLocationValidator(allowed ...string) validator.String {
+	return &shieldingLocationValidator{allowed: allowed}
+}
+
+func (v *shieldingLocationValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	got := req.ConfigValue.ValueString()
+	for _, a := range v.allowed {
+		if got == a {
+			return
+		}
+	}
+	resp.Diagnostics.Append(validatordiag.InvalidAttributeValueMatchDiagnostic(
+		req.Path,
+		v.Description(ctx),
+		got,
+	))
+}
+
+func (v *shieldingLocationValidator) Description(_ context.Context) string {
+	return fmt.Sprintf("shielding location id must be one of: %s", strings.Join(v.allowed, ", "))
+}
+
+func (v *shieldingLocationValidator) MarkdownDescription(ctx context.Context) string {
+	return v.Description(ctx)
+}
+
 // rewriteBodyValidator validates the format of rewrite body pattern
 type rewriteBodyValidator struct{}
 

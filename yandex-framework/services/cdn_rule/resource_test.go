@@ -3,11 +3,14 @@ package cdn_rule
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/stretchr/testify/assert"
@@ -986,6 +989,127 @@ func TestImportState_BadFormat(t *testing.T) {
 // parseCDNRuleID (pure helper)
 // -----------------------------------------------------------------------------
 
+// TestCreate_AllowedHTTPMethodsPreserved pins down issue [7] from
+// CDN_PROVIDER_TEST_ISSUES.md: when the user configures
+// allowed_http_methods=["GET","HEAD","OPTIONS"] (which equals the API
+// defaults), Read after Create must not silently null the field — that
+// trips Terraform's "Provider produced inconsistent result" check and
+// marks the rule as tainted.
+//
+// The fix is in flattenOptions / readRuleInto: the prior plan options are
+// threaded into FlattenCDNResourceOptions so isDefaultAllowedHttpMethods's
+// fallback to null only fires when the user truly did not configure it.
+func TestCreate_AllowedHTTPMethodsPreserved(t *testing.T) {
+	ctx := context.Background()
+
+	apiOptions := &cdn.ResourceOptions{
+		AllowedHttpMethods: &cdn.ResourceOptions_StringsListOption{
+			Enabled: true,
+			Value:   []string{"GET", "HEAD", "OPTIONS"},
+		},
+	}
+
+	// Build a properly-typed plan options list with AllowedHTTPMethods set.
+	// Constructing CDNOptionsModel via Go literals leaves nested list/map
+	// elem-types missing on zero-value fields and trips ObjectValueFrom's
+	// type-validation, so flattenBaseOptionsModel pre-fills every nested
+	// container with a typed-null value first.
+	base := flattenBaseOptionsModel()
+	allowed, listDiags := types.ListValue(types.StringType, []attr.Value{
+		types.StringValue("GET"),
+		types.StringValue("HEAD"),
+		types.StringValue("OPTIONS"),
+	})
+	require.False(t, listDiags.HasError(), "%v", listDiags)
+	base.AllowedHTTPMethods = allowed
+
+	planOptions, planDiags := types.ListValueFrom(ctx, types.ObjectType{
+		AttrTypes: cdn_resource.GetCDNOptionsAttrTypes(),
+	}, []cdn_resource.CDNOptionsModel{base})
+	require.False(t, planDiags.HasError(), "%v", planDiags)
+
+	be := &fakeBackend{
+		createFn: func(_ context.Context, _ *cdn.CreateResourceRuleRequest) (int64, error) {
+			return 1, nil
+		},
+		// Server returns exactly the defaults that the user asked for; without
+		// the plan-threading fix, flatten would drop these to null.
+		getFn: func(_ context.Context, _ *cdn.GetResourceRuleRequest) (*cdn.Rule, error) {
+			return &cdn.Rule{
+				Id:          1,
+				Name:        "r",
+				RulePattern: `.*`,
+				Options:     apiOptions,
+			}, nil
+		},
+	}
+	r := newResourceForTest(be)
+
+	plan := newPlan(t, CDNRuleModel{
+		ResourceID:  types.StringValue("res-1"),
+		Name:        types.StringValue("r"),
+		RulePattern: types.StringValue(`.*`),
+		Weight:      types.Int64Value(0),
+		Options:     planOptions,
+	})
+	resp := resource.CreateResponse{State: emptyState(t)}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, &resp)
+
+	require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+	got := readState(t, resp.State)
+
+	require.False(t, got.Options.IsNull(), "options list must not be null after Create")
+	var gotModels []cdn_resource.CDNOptionsModel
+	require.False(t, got.Options.ElementsAs(ctx, &gotModels, false).HasError())
+	require.Len(t, gotModels, 1)
+	require.False(t, gotModels[0].AllowedHTTPMethods.IsNull(),
+		"allowed_http_methods must survive Create→Read when user asked for the API defaults")
+
+	var methods []string
+	require.False(t, gotModels[0].AllowedHTTPMethods.ElementsAs(ctx, &methods, false).HasError())
+	assert.ElementsMatch(t, []string{"GET", "HEAD", "OPTIONS"}, methods,
+		"allowed_http_methods round-trips through Create→Read intact")
+}
+
+// flattenBaseOptionsModel builds a CDNOptionsModel whose every list/map/nested
+// field is a typed-null value. Constructing one from scratch with Go literals
+// leaves elem-types missing on List/Map zero values and trips
+// ObjectValueFrom's type-validation.
+func flattenBaseOptionsModel() cdn_resource.CDNOptionsModel {
+	strList := types.ListNull(types.StringType)
+	strMap := types.MapNull(types.StringType)
+	nestedListNull := func(at map[string]attr.Type) types.List {
+		return types.ListNull(types.ObjectType{AttrTypes: at})
+	}
+	return cdn_resource.CDNOptionsModel{
+		EdgeCacheSettings:     nestedListNull(cdn_resource.GetEdgeCacheSettingsAttrTypes()),
+		BrowserCacheSettings:  nestedListNull(map[string]attr.Type{"enabled": types.BoolType, "cache_time": types.Int64Type}),
+		CacheHTTPHeaders:      strList,
+		QueryParamsWhitelist:  strList,
+		QueryParamsBlacklist:  strList,
+		Cors:                  strList,
+		AllowedHTTPMethods:    strList,
+		Stale:                 strList,
+		StaticResponseHeaders: strMap,
+		StaticRequestHeaders:  strMap,
+		IPAddressACL: nestedListNull(map[string]attr.Type{
+			"policy_type":     types.StringType,
+			"excepted_values": types.ListType{ElemType: types.StringType},
+		}),
+		Rewrite: nestedListNull(map[string]attr.Type{
+			"enabled": types.BoolType,
+			"body":    types.StringType,
+			"flag":    types.StringType,
+		}),
+		BrotliCompression: strList,
+		GeoACL:            nestedListNull(cdn_resource.GetGeoACLAttrTypes()),
+		ReferrerACL:       nestedListNull(cdn_resource.GetReferrerACLAttrTypes()),
+		HeaderFilter:      nestedListNull(cdn_resource.GetHeaderFilterAttrTypes()),
+		FollowRedirects:   nestedListNull(cdn_resource.GetFollowRedirectsAttrTypes()),
+		StaticResponseOpt: nestedListNull(cdn_resource.GetStaticResponseAttrTypes()),
+	}
+}
+
 func TestParseCDNRuleID(t *testing.T) {
 	cases := []struct {
 		in       string
@@ -1016,3 +1140,63 @@ func TestParseCDNRuleID(t *testing.T) {
 	}
 }
 
+// TestSchema_ForceReplaceOnRuleChanges pins down the intentional schema
+// decision around issue [11] in CDN_PROVIDER_TEST_ISSUES.md. The YC API's
+// UpdateResourceRule has clone-with-new-id semantics — every "in-place"
+// change actually recreates the rule under a new id (see
+// TestUpdate_RenumberFromMetadata). Surfacing that as `forces replacement`
+// in `terraform plan` is honest; hiding it behind a fake in-place Update
+// would still recreate the rule but without warning the operator.
+//
+// If you find yourself flipping this test, make sure the API has actually
+// gained in-place update support — otherwise users will be surprised by
+// silent rule id churn.
+func TestSchema_ForceReplaceOnRuleChanges(t *testing.T) {
+	ctx := context.Background()
+	s := CDNRuleSchema(ctx)
+
+	for _, field := range []string{"resource_id", "name", "rule_pattern", "weight"} {
+		t.Run(field, func(t *testing.T) {
+			attr, ok := s.Attributes[field]
+			require.True(t, ok, "attribute %q missing from schema", field)
+			require.True(t, attributeHasRequiresReplace(attr),
+				"attribute %q must require replacement on change; YC API does not support true in-place updates for rules", field)
+		})
+	}
+}
+
+func attributeHasRequiresReplace(attr schema.Attribute) bool {
+	type withStringPM interface {
+		StringPlanModifiers() []planmodifier.String
+	}
+	type withInt64PM interface {
+		Int64PlanModifiers() []planmodifier.Int64
+	}
+	if a, ok := attr.(withStringPM); ok {
+		for _, m := range a.StringPlanModifiers() {
+			if isStringRequiresReplace(m) {
+				return true
+			}
+		}
+	}
+	if a, ok := attr.(withInt64PM); ok {
+		for _, m := range a.Int64PlanModifiers() {
+			if isInt64RequiresReplace(m) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// All requires-replace modifiers in plugin-framework describe themselves as
+// "...destroy and recreate the resource." There is no public API to distinguish
+// requires-replace from any other plan modifier, so we match on the description.
+
+func isStringRequiresReplace(m planmodifier.String) bool {
+	return strings.Contains(strings.ToLower(m.Description(context.Background())), "destroy and recreate")
+}
+
+func isInt64RequiresReplace(m planmodifier.Int64) bool {
+	return strings.Contains(strings.ToLower(m.Description(context.Background())), "destroy and recreate")
+}

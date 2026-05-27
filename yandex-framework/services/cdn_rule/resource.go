@@ -274,7 +274,7 @@ func (r *cdnRuleResource) Update(ctx context.Context, req resource.UpdateRequest
 			ResourceId: resourceID,
 			RuleId:     ruleID,
 		}); cleanupErr != nil {
-			if st, ok := status.FromError(cleanupErr); !(ok && st.Code() == codes.NotFound) {
+			if st, ok := status.FromError(cleanupErr); !ok || st.Code() != codes.NotFound {
 				resp.Diagnostics.AddWarning(
 					"Stale CDN rule could not be deleted after Update",
 					fmt.Sprintf("Update renumbered rule %d → %d, but deleting the old %d failed: %s. "+
@@ -389,6 +389,12 @@ const (
 // model. It separates "drift, drop from state" (readNotFound + nil error)
 // from "transport / unmarshal failure" (non-nil error) so callers can react
 // correctly — wiping state on a transient API error would be wrong.
+//
+// Capturing model.Options before the API call lets flattenOptions tell apart
+// "API returned defaults and user did not configure this field" from
+// "API returned the same defaults the user explicitly asked for". Without it,
+// fields like allowed_http_methods get nulled out and tripping Terraform's
+// "Provider produced inconsistent result" check.
 func (r *cdnRuleResource) readRuleInto(ctx context.Context, model *CDNRuleModel) (readResult, error) {
 	resourceID, ruleID, err := parseCDNRuleID(model.ID.ValueString())
 	if err != nil {
@@ -399,6 +405,8 @@ func (r *cdnRuleResource) readRuleInto(ctx context.Context, model *CDNRuleModel)
 		"resource_id": resourceID,
 		"rule_id":     ruleID,
 	})
+
+	priorOptions := model.Options
 
 	rule, err := r.api().Get(ctx, &cdn.GetResourceRuleRequest{
 		ResourceId: resourceID,
@@ -421,7 +429,7 @@ func (r *cdnRuleResource) readRuleInto(ctx context.Context, model *CDNRuleModel)
 	model.Weight = types.Int64Value(rule.Weight)
 
 	var diags diag.Diagnostics
-	model.Options = flattenOptions(ctx, rule.Options, &diags)
+	model.Options = flattenOptions(ctx, rule.Options, priorOptions, &diags)
 	if diags.HasError() {
 		return readOK, fmt.Errorf("flatten rule options: %v", diags.Errors())
 	}

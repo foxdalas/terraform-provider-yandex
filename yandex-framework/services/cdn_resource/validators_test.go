@@ -676,3 +676,54 @@ func TestEdgeCacheSettingsValidator(t *testing.T) {
 		})
 	}
 }
+
+// TestShieldingLocationValidator_Accepts ensures whitelisted ids pass.
+func TestShieldingLocationValidator_Accepts(t *testing.T) {
+	v := NewShieldingLocationValidator("1", "130")
+	for _, id := range []string{"1", "130"} {
+		t.Run(id, func(t *testing.T) {
+			resp := &validator.StringResponse{}
+			v.ValidateString(context.Background(), validator.StringRequest{
+				Path:        path.Root("shielding"),
+				ConfigValue: types.StringValue(id),
+			}, resp)
+			require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+		})
+	}
+}
+
+// TestShieldingLocationValidator_Rejects ensures the message is clean — no
+// double-quoted ids like `["\"1\"" "\"130\""]` from the upstream OneOf %q
+// rendering bug (issue [12] in CDN_PROVIDER_TEST_ISSUES.md).
+func TestShieldingLocationValidator_Rejects(t *testing.T) {
+	v := NewShieldingLocationValidator("1", "130")
+	resp := &validator.StringResponse{}
+	v.ValidateString(context.Background(), validator.StringRequest{
+		Path:        path.Root("shielding"),
+		ConfigValue: types.StringValue("M9"),
+	}, resp)
+
+	require.True(t, resp.Diagnostics.HasError())
+	detail := resp.Diagnostics.Errors()[0].Detail()
+	assert.Contains(t, detail, "1, 130", "ids should be rendered as a clean comma list, got: %q", detail)
+	assert.NotContains(t, detail, `\"`, "no escaped double quotes in the rendered list, got: %q", detail)
+}
+
+// TestShieldingLocationValidator_SkipsNullAndUnknown documents the standard
+// validator contract: skip null and unknown values silently.
+func TestShieldingLocationValidator_SkipsNullAndUnknown(t *testing.T) {
+	v := NewShieldingLocationValidator("1", "130")
+	for name, val := range map[string]types.String{
+		"null":    types.StringNull(),
+		"unknown": types.StringUnknown(),
+	} {
+		t.Run(name, func(t *testing.T) {
+			resp := &validator.StringResponse{}
+			v.ValidateString(context.Background(), validator.StringRequest{
+				Path:        path.Root("shielding"),
+				ConfigValue: val,
+			}, resp)
+			require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+		})
+	}
+}

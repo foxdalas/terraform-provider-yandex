@@ -572,11 +572,6 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	// Preserve plan value for updated_at to avoid "inconsistent result" error.
-	// UseStateForUnknown() freezes the old timestamp in plan, but API always returns a new one.
-	// The actual value will be picked up on next refresh (Read).
-	newState.UpdatedAt = plan.UpdatedAt
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
