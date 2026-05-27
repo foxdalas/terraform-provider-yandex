@@ -1,0 +1,118 @@
+{
+  "step": "03_update",
+  "request": {
+    "active": false,
+    "labels": {},
+    "options": null,
+    "originGroupId": null,
+    "originProtocol": "ORIGIN_PROTOCOL_UNSPECIFIED",
+    "removeLabels": false,
+    "resourceId": "bc8rtbcoy2bqzj3oifrc",
+    "secondaryHostnames": null,
+    "sslCertificate": null,
+    "tls": null
+  },
+  "response": {
+    "createdAt": "2026-05-27T07:53:17.395737Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Update resource",
+    "done": true,
+    "id": "bc8d7bznr3gckrgjyjnw",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.UpdateResourceMetadata",
+      "resourceId": "bc8rtbcoy2bqzj3oifrc"
+    },
+    "modifiedAt": "2026-05-27T07:53:17.395737Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.Resource",
+      "active": false,
+      "cname": "tf-capture-1779868394.example.com",
+      "createdAt": "2026-05-27T07:53:16.117357Z",
+      "folderId": "b1gafb9nb9otk1snp8g7",
+      "id": "bc8rtbcoy2bqzj3oifrc",
+      "labels": {},
+      "options": {
+        "allowedHttpMethods": null,
+        "browserCacheSettings": {
+          "enabled": false,
+          "value": "0"
+        },
+        "cacheHttpHeaders": null,
+        "compressionOptions": null,
+        "cors": null,
+        "customServerName": {
+          "enabled": false,
+          "value": ""
+        },
+        "disableCache": null,
+        "disableProxyForceRanges": null,
+        "edgeCacheSettings": {
+          "defaultValue": "86400",
+          "enabled": true
+        },
+        "followRedirects": null,
+        "geoAcl": null,
+        "headerFilter": null,
+        "hostOptions": {
+          "forwardHostHeader": {
+            "enabled": true,
+            "value": true
+          }
+        },
+        "ignoreCookie": {
+          "enabled": true,
+          "value": true
+        },
+        "ipAddressAcl": null,
+        "proxyCacheMethodsSet": null,
+        "queryParamsOptions": {
+          "ignoreQueryString": {
+            "enabled": true,
+            "value": true
+          }
+        },
+        "redirectOptions": null,
+        "referrerAcl": null,
+        "rewrite": null,
+        "secureKey": {
+          "enabled": false,
+          "key": "",
+          "type": "DISABLE_IP_SIGNING"
+        },
+        "slice": {
+          "enabled": false,
+          "value": false
+        },
+        "stale": {
+          "enabled": false,
+          "value": []
+        },
+        "staticHeaders": {
+          "enabled": true,
+          "value": {}
+        },
+        "staticRequestHeaders": {
+          "enabled": true,
+          "value": {}
+        },
+        "staticResponse": null,
+        "websockets": null
+      },
+      "originGroupId": "1043764766748930932",
+      "originGroupName": "common-a-com",
+      "originProtocol": "HTTP",
+      "providerCname": "6a506e6a0a0a9c82.topology.gslb.yccdn.ru",
+      "providerType": "ourcdn",
+      "secondaryHostnames": [],
+      "sslCertificate": {
+        "data": null,
+        "status": "READY",
+        "type": "DONT_USE"
+      },
+      "tls": {
+        "profile": "PROFILE_COMPATIBLE"
+      },
+      "updatedAt": "2026-05-27T07:53:17.227967Z"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "step": "06_delete",
+  "request": {
+    "resourceId": "bc8rtbcoy2bqzj3oifrc"
+  },
+  "response": {
+    "createdAt": "2026-05-27T07:53:18.980694Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "delete resource",
+    "done": true,
+    "id": "bc8l5gpiyml5yau3ekov",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.DeleteResourceMetadata",
+      "resourceId": "bc8rtbcoy2bqzj3oifrc"
+    },
+    "modifiedAt": "2026-05-27T07:53:21.144811Z",
+    "response": {
+      "@type": "type.googleapis.com/google.protobuf.Empty",
+      "value": {}
+    }
+  }
+}

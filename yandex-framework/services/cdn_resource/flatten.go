@@ -62,11 +62,7 @@ func FlattenCDNResourceOptions(ctx context.Context, options *cdn.ResourceOptions
 	if options.SecureKey != nil && options.SecureKey.Enabled {
 		opt.SecureKey = types.StringValue(options.SecureKey.Key)
 		// EnableIPURLSigning is derived from SecureKey.Type
-		if options.SecureKey.Type == cdn.SecureKeyURLType_ENABLE_IP_SIGNING {
-			opt.EnableIPURLSigning = types.BoolValue(true)
-		} else {
-			opt.EnableIPURLSigning = types.BoolValue(false)
-		}
+		opt.EnableIPURLSigning = types.BoolValue(options.SecureKey.Type == cdn.SecureKeyURLType_ENABLE_IP_SIGNING)
 	} else {
 		opt.SecureKey = types.StringNull()
 		opt.EnableIPURLSigning = types.BoolNull()
@@ -467,36 +463,39 @@ func flattenEdgeCacheSettings(ctx context.Context, edgeCache *cdn.ResourceOption
 		"default_value": types.Int64Type,
 	}
 
-	// Log what API returned
+	disabledList := func() types.List {
+		listVal, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: edgeCacheAttrTypes,
+		}, []EdgeCacheSettingsModel{{
+			Enabled:      types.BoolValue(false),
+			Value:        types.Int64Null(),
+			CustomValues: types.MapNull(types.Int64Type),
+			DefaultValue: types.Int64Null(),
+		}})
+		diags.Append(d...)
+		return listVal
+	}
+
+	// planWantsDisabled reports whether the plan explicitly had enabled=false:
+	// API may drop the block when we send cache_time=0, but plan expects it preserved.
+	planWantsDisabled := func() bool {
+		if planOptionsModel == nil || planOptionsModel.EdgeCacheSettings.IsNull() || len(planOptionsModel.EdgeCacheSettings.Elements()) == 0 {
+			return false
+		}
+		var planEdgeSettings []EdgeCacheSettingsModel
+		if d := planOptionsModel.EdgeCacheSettings.ElementsAs(ctx, &planEdgeSettings, false); d.HasError() || len(planEdgeSettings) == 0 {
+			return false
+		}
+		planEnabled := planEdgeSettings[0].Enabled
+		return !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool()
+	}
+
 	if edgeCache == nil {
 		tflog.Debug(ctx, "EdgeCacheSettings: API returned nil")
-
-		// CRITICAL: Check if plan had enabled=false
-		// API may delete the block when we send cache_time=0
-		// But plan expects the block with enabled=false, not null!
-		if planOptionsModel != nil && !planOptionsModel.EdgeCacheSettings.IsNull() && len(planOptionsModel.EdgeCacheSettings.Elements()) > 0 {
-			var planEdgeSettings []EdgeCacheSettingsModel
-			planDiags := planOptionsModel.EdgeCacheSettings.ElementsAs(ctx, &planEdgeSettings, false)
-			if !planDiags.HasError() && len(planEdgeSettings) > 0 {
-				planEnabled := planEdgeSettings[0].Enabled
-				if !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool() {
-					// Plan had enabled=false, preserve it in state
-					tflog.Debug(ctx, "EdgeCacheSettings: Plan had enabled=false, preserving in state")
-					edgeCacheModel := EdgeCacheSettingsModel{
-						Enabled:      types.BoolValue(false),
-						Value:        types.Int64Null(),
-						CustomValues: types.MapNull(types.Int64Type),
-						DefaultValue: types.Int64Null(),
-					}
-					edgeCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-						AttrTypes: edgeCacheAttrTypes,
-					}, []EdgeCacheSettingsModel{edgeCacheModel})
-					diags.Append(d...)
-					return edgeCacheList
-				}
-			}
+		if planWantsDisabled() {
+			tflog.Debug(ctx, "EdgeCacheSettings: Plan had enabled=false, preserving in state")
+			return disabledList()
 		}
-
 		return types.ListNull(types.ObjectType{AttrTypes: edgeCacheAttrTypes})
 	}
 
@@ -508,31 +507,10 @@ func flattenEdgeCacheSettings(ctx context.Context, edgeCache *cdn.ResourceOption
 	// We don't expose this in state (return null) UNLESS plan had enabled=false
 	if !edgeCache.Enabled {
 		tflog.Debug(ctx, "EdgeCacheSettings: API returned Enabled=false (use default)")
-
-		// Check if plan had enabled=false (user wanted to disable caching)
-		if planOptionsModel != nil && !planOptionsModel.EdgeCacheSettings.IsNull() && len(planOptionsModel.EdgeCacheSettings.Elements()) > 0 {
-			var planEdgeSettings []EdgeCacheSettingsModel
-			planDiags := planOptionsModel.EdgeCacheSettings.ElementsAs(ctx, &planEdgeSettings, false)
-			if !planDiags.HasError() && len(planEdgeSettings) > 0 {
-				planEnabled := planEdgeSettings[0].Enabled
-				if !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool() {
-					// Plan had enabled=false, preserve it in state
-					tflog.Debug(ctx, "EdgeCacheSettings: Plan had enabled=false, preserving in state")
-					edgeCacheModel := EdgeCacheSettingsModel{
-						Enabled:      types.BoolValue(false),
-						Value:        types.Int64Null(),
-						CustomValues: types.MapNull(types.Int64Type),
-						DefaultValue: types.Int64Null(),
-					}
-					edgeCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-						AttrTypes: edgeCacheAttrTypes,
-					}, []EdgeCacheSettingsModel{edgeCacheModel})
-					diags.Append(d...)
-					return edgeCacheList
-				}
-			}
+		if planWantsDisabled() {
+			tflog.Debug(ctx, "EdgeCacheSettings: Plan had enabled=false, preserving in state")
+			return disabledList()
 		}
-
 		return types.ListNull(types.ObjectType{AttrTypes: edgeCacheAttrTypes})
 	}
 
@@ -564,19 +542,8 @@ func flattenEdgeCacheSettings(ctx context.Context, edgeCache *cdn.ResourceOption
 		}
 	}
 
-	// If caching is disabled (cache_time=0), return enabled=false without value/custom_values
 	if cachingDisabled {
-		edgeCacheModel := EdgeCacheSettingsModel{
-			Enabled:      types.BoolValue(false),
-			Value:        types.Int64Null(),
-			CustomValues: types.MapNull(types.Int64Type),
-			DefaultValue: types.Int64Null(),
-		}
-		edgeCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-			AttrTypes: edgeCacheAttrTypes,
-		}, []EdgeCacheSettingsModel{edgeCacheModel})
-		diags.Append(d...)
-		return edgeCacheList
+		return disabledList()
 	}
 
 	// Caching is enabled with non-zero values
@@ -643,31 +610,36 @@ func flattenBrowserCacheSettings(ctx context.Context, browserCache *cdn.Resource
 		"cache_time": types.Int64Type,
 	}
 
-	// If API returns nil, return null (not configured)
-	if browserCache == nil {
-		// CRITICAL: Check if plan had enabled=false
-		// API may delete the block when we send cache_time=0
-		if planOptionsModel != nil && !planOptionsModel.BrowserCacheSettings.IsNull() && len(planOptionsModel.BrowserCacheSettings.Elements()) > 0 {
-			var planBrowserSettings []BrowserCacheSettingsModel
-			planDiags := planOptionsModel.BrowserCacheSettings.ElementsAs(ctx, &planBrowserSettings, false)
-			if !planDiags.HasError() && len(planBrowserSettings) > 0 {
-				planEnabled := planBrowserSettings[0].Enabled
-				if !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool() {
-					// Plan had enabled=false, preserve it in state
-					tflog.Debug(ctx, "BrowserCacheSettings: Plan had enabled=false, preserving in state")
-					browserCacheModel := BrowserCacheSettingsModel{
-						Enabled:   types.BoolValue(false),
-						CacheTime: types.Int64Null(),
-					}
-					browserCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-						AttrTypes: browserCacheAttrTypes,
-					}, []BrowserCacheSettingsModel{browserCacheModel})
-					diags.Append(d...)
-					return browserCacheList
-				}
-			}
-		}
+	disabledList := func() types.List {
+		listVal, d := types.ListValueFrom(ctx, types.ObjectType{
+			AttrTypes: browserCacheAttrTypes,
+		}, []BrowserCacheSettingsModel{{
+			Enabled:   types.BoolValue(false),
+			CacheTime: types.Int64Null(),
+		}})
+		diags.Append(d...)
+		return listVal
+	}
 
+	// planWantsDisabled reports whether the plan explicitly had enabled=false:
+	// API may drop the block when we send cache_time=0, but plan expects it preserved.
+	planWantsDisabled := func() bool {
+		if planOptionsModel == nil || planOptionsModel.BrowserCacheSettings.IsNull() || len(planOptionsModel.BrowserCacheSettings.Elements()) == 0 {
+			return false
+		}
+		var planBrowserSettings []BrowserCacheSettingsModel
+		if d := planOptionsModel.BrowserCacheSettings.ElementsAs(ctx, &planBrowserSettings, false); d.HasError() || len(planBrowserSettings) == 0 {
+			return false
+		}
+		planEnabled := planBrowserSettings[0].Enabled
+		return !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool()
+	}
+
+	if browserCache == nil {
+		if planWantsDisabled() {
+			tflog.Debug(ctx, "BrowserCacheSettings: Plan had enabled=false, preserving in state")
+			return disabledList()
+		}
 		return types.ListNull(types.ObjectType{AttrTypes: browserCacheAttrTypes})
 	}
 
@@ -675,29 +647,10 @@ func flattenBrowserCacheSettings(ctx context.Context, browserCache *cdn.Resource
 	// We don't expose this in state (return null) UNLESS plan had enabled=false
 	if !browserCache.Enabled {
 		tflog.Debug(ctx, "BrowserCacheSettings: API returned Enabled=false (use default)")
-
-		// Check if plan had enabled=false (user wanted to disable caching)
-		if planOptionsModel != nil && !planOptionsModel.BrowserCacheSettings.IsNull() && len(planOptionsModel.BrowserCacheSettings.Elements()) > 0 {
-			var planBrowserSettings []BrowserCacheSettingsModel
-			planDiags := planOptionsModel.BrowserCacheSettings.ElementsAs(ctx, &planBrowserSettings, false)
-			if !planDiags.HasError() && len(planBrowserSettings) > 0 {
-				planEnabled := planBrowserSettings[0].Enabled
-				if !planEnabled.IsNull() && !planEnabled.IsUnknown() && !planEnabled.ValueBool() {
-					// Plan had enabled=false, preserve it in state
-					tflog.Debug(ctx, "BrowserCacheSettings: Plan had enabled=false, preserving in state")
-					browserCacheModel := BrowserCacheSettingsModel{
-						Enabled:   types.BoolValue(false),
-						CacheTime: types.Int64Null(),
-					}
-					browserCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-						AttrTypes: browserCacheAttrTypes,
-					}, []BrowserCacheSettingsModel{browserCacheModel})
-					diags.Append(d...)
-					return browserCacheList
-				}
-			}
+		if planWantsDisabled() {
+			tflog.Debug(ctx, "BrowserCacheSettings: Plan had enabled=false, preserving in state")
+			return disabledList()
 		}
-
 		return types.ListNull(types.ObjectType{AttrTypes: browserCacheAttrTypes})
 	}
 
@@ -705,15 +658,7 @@ func flattenBrowserCacheSettings(ctx context.Context, browserCache *cdn.Resource
 	// This needs to be translated to user-facing enabled=false
 	if browserCache.Value == 0 {
 		tflog.Debug(ctx, "BrowserCacheSettings: API returned Value=0 (disabled), saving as enabled=false")
-		browserCacheModel := BrowserCacheSettingsModel{
-			Enabled:   types.BoolValue(false),
-			CacheTime: types.Int64Null(),
-		}
-		browserCacheList, d := types.ListValueFrom(ctx, types.ObjectType{
-			AttrTypes: browserCacheAttrTypes,
-		}, []BrowserCacheSettingsModel{browserCacheModel})
-		diags.Append(d...)
-		return browserCacheList
+		return disabledList()
 	}
 
 	// Caching is enabled with non-zero value

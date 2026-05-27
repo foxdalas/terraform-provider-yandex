@@ -335,6 +335,14 @@ func EdgeCacheSettingsDataSourceSchema() schema.ListNestedBlock {
 					ElementType:         types.Int64Type,
 					Computed:            true,
 				},
+				// default_value must mirror what flatten produces: flattenEdgeCacheSettings
+				// fills this attribute when the API returns a DefaultValue variant. Omitting
+				// it makes data source reads explode with a Value Conversion Error.
+				"default_value": schema.Int64Attribute{
+					Description:         "Default cache time in seconds used when the API returns a DefaultValue variant.",
+					MarkdownDescription: "Default cache time in seconds used when the API returns a DefaultValue variant.",
+					Computed:            true,
+				},
 			},
 		},
 	}

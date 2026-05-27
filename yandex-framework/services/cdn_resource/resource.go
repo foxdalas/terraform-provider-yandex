@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,6 +20,15 @@ const (
 	yandexCDNResourceDefaultTimeout = 30 * time.Minute
 )
 
+// MergeField keeps the planned value unless it is null/unknown and state has it set —
+// used to preserve previously-set values for fields not being changed in an Update.
+func MergeField[T attr.Value](plan, state T) T {
+	if (plan.IsNull() || plan.IsUnknown()) && !state.IsNull() {
+		return state
+	}
+	return plan
+}
+
 // Ensure provider defined types fully satisfy framework interfaces
 var (
 	_ resource.Resource                = &cdnResourceResource{}
@@ -28,11 +38,21 @@ var (
 
 type cdnResourceResource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived
+	// from providerConfig. Set by tests; nil in production.
+	backend resourceBackend
 }
 
 // NewResource creates a new CDN resource
 func NewResource() resource.Resource {
 	return &cdnResourceResource{}
+}
+
+func (r *cdnResourceResource) api() resourceBackend {
+	if r.backend != nil {
+		return r.backend
+	}
+	return newSDKBackend(r.providerConfig)
 }
 
 func (r *cdnResourceResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -213,41 +233,16 @@ func (r *cdnResourceResource) Create(ctx context.Context, req resource.CreateReq
 	})
 
 	// Call API
-	op, err := r.providerConfig.SDK.WrapOperation(
-		r.providerConfig.SDK.CDN().Resource().Create(ctx, createReq),
-	)
+	resourceID, err := r.api().Create(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create CDN resource", err.Error())
 		return
 	}
 
-	// Wait for operation to complete
-	err = op.Wait(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to wait for CDN resource creation", err.Error())
-		return
-	}
-
-	// Get resource metadata from operation
-	metadata, err := op.Metadata()
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get operation metadata", err.Error())
-		return
-	}
-
-	resourceMetadata, ok := metadata.(*cdn.CreateResourceMetadata)
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Invalid operation metadata",
-			fmt.Sprintf("Expected *cdn.CreateResourceMetadata, got: %T", metadata),
-		)
-		return
-	}
-
-	plan.ID = types.StringValue(resourceMetadata.ResourceId)
+	plan.ID = types.StringValue(resourceID)
 
 	// Apply shielding configuration if specified
-	if err := applyShieldingFromPlan(ctx, &plan, r.providerConfig.SDK); err != nil {
+	if err := applyShieldingFromPlan(ctx, &plan, r.api()); err != nil {
 		resp.Diagnostics.AddError("Failed to configure shielding", err.Error())
 		return
 	}
@@ -431,31 +426,17 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 				stateOpt := stateOptionsModels[0]
 
 				// Independent Boolean options
-				if (mergedOptions.Slice.IsNull() || mergedOptions.Slice.IsUnknown()) && !stateOpt.Slice.IsNull() {
-					mergedOptions.Slice = stateOpt.Slice
-				}
-				if (mergedOptions.IgnoreCookie.IsNull() || mergedOptions.IgnoreCookie.IsUnknown()) && !stateOpt.IgnoreCookie.IsNull() {
-					mergedOptions.IgnoreCookie = stateOpt.IgnoreCookie
-				}
-				if (mergedOptions.ProxyCacheMethodsSet.IsNull() || mergedOptions.ProxyCacheMethodsSet.IsUnknown()) && !stateOpt.ProxyCacheMethodsSet.IsNull() {
-					mergedOptions.ProxyCacheMethodsSet = stateOpt.ProxyCacheMethodsSet
-				}
-				if (mergedOptions.DisableProxyForceRanges.IsNull() || mergedOptions.DisableProxyForceRanges.IsUnknown()) && !stateOpt.DisableProxyForceRanges.IsNull() {
-					mergedOptions.DisableProxyForceRanges = stateOpt.DisableProxyForceRanges
-				}
+				mergedOptions.Slice = MergeField(mergedOptions.Slice, stateOpt.Slice)
+				mergedOptions.IgnoreCookie = MergeField(mergedOptions.IgnoreCookie, stateOpt.IgnoreCookie)
+				mergedOptions.ProxyCacheMethodsSet = MergeField(mergedOptions.ProxyCacheMethodsSet, stateOpt.ProxyCacheMethodsSet)
+				mergedOptions.DisableProxyForceRanges = MergeField(mergedOptions.DisableProxyForceRanges, stateOpt.DisableProxyForceRanges)
 
 				// Integer options
-				if (mergedOptions.EdgeCacheSettings.IsNull() || mergedOptions.EdgeCacheSettings.IsUnknown()) && !stateOpt.EdgeCacheSettings.IsNull() {
-					mergedOptions.EdgeCacheSettings = stateOpt.EdgeCacheSettings
-				}
-				if (mergedOptions.BrowserCacheSettings.IsNull() || mergedOptions.BrowserCacheSettings.IsUnknown()) && !stateOpt.BrowserCacheSettings.IsNull() {
-					mergedOptions.BrowserCacheSettings = stateOpt.BrowserCacheSettings
-				}
+				mergedOptions.EdgeCacheSettings = MergeField(mergedOptions.EdgeCacheSettings, stateOpt.EdgeCacheSettings)
+				mergedOptions.BrowserCacheSettings = MergeField(mergedOptions.BrowserCacheSettings, stateOpt.BrowserCacheSettings)
 
 				// String options
-				if (mergedOptions.CustomServerName.IsNull() || mergedOptions.CustomServerName.IsUnknown()) && !stateOpt.CustomServerName.IsNull() {
-					mergedOptions.CustomServerName = stateOpt.CustomServerName
-				}
+				mergedOptions.CustomServerName = MergeField(mergedOptions.CustomServerName, stateOpt.CustomServerName)
 				if (mergedOptions.SecureKey.IsNull() || mergedOptions.SecureKey.IsUnknown()) && !stateOpt.SecureKey.IsNull() {
 					mergedOptions.SecureKey = stateOpt.SecureKey
 					mergedOptions.EnableIPURLSigning = stateOpt.EnableIPURLSigning
@@ -465,9 +446,7 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 				// DEPRECATED: cache_http_headers - always null, not merged
 				mergedOptions.CacheHTTPHeaders = types.ListNull(types.StringType)
 
-				if (mergedOptions.Cors.IsNull() || mergedOptions.Cors.IsUnknown()) && !stateOpt.Cors.IsNull() {
-					mergedOptions.Cors = stateOpt.Cors
-				}
+				mergedOptions.Cors = MergeField(mergedOptions.Cors, stateOpt.Cors)
 
 				// Map options - DO NOT merge, user explicitly controls these
 				// Null in plan means "delete/disable", not "preserve state"
@@ -528,32 +507,16 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 				}
 
 				// Nested blocks
-				if (mergedOptions.IPAddressACL.IsNull() || mergedOptions.IPAddressACL.IsUnknown()) && !stateOpt.IPAddressACL.IsNull() {
-					mergedOptions.IPAddressACL = stateOpt.IPAddressACL
-				}
-				if (mergedOptions.Rewrite.IsNull() || mergedOptions.Rewrite.IsUnknown()) && !stateOpt.Rewrite.IsNull() {
-					mergedOptions.Rewrite = stateOpt.Rewrite
-				}
+				mergedOptions.IPAddressACL = MergeField(mergedOptions.IPAddressACL, stateOpt.IPAddressACL)
+				mergedOptions.Rewrite = MergeField(mergedOptions.Rewrite, stateOpt.Rewrite)
 
 				// New options - merge from state if plan is null/unknown
-				if (mergedOptions.Websockets.IsNull() || mergedOptions.Websockets.IsUnknown()) && !stateOpt.Websockets.IsNull() {
-					mergedOptions.Websockets = stateOpt.Websockets
-				}
-				if (mergedOptions.GeoACL.IsNull() || mergedOptions.GeoACL.IsUnknown()) && !stateOpt.GeoACL.IsNull() {
-					mergedOptions.GeoACL = stateOpt.GeoACL
-				}
-				if (mergedOptions.ReferrerACL.IsNull() || mergedOptions.ReferrerACL.IsUnknown()) && !stateOpt.ReferrerACL.IsNull() {
-					mergedOptions.ReferrerACL = stateOpt.ReferrerACL
-				}
-				if (mergedOptions.HeaderFilter.IsNull() || mergedOptions.HeaderFilter.IsUnknown()) && !stateOpt.HeaderFilter.IsNull() {
-					mergedOptions.HeaderFilter = stateOpt.HeaderFilter
-				}
-				if (mergedOptions.FollowRedirects.IsNull() || mergedOptions.FollowRedirects.IsUnknown()) && !stateOpt.FollowRedirects.IsNull() {
-					mergedOptions.FollowRedirects = stateOpt.FollowRedirects
-				}
-				if (mergedOptions.StaticResponseOpt.IsNull() || mergedOptions.StaticResponseOpt.IsUnknown()) && !stateOpt.StaticResponseOpt.IsNull() {
-					mergedOptions.StaticResponseOpt = stateOpt.StaticResponseOpt
-				}
+				mergedOptions.Websockets = MergeField(mergedOptions.Websockets, stateOpt.Websockets)
+				mergedOptions.GeoACL = MergeField(mergedOptions.GeoACL, stateOpt.GeoACL)
+				mergedOptions.ReferrerACL = MergeField(mergedOptions.ReferrerACL, stateOpt.ReferrerACL)
+				mergedOptions.HeaderFilter = MergeField(mergedOptions.HeaderFilter, stateOpt.HeaderFilter)
+				mergedOptions.FollowRedirects = MergeField(mergedOptions.FollowRedirects, stateOpt.FollowRedirects)
+				mergedOptions.StaticResponseOpt = MergeField(mergedOptions.StaticResponseOpt, stateOpt.StaticResponseOpt)
 			}
 		} else if len(stateOptionsModels) > 0 {
 			// No plan options, use state
@@ -578,23 +541,14 @@ func (r *cdnResourceResource) Update(ctx context.Context, req resource.UpdateReq
 			"resource_id": updateReq.ResourceId,
 		})
 
-		op, err := r.providerConfig.SDK.WrapOperation(
-			r.providerConfig.SDK.CDN().Resource().Update(ctx, updateReq),
-		)
-		if err != nil {
+		if err := r.api().Update(ctx, updateReq); err != nil {
 			resp.Diagnostics.AddError("Failed to update CDN resource", err.Error())
-			return
-		}
-
-		err = op.Wait(ctx)
-		if err != nil {
-			resp.Diagnostics.AddError("Failed to wait for CDN resource update", err.Error())
 			return
 		}
 	}
 
 	// Update shielding configuration if changed
-	if err := updateShieldingIfChanged(ctx, &plan, &state, r.providerConfig.SDK); err != nil {
+	if err := updateShieldingIfChanged(ctx, &plan, &state, r.api()); err != nil {
 		resp.Diagnostics.AddError("Failed to update shielding", err.Error())
 		return
 	}
@@ -650,17 +604,8 @@ func (r *cdnResourceResource) Delete(ctx context.Context, req resource.DeleteReq
 		ResourceId: state.ID.ValueString(),
 	}
 
-	op, err := r.providerConfig.SDK.WrapOperation(
-		r.providerConfig.SDK.CDN().Resource().Delete(ctx, deleteReq),
-	)
-	if err != nil {
+	if err := r.api().Delete(ctx, deleteReq); err != nil {
 		resp.Diagnostics.AddError("Failed to delete CDN resource", err.Error())
-		return
-	}
-
-	err = op.Wait(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to wait for CDN resource deletion", err.Error())
 		return
 	}
 }
@@ -679,7 +624,7 @@ func (r *cdnResourceResource) readResourceToState(ctx context.Context, state *CD
 		ResourceId: state.ID.ValueString(),
 	}
 
-	resource, err := r.providerConfig.SDK.CDN().Resource().Get(ctx, getReq)
+	resource, err := r.api().Get(ctx, getReq)
 	if err != nil {
 		tflog.Debug(ctx, "CDN resource not found", map[string]interface{}{
 			"resource_id": state.ID.ValueString(),
@@ -726,7 +671,7 @@ func (r *cdnResourceResource) readResourceToState(ctx context.Context, state *CD
 	state.SSLCertificate = flattenSSLCertificate(ctx, resource.SslCertificate, diags)
 
 	// Shielding - fetch from separate API
-	shieldingLocation, err := getShieldingLocation(ctx, state.ID.ValueString(), r.providerConfig.SDK)
+	shieldingLocation, err := getShieldingLocation(ctx, state.ID.ValueString(), r.api())
 	if err != nil {
 		diags.AddError("Failed to read shielding configuration", err.Error())
 		return false
@@ -766,16 +711,14 @@ func (r *cdnResourceResource) resolveOriginGroupID(ctx context.Context, plan *CD
 			FolderId: folderID,
 		}
 
-		it := r.providerConfig.SDK.CDN().OriginGroup().OriginGroupIterator(ctx, listReq)
-		for it.Next() {
-			group := it.Value()
+		groups, err := r.api().OriginGroupList(ctx, listReq)
+		if err != nil {
+			return 0, fmt.Errorf("failed to list origin groups: %w", err)
+		}
+		for _, group := range groups {
 			if group.Name == plan.OriginGroupName.ValueString() {
 				return group.Id, nil
 			}
-		}
-
-		if err := it.Error(); err != nil {
-			return 0, fmt.Errorf("failed to list origin groups: %w", err)
 		}
 
 		return 0, fmt.Errorf("origin group with name %q not found", plan.OriginGroupName.ValueString())

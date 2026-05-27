@@ -95,8 +95,6 @@ func ExpandCDNResourceOptions(ctx context.Context, planOptions []CDNOptionsModel
 			Enabled: true,
 			Value:   true,
 		}
-	} else {
-		result.DisableProxyForceRanges = nil
 	}
 
 	// Cache settings - nested blocks

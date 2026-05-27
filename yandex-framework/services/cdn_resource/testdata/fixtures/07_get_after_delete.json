@@ -1,0 +1,26 @@
+{
+  "step": "07_get_after_delete",
+  "request": {
+    "resourceId": "bc8rtbcoy2bqzj3oifrc"
+  },
+  "response": {
+    "active": false,
+    "cname": "",
+    "createdAt": null,
+    "folderId": "",
+    "id": "",
+    "labels": {},
+    "options": null,
+    "originGroupId": "0",
+    "originGroupName": "",
+    "originProtocol": "ORIGIN_PROTOCOL_UNSPECIFIED",
+    "providerCname": "",
+    "providerType": "",
+    "secondaryHostnames": [],
+    "sslCertificate": null,
+    "tls": null,
+    "updatedAt": null
+  },
+  "grpc_code": "NotFound",
+  "error": "rpc error: code = NotFound desc = resource not found"
+}

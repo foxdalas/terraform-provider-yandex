@@ -23,11 +23,21 @@ var (
 
 type cdnResourceDataSource struct {
 	providerConfig *provider_config.Config
+	// backend, when non-nil, replaces the SDK-backed implementation derived
+	// from providerConfig. Set by tests; nil in production.
+	backend resourceBackend
 }
 
 // NewDataSource creates a new CDN resource data source
 func NewDataSource() datasource.DataSource {
 	return &cdnResourceDataSource{}
+}
+
+func (d *cdnResourceDataSource) api() resourceBackend {
+	if d.backend != nil {
+		return d.backend
+	}
+	return newSDKBackend(d.providerConfig)
 }
 
 func (d *cdnResourceDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -106,7 +116,7 @@ func (d *cdnResourceDataSource) Read(ctx context.Context, req datasource.ReadReq
 		"resource_id": resourceID,
 	})
 
-	resource, err := d.providerConfig.SDK.CDN().Resource().Get(ctx, &cdn.GetResourceRequest{
+	resource, err := d.api().Get(ctx, &cdn.GetResourceRequest{
 		ResourceId: resourceID,
 	})
 
@@ -192,7 +202,7 @@ func (d *cdnResourceDataSource) Read(ctx context.Context, req datasource.ReadReq
 	}
 
 	// Shielding - fetch from separate API
-	shieldingLocation, err := getShieldingLocation(ctx, resourceID, d.providerConfig.SDK)
+	shieldingLocation, err := getShieldingLocation(ctx, resourceID, d.api())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read shielding configuration", err.Error())
 		return
@@ -227,12 +237,14 @@ func (d *cdnResourceDataSource) resolveCDNResourceIDByCname(ctx context.Context,
 		"cname":     cname,
 	})
 
-	iterator := d.providerConfig.SDK.CDN().Resource().ResourceIterator(ctx, &cdn.ListResourcesRequest{
+	resources, err := d.api().List(ctx, &cdn.ListResourcesRequest{
 		FolderId: folderID,
 	})
+	if err != nil {
+		return "", fmt.Errorf("error iterating CDN resources: %w", err)
+	}
 
-	for iterator.Next() {
-		resource := iterator.Value()
+	for _, resource := range resources {
 		if cname == resource.Cname {
 			tflog.Debug(ctx, "Found matching CDN resource", map[string]interface{}{
 				"cname": cname,
@@ -240,10 +252,6 @@ func (d *cdnResourceDataSource) resolveCDNResourceIDByCname(ctx context.Context,
 			})
 			return resource.Id, nil
 		}
-	}
-
-	if err := iterator.Error(); err != nil {
-		return "", fmt.Errorf("error iterating CDN resources: %w", err)
 	}
 
 	return "", fmt.Errorf("CDN resource with cname %q not found in folder %s", cname, folderID)
