@@ -1,0 +1,265 @@
+{
+  "step": "07_update",
+  "request": {
+    "active": true,
+    "labels": {},
+    "options": {
+      "allowedHttpMethods": null,
+      "browserCacheSettings": {
+        "enabled": false,
+        "value": "0"
+      },
+      "cacheHttpHeaders": null,
+      "compressionOptions": {
+        "brotliCompression": {
+          "enabled": true,
+          "value": [
+            "text/html",
+            "application/json"
+          ]
+        }
+      },
+      "cors": {
+        "enabled": false,
+        "value": []
+      },
+      "customServerName": {
+        "enabled": false,
+        "value": ""
+      },
+      "disableCache": null,
+      "disableProxyForceRanges": {
+        "enabled": false,
+        "value": false
+      },
+      "edgeCacheSettings": {
+        "enabled": false
+      },
+      "followRedirects": {
+        "codes": [],
+        "enabled": false,
+        "useCustomHost": false
+      },
+      "geoAcl": {
+        "countries": [],
+        "enabled": false,
+        "mode": "MODE_UNSPECIFIED"
+      },
+      "headerFilter": {
+        "enabled": false,
+        "headers": []
+      },
+      "hostOptions": {
+        "forwardHostHeader": {
+          "enabled": false,
+          "value": false
+        }
+      },
+      "ignoreCookie": {
+        "enabled": false,
+        "value": false
+      },
+      "ipAddressAcl": {
+        "enabled": false,
+        "exceptedValues": [],
+        "policyType": "POLICY_TYPE_UNSPECIFIED"
+      },
+      "proxyCacheMethodsSet": {
+        "enabled": false,
+        "value": false
+      },
+      "queryParamsOptions": {
+        "queryParamsWhitelist": {
+          "enabled": true,
+          "value": [
+            "page"
+          ]
+        }
+      },
+      "redirectOptions": null,
+      "referrerAcl": {
+        "enabled": false,
+        "mode": "MODE_UNSPECIFIED",
+        "referrers": []
+      },
+      "rewrite": {
+        "body": "",
+        "enabled": false,
+        "flag": "REWRITE_FLAG_UNSPECIFIED"
+      },
+      "secureKey": {
+        "enabled": false,
+        "key": "",
+        "type": "SECURE_KEY_URL_TYPE_UNSPECIFIED"
+      },
+      "slice": {
+        "enabled": false,
+        "value": false
+      },
+      "stale": {
+        "enabled": false,
+        "value": []
+      },
+      "staticHeaders": {
+        "enabled": false,
+        "value": {}
+      },
+      "staticRequestHeaders": {
+        "enabled": false,
+        "value": {}
+      },
+      "staticResponse": {
+        "code": "0",
+        "content": "",
+        "enabled": false
+      },
+      "websockets": null
+    },
+    "originGroupId": null,
+    "originProtocol": "HTTP",
+    "removeLabels": true,
+    "resourceId": "bc8rahjp6mggy2w53dke",
+    "secondaryHostnames": null,
+    "sslCertificate": null,
+    "tls": null
+  },
+  "response": {
+    "createdAt": "2026-06-10T10:13:44.697584Z",
+    "createdBy": "ajen9vbrmfmfe2p9qa4v",
+    "description": "Update resource",
+    "done": true,
+    "id": "bc8zekotq73swiv7mj7x",
+    "metadata": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.UpdateResourceMetadata",
+      "resourceId": "bc8rahjp6mggy2w53dke"
+    },
+    "modifiedAt": "2026-06-10T10:13:44.697584Z",
+    "response": {
+      "@type": "type.googleapis.com/yandex.cloud.cdn.v1.Resource",
+      "active": true,
+      "cname": "tf-capture-1781086419.example.com",
+      "createdAt": "2026-06-10T10:13:41.973142Z",
+      "folderId": "b1gafb9nb9otk1snp8g7",
+      "id": "bc8rahjp6mggy2w53dke",
+      "labels": {},
+      "options": {
+        "allowedHttpMethods": null,
+        "browserCacheSettings": {
+          "enabled": false,
+          "value": "0"
+        },
+        "cacheHttpHeaders": null,
+        "compressionOptions": {
+          "brotliCompression": {
+            "enabled": true,
+            "value": [
+              "text/html",
+              "application/json"
+            ]
+          }
+        },
+        "cors": {
+          "enabled": false,
+          "value": []
+        },
+        "customServerName": {
+          "enabled": false,
+          "value": ""
+        },
+        "disableCache": null,
+        "disableProxyForceRanges": {
+          "enabled": false,
+          "value": false
+        },
+        "edgeCacheSettings": {
+          "enabled": true,
+          "value": {
+            "customValues": {},
+            "simpleValue": "0"
+          }
+        },
+        "followRedirects": {
+          "codes": [],
+          "enabled": false,
+          "useCustomHost": false
+        },
+        "geoAcl": {
+          "countries": [],
+          "enabled": false,
+          "mode": "MODE_UNSPECIFIED"
+        },
+        "headerFilter": {
+          "enabled": false,
+          "headers": []
+        },
+        "hostOptions": null,
+        "ignoreCookie": {
+          "enabled": false,
+          "value": false
+        },
+        "ipAddressAcl": null,
+        "proxyCacheMethodsSet": {
+          "enabled": false,
+          "value": false
+        },
+        "queryParamsOptions": {
+          "queryParamsWhitelist": {
+            "enabled": true,
+            "value": [
+              "page"
+            ]
+          }
+        },
+        "redirectOptions": null,
+        "referrerAcl": {
+          "enabled": false,
+          "mode": "MODE_UNSPECIFIED",
+          "referrers": []
+        },
+        "rewrite": null,
+        "secureKey": {
+          "enabled": false,
+          "key": "",
+          "type": "DISABLE_IP_SIGNING"
+        },
+        "slice": {
+          "enabled": false,
+          "value": false
+        },
+        "stale": {
+          "enabled": false,
+          "value": []
+        },
+        "staticHeaders": {
+          "enabled": false,
+          "value": {}
+        },
+        "staticRequestHeaders": {
+          "enabled": false,
+          "value": {}
+        },
+        "staticResponse": {
+          "code": "0",
+          "content": "",
+          "enabled": false
+        },
+        "websockets": null
+      },
+      "originGroupId": "1043764766748930932",
+      "originGroupName": "common-a-com",
+      "originProtocol": "HTTP",
+      "providerCname": "6a506e6a0a0a9c82.topology.gslb.yccdn.ru",
+      "providerType": "ourcdn",
+      "secondaryHostnames": [],
+      "sslCertificate": {
+        "data": null,
+        "status": "READY",
+        "type": "DONT_USE"
+      },
+      "tls": {
+        "profile": "PROFILE_COMPATIBLE"
+      },
+      "updatedAt": "2026-06-10T10:13:44.418159Z"
+    }
+  }
+}

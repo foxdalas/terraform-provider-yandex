@@ -40,11 +40,22 @@ func FlattenCDNResourceOptions(ctx context.Context, options *cdn.ResourceOptions
 
 	opt := CDNOptionsModel{}
 
-	// Boolean options - CRITICAL: Set null when Enabled=false to prevent state drift
-	opt.Slice = flattenBoolOption(options.Slice)
-	opt.IgnoreCookie = flattenBoolOption(options.IgnoreCookie)
-	opt.ProxyCacheMethodsSet = flattenBoolOption(options.ProxyCacheMethodsSet)
-	opt.DisableProxyForceRanges = flattenBoolOption(options.DisableProxyForceRanges)
+	// Boolean options - null when the API reports the option disabled, UNLESS the
+	// plan explicitly carries `false`. The API normalizes a sent
+	// {Enabled:true, Value:false} back to a disabled option, so without consulting
+	// the plan a planned `false` would flatten to null and trip "Provider produced
+	// inconsistent result after apply" (see TestResourceGolden_Lifecycle update #2).
+	var planSlice, planIgnoreCookie, planProxyCacheMethodsSet, planDisableProxyForceRanges types.Bool
+	if planOptionsModel != nil {
+		planSlice = planOptionsModel.Slice
+		planIgnoreCookie = planOptionsModel.IgnoreCookie
+		planProxyCacheMethodsSet = planOptionsModel.ProxyCacheMethodsSet
+		planDisableProxyForceRanges = planOptionsModel.DisableProxyForceRanges
+	}
+	opt.Slice = flattenBoolOptionWithPlan(options.Slice, planSlice)
+	opt.IgnoreCookie = flattenBoolOptionWithPlan(options.IgnoreCookie, planIgnoreCookie)
+	opt.ProxyCacheMethodsSet = flattenBoolOptionWithPlan(options.ProxyCacheMethodsSet, planProxyCacheMethodsSet)
+	opt.DisableProxyForceRanges = flattenBoolOptionWithPlan(options.DisableProxyForceRanges, planDisableProxyForceRanges)
 
 	// Cache settings - nested blocks (pass plan to preserve disabled blocks)
 	opt.EdgeCacheSettings = flattenEdgeCacheSettings(ctx, options.EdgeCacheSettings, planOptionsModel, diags)
@@ -173,6 +184,21 @@ func flattenBoolOption(option *cdn.ResourceOptions_BoolOption) types.Bool {
 		return types.BoolNull()
 	}
 	return types.BoolValue(option.Value)
+}
+
+// flattenBoolOptionWithPlan reconciles flattenBoolOption against the planned
+// value. The CDN API normalizes a sent {Enabled:true, Value:false} back to a
+// disabled option, so flattenBoolOption alone turns a planned `false` into null
+// and trips Terraform's "Provider produced inconsistent result after apply"
+// check. When the API reports the option disabled but the plan explicitly holds
+// a known `false`, honor that `false`; otherwise keep the null-when-unset
+// semantics.
+func flattenBoolOptionWithPlan(option *cdn.ResourceOptions_BoolOption, planValue types.Bool) types.Bool {
+	v := flattenBoolOption(option)
+	if v.IsNull() && !planValue.IsNull() && !planValue.IsUnknown() && !planValue.ValueBool() {
+		return types.BoolValue(false)
+	}
+	return v
 }
 
 // isDefaultAllowedHttpMethods checks if API returned default HTTP methods

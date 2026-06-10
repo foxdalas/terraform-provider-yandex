@@ -2,7 +2,7 @@
   "step": "01_create",
   "request": {
     "active": true,
-    "cname": "tf-capture-1779868394.example.com",
+    "cname": "tf-capture-1781086419.example.com",
     "folderId": "b1gafb9nb9otk1snp8g7",
     "labels": {},
     "options": null,
@@ -16,23 +16,23 @@
     "tls": null
   },
   "response": {
-    "createdAt": "2026-05-27T07:53:16.290256Z",
+    "createdAt": "2026-06-10T10:13:42.197481Z",
     "createdBy": "ajen9vbrmfmfe2p9qa4v",
     "description": "Create resource",
     "done": true,
-    "id": "bc8nwin6rrf45rop42t4",
+    "id": "bc8to7ckamvmj7gmryck",
     "metadata": {
       "@type": "type.googleapis.com/yandex.cloud.cdn.v1.CreateResourceMetadata",
-      "resourceId": "bc8rtbcoy2bqzj3oifrc"
+      "resourceId": "bc8rahjp6mggy2w53dke"
     },
-    "modifiedAt": "2026-05-27T07:53:16.290256Z",
+    "modifiedAt": "2026-06-10T10:13:42.197481Z",
     "response": {
       "@type": "type.googleapis.com/yandex.cloud.cdn.v1.Resource",
       "active": true,
-      "cname": "tf-capture-1779868394.example.com",
-      "createdAt": "2026-05-27T07:53:16.117357Z",
+      "cname": "tf-capture-1781086419.example.com",
+      "createdAt": "2026-06-10T10:13:41.973142Z",
       "folderId": "b1gafb9nb9otk1snp8g7",
-      "id": "bc8rtbcoy2bqzj3oifrc",
+      "id": "bc8rahjp6mggy2w53dke",
       "labels": {},
       "options": {
         "allowedHttpMethods": null,
@@ -91,11 +91,11 @@
           "value": []
         },
         "staticHeaders": {
-          "enabled": true,
+          "enabled": false,
           "value": {}
         },
         "staticRequestHeaders": {
-          "enabled": true,
+          "enabled": false,
           "value": {}
         },
         "staticResponse": null,
@@ -115,7 +115,7 @@
       "tls": {
         "profile": "PROFILE_COMPATIBLE"
       },
-      "updatedAt": "2026-05-27T07:53:16.117357Z"
+      "updatedAt": "2026-06-10T10:13:41.973142Z"
     }
   }
 }

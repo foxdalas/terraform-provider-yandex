@@ -1,27 +1,27 @@
 {
-  "step": "04_get_after_update",
+  "step": "06_get_after_update_2",
   "request": {
     "resourceId": "bc8rahjp6mggy2w53dke"
   },
   "response": {
-    "active": true,
+    "active": false,
     "cname": "tf-capture-1781086419.example.com",
     "createdAt": "2026-06-10T10:13:41.973142Z",
     "folderId": "b1gafb9nb9otk1snp8g7",
     "id": "bc8rahjp6mggy2w53dke",
     "labels": {
       "env": "capture",
-      "tier": "gold"
+      "tier": "silver"
     },
     "options": {
       "allowedHttpMethods": null,
       "browserCacheSettings": {
         "enabled": true,
-        "value": "3600"
+        "value": "0"
       },
       "cacheHttpHeaders": null,
       "compressionOptions": {
-        "gzipOn": {
+        "fetchCompressed": {
           "enabled": true,
           "value": true
         }
@@ -29,122 +29,131 @@
       "cors": {
         "enabled": true,
         "value": [
-          "*"
+          "https://example.com"
         ]
       },
       "customServerName": {
         "enabled": true,
-        "value": "capture.example.com"
+        "value": "flipped.example.com"
       },
       "disableCache": null,
       "disableProxyForceRanges": {
-        "enabled": true,
-        "value": true
+        "enabled": false,
+        "value": false
       },
       "edgeCacheSettings": {
-        "defaultValue": "345600",
-        "enabled": true
+        "enabled": true,
+        "value": {
+          "customValues": {
+            "404": "30",
+            "500": "120"
+          },
+          "simpleValue": "600"
+        }
       },
       "followRedirects": {
         "codes": [
-          "301",
-          "302"
+          "307",
+          "308"
         ],
         "enabled": true,
-        "useCustomHost": true
+        "useCustomHost": false
       },
       "geoAcl": {
         "countries": [
-          "US",
-          "DE"
+          "RU"
         ],
         "enabled": true,
-        "mode": "MODE_ALLOW"
+        "mode": "MODE_DENY"
       },
       "headerFilter": {
         "enabled": true,
         "headers": [
-          "x-keep-this"
+          "x-keep-this",
+          "x-and-this"
         ]
       },
       "hostOptions": {
-        "forwardHostHeader": {
+        "host": {
           "enabled": true,
-          "value": true
+          "value": "custom-host.example.com"
         }
       },
       "ignoreCookie": {
-        "enabled": true,
-        "value": true
+        "enabled": false,
+        "value": false
       },
       "ipAddressAcl": {
         "enabled": true,
         "exceptedValues": [
-          "192.0.2.0/24"
+          "203.0.113.0/24"
         ],
-        "policyType": "POLICY_TYPE_ALLOW"
+        "policyType": "POLICY_TYPE_DENY"
       },
       "proxyCacheMethodsSet": {
-        "enabled": true,
-        "value": true
+        "enabled": false,
+        "value": false
       },
       "queryParamsOptions": {
-        "ignoreQueryString": {
+        "queryParamsBlacklist": {
           "enabled": true,
-          "value": true
+          "value": [
+            "utm_source",
+            "utm_medium"
+          ]
         }
       },
       "redirectOptions": null,
       "referrerAcl": {
         "enabled": true,
-        "mode": "MODE_ALLOW",
+        "mode": "MODE_DENY",
         "referrers": [
-          "example.com"
+          "*.spam.example"
         ]
       },
       "rewrite": {
-        "body": "/old/(.*) /new/$1",
+        "body": "/a/(.*) /b/$1",
         "enabled": true,
-        "flag": "BREAK"
+        "flag": "REDIRECT"
       },
       "secureKey": {
         "enabled": true,
-        "key": "capture-secure-key-01",
-        "type": "DISABLE_IP_SIGNING"
+        "key": "capture-secure-key-02",
+        "type": "ENABLE_IP_SIGNING"
       },
       "slice": {
-        "enabled": true,
-        "value": true
+        "enabled": false,
+        "value": false
       },
       "stale": {
         "enabled": true,
         "value": [
-          "error",
-          "http_503"
+          "http_404",
+          "timeout"
         ]
       },
       "staticHeaders": {
         "enabled": true,
         "value": {
-          "x-static-response": "from-cdn"
+          "x-static-response": "flipped"
         }
       },
       "staticRequestHeaders": {
         "enabled": true,
         "value": {
-          "x-req-header": "v1"
+          "x-req-header": "v2"
         }
       },
       "staticResponse": {
-        "code": "200",
-        "content": "served-by-cdn",
+        "code": "302",
+        "content": "https://redirect.example.com",
         "enabled": true
       },
       "websockets": null
     },
     "originGroupId": "1043764766748930932",
     "originGroupName": "common-a-com",
-    "originProtocol": "HTTPS",
+    "originProtocol": "MATCH",
     "providerCname": "6a506e6a0a0a9c82.topology.gslb.yccdn.ru",
     "providerType": "ourcdn",
     "secondaryHostnames": [],
@@ -156,6 +165,6 @@
     "tls": {
       "profile": "PROFILE_COMPATIBLE"
     },
-    "updatedAt": "2026-06-10T10:13:42.901260Z"
+    "updatedAt": "2026-06-10T10:13:43.788886Z"
   }
 }

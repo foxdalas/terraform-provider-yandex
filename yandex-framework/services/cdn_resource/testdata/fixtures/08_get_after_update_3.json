@@ -1,5 +1,5 @@
 {
-  "step": "02_get_after_create",
+  "step": "08_get_after_update_3",
   "request": {
     "resourceId": "bc8rahjp6mggy2w53dke"
   },
@@ -17,41 +17,73 @@
         "value": "0"
       },
       "cacheHttpHeaders": null,
-      "compressionOptions": null,
-      "cors": null,
+      "compressionOptions": {
+        "brotliCompression": {
+          "enabled": true,
+          "value": [
+            "text/html",
+            "application/json"
+          ]
+        }
+      },
+      "cors": {
+        "enabled": false,
+        "value": []
+      },
       "customServerName": {
         "enabled": false,
         "value": ""
       },
       "disableCache": null,
-      "disableProxyForceRanges": null,
-      "edgeCacheSettings": {
-        "defaultValue": "86400",
-        "enabled": true
+      "disableProxyForceRanges": {
+        "enabled": false,
+        "value": false
       },
-      "followRedirects": null,
-      "geoAcl": null,
-      "headerFilter": null,
-      "hostOptions": {
-        "forwardHostHeader": {
-          "enabled": true,
-          "value": true
+      "edgeCacheSettings": {
+        "enabled": true,
+        "value": {
+          "customValues": {},
+          "simpleValue": "0"
         }
       },
+      "followRedirects": {
+        "codes": [],
+        "enabled": false,
+        "useCustomHost": false
+      },
+      "geoAcl": {
+        "countries": [],
+        "enabled": false,
+        "mode": "MODE_UNSPECIFIED"
+      },
+      "headerFilter": {
+        "enabled": false,
+        "headers": []
+      },
+      "hostOptions": null,
       "ignoreCookie": {
-        "enabled": true,
-        "value": true
+        "enabled": false,
+        "value": false
       },
       "ipAddressAcl": null,
-      "proxyCacheMethodsSet": null,
+      "proxyCacheMethodsSet": {
+        "enabled": false,
+        "value": false
+      },
       "queryParamsOptions": {
-        "ignoreQueryString": {
+        "queryParamsWhitelist": {
           "enabled": true,
-          "value": true
+          "value": [
+            "page"
+          ]
         }
       },
       "redirectOptions": null,
-      "referrerAcl": null,
+      "referrerAcl": {
+        "enabled": false,
+        "mode": "MODE_UNSPECIFIED",
+        "referrers": []
+      },
       "rewrite": null,
       "secureKey": {
         "enabled": false,
@@ -74,7 +106,11 @@
         "enabled": false,
         "value": {}
       },
-      "staticResponse": null,
+      "staticResponse": {
+        "code": "0",
+        "content": "",
+        "enabled": false
+      },
       "websockets": null
     },
     "originGroupId": "1043764766748930932",
@@ -91,6 +127,6 @@
     "tls": {
       "profile": "PROFILE_COMPATIBLE"
     },
-    "updatedAt": "2026-06-10T10:13:42.087131Z"
+    "updatedAt": "2026-06-10T10:13:44.597076Z"
   }
 }

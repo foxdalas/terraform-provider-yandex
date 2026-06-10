@@ -1,5 +1,5 @@
 {
-  "step": "05_list",
+  "step": "09_list",
   "request": {
     "folderId": "b1gafb9nb9otk1snp8g7",
     "pageSize": "0",
@@ -9,11 +9,11 @@
     "nextPageToken": "",
     "resources": [
       {
-        "active": false,
-        "cname": "tf-capture-1779868394.example.com",
-        "createdAt": "2026-05-27T07:53:16.117357Z",
+        "active": true,
+        "cname": "tf-capture-1781086419.example.com",
+        "createdAt": "2026-06-10T10:13:41.973142Z",
         "folderId": "b1gafb9nb9otk1snp8g7",
-        "id": "bc8rtbcoy2bqzj3oifrc",
+        "id": "bc8rahjp6mggy2w53dke",
         "labels": {},
         "options": {
           "allowedHttpMethods": null,
@@ -22,41 +22,73 @@
             "value": "0"
           },
           "cacheHttpHeaders": null,
-          "compressionOptions": null,
-          "cors": null,
+          "compressionOptions": {
+            "brotliCompression": {
+              "enabled": true,
+              "value": [
+                "text/html",
+                "application/json"
+              ]
+            }
+          },
+          "cors": {
+            "enabled": false,
+            "value": []
+          },
           "customServerName": {
             "enabled": false,
             "value": ""
           },
           "disableCache": null,
-          "disableProxyForceRanges": null,
-          "edgeCacheSettings": {
-            "defaultValue": "86400",
-            "enabled": true
+          "disableProxyForceRanges": {
+            "enabled": false,
+            "value": false
           },
-          "followRedirects": null,
-          "geoAcl": null,
-          "headerFilter": null,
-          "hostOptions": {
-            "forwardHostHeader": {
-              "enabled": true,
-              "value": true
+          "edgeCacheSettings": {
+            "enabled": true,
+            "value": {
+              "customValues": {},
+              "simpleValue": "0"
             }
           },
+          "followRedirects": {
+            "codes": [],
+            "enabled": false,
+            "useCustomHost": false
+          },
+          "geoAcl": {
+            "countries": [],
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED"
+          },
+          "headerFilter": {
+            "enabled": false,
+            "headers": []
+          },
+          "hostOptions": null,
           "ignoreCookie": {
-            "enabled": true,
-            "value": true
+            "enabled": false,
+            "value": false
           },
           "ipAddressAcl": null,
-          "proxyCacheMethodsSet": null,
+          "proxyCacheMethodsSet": {
+            "enabled": false,
+            "value": false
+          },
           "queryParamsOptions": {
-            "ignoreQueryString": {
+            "queryParamsWhitelist": {
               "enabled": true,
-              "value": true
+              "value": [
+                "page"
+              ]
             }
           },
           "redirectOptions": null,
-          "referrerAcl": null,
+          "referrerAcl": {
+            "enabled": false,
+            "mode": "MODE_UNSPECIFIED",
+            "referrers": []
+          },
           "rewrite": null,
           "secureKey": {
             "enabled": false,
@@ -72,14 +104,18 @@
             "value": []
           },
           "staticHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
-          "staticResponse": null,
+          "staticResponse": {
+            "code": "0",
+            "content": "",
+            "enabled": false
+          },
           "websockets": null
         },
         "originGroupId": "1043764766748930932",
@@ -96,7 +132,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-05-27T07:53:17.341027Z"
+        "updatedAt": "2026-06-10T10:13:44.597076Z"
       },
       {
         "active": true,
@@ -155,7 +191,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -183,7 +219,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -202,7 +238,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -287,7 +323,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -315,7 +351,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -334,7 +370,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -451,7 +487,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -470,7 +506,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -586,7 +622,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -605,7 +641,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -718,7 +754,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -737,7 +773,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -848,7 +884,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -867,7 +903,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -951,7 +987,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -979,7 +1015,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -998,7 +1034,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1113,7 +1149,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1132,7 +1168,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1219,7 +1255,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -1247,7 +1283,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1266,7 +1302,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1353,7 +1389,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -1381,7 +1417,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1400,7 +1436,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1515,7 +1551,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1534,7 +1570,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1649,7 +1685,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1668,7 +1704,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": null,
@@ -1757,7 +1793,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -1789,7 +1825,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -1900,7 +1936,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -1932,7 +1968,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2043,7 +2079,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2075,7 +2111,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2186,7 +2222,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2218,7 +2254,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2329,7 +2365,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2361,7 +2397,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2476,7 +2512,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2508,7 +2544,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2623,7 +2659,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2655,7 +2691,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2770,7 +2806,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2802,7 +2838,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -2917,7 +2953,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -2949,7 +2985,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3064,7 +3100,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3096,7 +3132,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3211,7 +3247,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3243,7 +3279,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3358,7 +3394,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3390,7 +3426,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3497,7 +3533,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3529,7 +3565,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3646,7 +3682,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3678,7 +3714,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3793,7 +3829,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3825,7 +3861,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -3940,7 +3976,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -3972,7 +4008,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4087,7 +4123,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4119,7 +4155,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4234,7 +4270,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4266,7 +4302,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4381,7 +4417,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4413,7 +4449,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4528,7 +4564,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4560,7 +4596,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4675,7 +4711,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4707,7 +4743,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4822,7 +4858,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -4854,7 +4890,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -4969,7 +5005,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5001,7 +5037,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5116,7 +5152,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5148,7 +5184,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5263,7 +5299,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5295,7 +5331,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5410,7 +5446,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5442,7 +5478,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5492,7 +5528,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-03-29T11:23:41.848118Z"
+        "updatedAt": "2026-05-28T10:45:25.927090Z"
       },
       {
         "active": true,
@@ -5557,7 +5593,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5585,7 +5621,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5604,7 +5640,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -5697,7 +5733,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5725,7 +5761,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5744,7 +5780,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -5832,7 +5868,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5860,7 +5896,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -5879,7 +5915,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -5967,7 +6003,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -5995,7 +6031,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6014,7 +6050,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -6111,7 +6147,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6147,7 +6183,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6266,7 +6302,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6302,7 +6338,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6421,7 +6457,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6457,7 +6493,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6576,7 +6612,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6612,7 +6648,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6731,7 +6767,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6767,7 +6803,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -6886,7 +6922,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -6922,7 +6958,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7041,7 +7077,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7077,7 +7113,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7196,7 +7232,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7232,7 +7268,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7351,7 +7387,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7387,7 +7423,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7506,7 +7542,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7542,7 +7578,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7661,7 +7697,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7697,7 +7733,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7816,7 +7852,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -7852,7 +7888,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -7971,7 +8007,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8007,7 +8043,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8126,7 +8162,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8162,7 +8198,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8281,7 +8317,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8317,7 +8353,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8436,7 +8472,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8472,7 +8508,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8591,7 +8627,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8627,7 +8663,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8657,7 +8693,9 @@
             "content": "",
             "enabled": false
           },
-          "websockets": null
+          "websockets": {
+            "enabled": false
+          }
         },
         "originGroupId": "3435260283177860787",
         "originGroupName": "www-aviasales-ro",
@@ -8677,7 +8715,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-04-23T11:51:05.432162Z"
+        "updatedAt": "2026-06-10T08:59:07.514452Z"
       },
       {
         "active": true,
@@ -8746,7 +8784,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8782,7 +8820,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -8901,7 +8939,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -8937,7 +8975,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9056,7 +9094,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9092,7 +9130,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9211,7 +9249,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9247,7 +9285,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9297,7 +9335,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-03-29T11:23:42.119972Z"
+        "updatedAt": "2026-05-28T10:45:25.653520Z"
       },
       {
         "active": true,
@@ -9366,7 +9404,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9402,7 +9440,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9521,7 +9559,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9557,7 +9595,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9676,7 +9714,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9712,7 +9750,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -9831,7 +9869,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -9867,7 +9905,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10018,7 +10056,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10037,7 +10075,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -10164,7 +10202,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10183,7 +10221,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -10331,7 +10369,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10350,7 +10388,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -10463,11 +10501,11 @@
             "value": []
           },
           "staticHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -10567,7 +10605,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -10603,7 +10641,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10759,7 +10797,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10778,7 +10816,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -10910,7 +10948,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -10929,7 +10967,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11067,7 +11105,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11086,7 +11124,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11120,7 +11158,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-04-10T11:36:53.177512Z"
+        "updatedAt": "2026-06-09T10:53:16.859289Z"
       },
       {
         "active": true,
@@ -11227,7 +11265,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11246,7 +11284,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11276,7 +11314,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-04-09T05:15:47.392552Z"
+        "updatedAt": "2026-06-08T04:43:37.763099Z"
       },
       {
         "active": true,
@@ -11386,7 +11424,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11405,7 +11443,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11542,7 +11580,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11561,7 +11599,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11698,7 +11736,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11717,7 +11755,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -11854,7 +11892,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -11873,7 +11911,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12014,7 +12052,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12033,7 +12071,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12169,7 +12207,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12188,7 +12226,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12324,7 +12362,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12343,7 +12381,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12473,7 +12511,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12492,7 +12530,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12636,7 +12674,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12655,7 +12693,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12791,7 +12829,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12810,7 +12848,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -12945,7 +12983,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -12964,7 +13002,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13100,7 +13138,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13119,7 +13157,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13255,7 +13293,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13274,7 +13312,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13415,7 +13453,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13434,7 +13472,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13534,7 +13572,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -13566,7 +13604,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13585,7 +13623,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13685,7 +13723,7 @@
             }
           },
           "ignoreCookie": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "ipAddressAcl": null,
@@ -13717,7 +13755,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13736,7 +13774,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13876,7 +13914,7 @@
             "type": "DISABLE_IP_SIGNING"
           },
           "slice": {
-            "enabled": true,
+            "enabled": false,
             "value": false
           },
           "stale": {
@@ -13895,7 +13933,7 @@
             }
           },
           "staticRequestHeaders": {
-            "enabled": true,
+            "enabled": false,
             "value": {}
           },
           "staticResponse": {
@@ -13925,7 +13963,7 @@
         "tls": {
           "profile": "PROFILE_COMPATIBLE"
         },
-        "updatedAt": "2026-05-26T12:49:15.719226Z"
+        "updatedAt": "2026-06-10T08:27:28.915147Z"
       }
     ]
   }

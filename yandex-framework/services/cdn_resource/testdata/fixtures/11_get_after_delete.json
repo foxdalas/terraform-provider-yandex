@@ -1,7 +1,7 @@
 {
-  "step": "07_get_after_delete",
+  "step": "11_get_after_delete",
   "request": {
-    "resourceId": "bc8rtbcoy2bqzj3oifrc"
+    "resourceId": "bc8rahjp6mggy2w53dke"
   },
   "response": {
     "active": false,

@@ -1,19 +1,19 @@
 {
-  "step": "06_delete",
+  "step": "10_delete",
   "request": {
-    "resourceId": "bc8rtbcoy2bqzj3oifrc"
+    "resourceId": "bc8rahjp6mggy2w53dke"
   },
   "response": {
-    "createdAt": "2026-05-27T07:53:18.980694Z",
+    "createdAt": "2026-06-10T10:13:46.235730Z",
     "createdBy": "ajen9vbrmfmfe2p9qa4v",
     "description": "delete resource",
     "done": true,
-    "id": "bc8l5gpiyml5yau3ekov",
+    "id": "bc8ow2efdllt3l6i5isi",
     "metadata": {
       "@type": "type.googleapis.com/yandex.cloud.cdn.v1.DeleteResourceMetadata",
-      "resourceId": "bc8rtbcoy2bqzj3oifrc"
+      "resourceId": "bc8rahjp6mggy2w53dke"
     },
-    "modifiedAt": "2026-05-27T07:53:21.144811Z",
+    "modifiedAt": "2026-06-10T10:13:49.467792Z",
     "response": {
       "@type": "type.googleapis.com/google.protobuf.Empty",
       "value": {}
