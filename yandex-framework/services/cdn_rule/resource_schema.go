@@ -98,6 +98,34 @@ func CDNRuleSchema(ctx context.Context) schema.Schema {
 					int64planmodifier.RequiresReplaceIfConfigured(),
 				},
 			},
+			// origins_group_id and origin_protocol are write-only: the CDN API
+			// accepts them on Create/Update but never returns them on Get, so
+			// they are Optional-only (not Computed) and Terraform keeps the
+			// configured value in state without reconciling against the API.
+			"origins_group_id": schema.StringAttribute{
+				Optional: true,
+				Description: "ID of the origins group to use for requests matching this rule, " +
+					"overriding the origins group of the parent CDN resource. " +
+					"Write-only: the CDN API does not return this value, so it cannot be imported.",
+				MarkdownDescription: "ID of the origins group to use for requests matching this rule, " +
+					"overriding the origins group of the parent CDN resource. " +
+					"Write-only: the CDN API does not return this value, so it cannot be imported.",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(regexp.MustCompile(`^\d+$`), "must be a numeric origins group ID"),
+				},
+			},
+			"origin_protocol": schema.StringAttribute{
+				Optional: true,
+				Description: "Protocol for CDN servers to connect to origin for requests matching this rule, " +
+					"overriding the parent CDN resource setting. One of `http`, `https`, `match`. " +
+					"Write-only: the CDN API does not return this value, so it cannot be imported.",
+				MarkdownDescription: "Protocol for CDN servers to connect to origin for requests matching this rule, " +
+					"overriding the parent CDN resource setting. One of `http`, `https`, `match`. " +
+					"Write-only: the CDN API does not return this value, so it cannot be imported.",
+				Validators: []validator.String{
+					stringvalidator.OneOf("http", "https", "match"),
+				},
+			},
 		},
 
 		Blocks: map[string]schema.Block{

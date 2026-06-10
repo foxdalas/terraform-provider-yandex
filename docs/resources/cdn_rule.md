@@ -53,6 +53,8 @@ resource "yandex_cdn_rule" "my_rule" {
 ### Optional
 
 - `options` (Block List) CDN Resource settings and options to tune CDN edge behavior. (see [below for nested schema](#nestedblock--options))
+- `origin_protocol` (String) Protocol for CDN servers to connect to origin for requests matching this rule, overriding the parent CDN resource setting. One of `http`, `https`, `match`. Write-only: the CDN API does not return this value, so it cannot be imported.
+- `origins_group_id` (String) ID of the origins group to use for requests matching this rule, overriding the origins group of the parent CDN resource. Write-only: the CDN API does not return this value, so it cannot be imported.
 - `timeouts` (Block, Optional) (see [below for nested schema](#nestedblock--timeouts))
 - `weight` (Number) Rule weight (0-9999) - rules with lower weights execute first. Default: `0`.
 

@@ -15,6 +15,13 @@ type CDNRuleModel struct {
 	RulePattern types.String   `tfsdk:"rule_pattern"` // Regular expression pattern
 	Weight      types.Int64    `tfsdk:"weight"`       // Rule weight for ordering
 	Options     types.List     `tfsdk:"options"`      // CDN options - uses same structure as cdn_resource
+	// OriginsGroupID and OriginProtocol override the resource-level origins
+	// group and origin protocol for requests matching this rule. They are
+	// write-only: the CDN API accepts them on Create/Update but the Rule
+	// returned by Get does not echo them back, so Read never reconciles these
+	// fields and Terraform trusts the configured value.
+	OriginsGroupID types.String `tfsdk:"origins_group_id"` // Per-rule origins group override (write-only)
+	OriginProtocol types.String `tfsdk:"origin_protocol"`  // Per-rule origin protocol override (write-only)
 }
 
 // CDNRuleDataSource represents the Terraform data source model for yandex_cdn_rule

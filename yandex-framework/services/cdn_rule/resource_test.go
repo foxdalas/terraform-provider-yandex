@@ -443,6 +443,140 @@ func TestUpdate_BasicFields(t *testing.T) {
 	assert.Equal(t, int64(42), *got.Weight)
 }
 
+// TestCreate_OriginOverrides verifies the write-only per-rule overrides
+// (origins_group_id / origin_protocol) are forwarded on Create and preserved in
+// state even though the Get response — like the real API — never echoes them.
+func TestCreate_OriginOverrides(t *testing.T) {
+	ctx := context.Background()
+	be := &fakeBackend{
+		createFn: func(_ context.Context, _ *cdn.CreateResourceRuleRequest) (int64, error) {
+			return 55, nil
+		},
+		getFn: func(_ context.Context, _ *cdn.GetResourceRuleRequest) (*cdn.Rule, error) {
+			// API never returns the override fields.
+			return cannedRule(55, "r", `.*`, 0), nil
+		},
+	}
+	r := newResourceForTest(be)
+
+	plan := newPlan(t, CDNRuleModel{
+		ResourceID:     types.StringValue("res-o"),
+		Name:           types.StringValue("r"),
+		RulePattern:    types.StringValue(`.*`),
+		Weight:         types.Int64Value(0),
+		OriginsGroupID: types.StringValue("987654"),
+		OriginProtocol: types.StringValue("https"),
+	})
+	resp := resource.CreateResponse{State: emptyState(t)}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, &resp)
+
+	require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+	require.Len(t, be.createReqs, 1)
+	got := be.createReqs[0]
+	assert.Equal(t, int64(987654), got.OriginsGroupId, "Create.OriginsGroupId")
+	assert.Equal(t, cdn.OriginProtocol_HTTPS, got.OriginProtocol, "Create.OriginProtocol")
+
+	final := readState(t, resp.State)
+	assert.Equal(t, "987654", final.OriginsGroupID.ValueString(),
+		"origins_group_id must survive a Read that does not echo it")
+	assert.Equal(t, "https", final.OriginProtocol.ValueString(),
+		"origin_protocol must survive a Read that does not echo it")
+}
+
+// TestCreate_OriginOverridesUnset confirms that when the overrides are not
+// configured the request carries the zero values (UNSPECIFIED protocol, group
+// id 0) so the rule inherits the parent resource's settings.
+func TestCreate_OriginOverridesUnset(t *testing.T) {
+	ctx := context.Background()
+	be := &fakeBackend{
+		createFn: func(_ context.Context, _ *cdn.CreateResourceRuleRequest) (int64, error) {
+			return 56, nil
+		},
+		getFn: func(_ context.Context, _ *cdn.GetResourceRuleRequest) (*cdn.Rule, error) {
+			return cannedRule(56, "r", `.*`, 0), nil
+		},
+	}
+	r := newResourceForTest(be)
+
+	plan := newPlan(t, CDNRuleModel{
+		ResourceID:  types.StringValue("res-o"),
+		Name:        types.StringValue("r"),
+		RulePattern: types.StringValue(`.*`),
+		Weight:      types.Int64Value(0),
+	})
+	resp := resource.CreateResponse{State: emptyState(t)}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, &resp)
+
+	require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+	require.Len(t, be.createReqs, 1)
+	got := be.createReqs[0]
+	assert.Equal(t, int64(0), got.OriginsGroupId)
+	assert.Equal(t, cdn.OriginProtocol_ORIGIN_PROTOCOL_UNSPECIFIED, got.OriginProtocol)
+}
+
+// TestUpdate_OriginOverrides verifies the overrides are forwarded on Update,
+// where OriginsGroupId is a wrapper value (nil when unset, set otherwise).
+func TestUpdate_OriginOverrides(t *testing.T) {
+	ctx := context.Background()
+	be := &fakeBackend{
+		getFn: func(_ context.Context, _ *cdn.GetResourceRuleRequest) (*cdn.Rule, error) {
+			return cannedRule(7, "r", `.*`, 0), nil
+		},
+	}
+	r := newResourceForTest(be)
+
+	plan := newPlan(t, CDNRuleModel{
+		ID:             types.StringValue("res-o/7"),
+		ResourceID:     types.StringValue("res-o"),
+		RuleID:         types.StringValue("7"),
+		Name:           types.StringValue("r"),
+		RulePattern:    types.StringValue(`.*`),
+		Weight:         types.Int64Value(0),
+		OriginsGroupID: types.StringValue("123"),
+		OriginProtocol: types.StringValue("match"),
+	})
+	state := newState(t, CDNRuleModel{
+		ID:          types.StringValue("res-o/7"),
+		ResourceID:  types.StringValue("res-o"),
+		RuleID:      types.StringValue("7"),
+		Name:        types.StringValue("r"),
+		RulePattern: types.StringValue(`.*`),
+		Weight:      types.Int64Value(0),
+	})
+
+	resp := resource.UpdateResponse{State: state}
+	r.Update(ctx, resource.UpdateRequest{Plan: plan, State: state}, &resp)
+
+	require.False(t, resp.Diagnostics.HasError(), "%v", resp.Diagnostics)
+	require.Len(t, be.updateReqs, 1)
+	got := be.updateReqs[0]
+	require.NotNil(t, got.OriginsGroupId, "Update.OriginsGroupId wrapper")
+	assert.Equal(t, int64(123), got.OriginsGroupId.GetValue())
+	assert.Equal(t, cdn.OriginProtocol_MATCH, got.OriginProtocol)
+}
+
+// TestCreate_InvalidOriginsGroupID asserts a non-numeric origins_group_id is
+// rejected before any API call. The schema validator also guards this, but the
+// resource defends independently since validators don't run in unit Create.
+func TestCreate_InvalidOriginsGroupID(t *testing.T) {
+	ctx := context.Background()
+	be := &fakeBackend{}
+	r := newResourceForTest(be)
+
+	plan := newPlan(t, CDNRuleModel{
+		ResourceID:     types.StringValue("res-o"),
+		Name:           types.StringValue("r"),
+		RulePattern:    types.StringValue(`.*`),
+		Weight:         types.Int64Value(0),
+		OriginsGroupID: types.StringValue("not-a-number"),
+	})
+	resp := resource.CreateResponse{State: emptyState(t)}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, &resp)
+
+	require.True(t, resp.Diagnostics.HasError())
+	assert.Empty(t, be.createReqs, "Create must not be called with an invalid origins_group_id")
+}
+
 // TestUpdate_EmptyNameFallsBackToState pins down the gotcha called out in
 // resource.go: proto3 doesn't distinguish "unset" from empty string, and the
 // API rejects "" with Internal. The resource compensates by falling back to

@@ -28,3 +28,19 @@ func expandOptions(ctx context.Context, model *CDNRuleModel, diags *diag.Diagnos
 	// Delegate to cdn_resource.ExpandCDNResourceOptions - same structure, same logic
 	return cdn_resource.ExpandCDNResourceOptions(ctx, optionsModels, diags)
 }
+
+// expandOriginProtocol maps the Terraform origin_protocol string to the CDN API
+// enum. An empty/null value yields ORIGIN_PROTOCOL_UNSPECIFIED, which tells the
+// API to inherit the parent resource's protocol rather than override it.
+func expandOriginProtocol(protocol string) cdn.OriginProtocol {
+	switch protocol {
+	case "http":
+		return cdn.OriginProtocol_HTTP
+	case "https":
+		return cdn.OriginProtocol_HTTPS
+	case "match":
+		return cdn.OriginProtocol_MATCH
+	default:
+		return cdn.OriginProtocol_ORIGIN_PROTOCOL_UNSPECIFIED
+	}
+}

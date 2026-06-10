@@ -17,6 +17,7 @@ import (
 	cdn_resource "github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/cdn_resource"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -112,6 +113,24 @@ func (r *cdnRuleResource) Create(ctx context.Context, req resource.CreateRequest
 		RulePattern: plan.RulePattern.ValueString(),
 		Weight:      plan.Weight.ValueInt64(),
 		Options:     options,
+	}
+
+	// origins_group_id / origin_protocol are optional per-rule overrides; only
+	// set them on the request when configured so an unset value lets the rule
+	// inherit the parent resource's origins group and protocol.
+	if v := plan.OriginsGroupID.ValueString(); v != "" {
+		originsGroupID, parseErr := strconv.ParseInt(v, 10, 64)
+		if parseErr != nil {
+			resp.Diagnostics.AddError(
+				"Invalid origins_group_id",
+				fmt.Sprintf("origins_group_id must be a numeric ID, got %q: %s", v, parseErr),
+			)
+			return
+		}
+		request.OriginsGroupId = originsGroupID
+	}
+	if v := plan.OriginProtocol.ValueString(); v != "" {
+		request.OriginProtocol = expandOriginProtocol(v)
 	}
 
 	ruleID, err := r.api().Create(ctx, request)
@@ -244,6 +263,24 @@ func (r *cdnRuleResource) Update(ctx context.Context, req resource.UpdateRequest
 		RulePattern: rulePattern,
 		Weight:      &weight,
 		Options:     options,
+	}
+
+	// origins_group_id / origin_protocol are optional per-rule overrides. On
+	// Update OriginsGroupId is a wrapper value so an unset field is left nil
+	// (no change) rather than forced to zero.
+	if v := plan.OriginsGroupID.ValueString(); v != "" {
+		originsGroupID, parseErr := strconv.ParseInt(v, 10, 64)
+		if parseErr != nil {
+			resp.Diagnostics.AddError(
+				"Invalid origins_group_id",
+				fmt.Sprintf("origins_group_id must be a numeric ID, got %q: %s", v, parseErr),
+			)
+			return
+		}
+		updateReq.OriginsGroupId = wrapperspb.Int64(originsGroupID)
+	}
+	if v := plan.OriginProtocol.ValueString(); v != "" {
+		updateReq.OriginProtocol = expandOriginProtocol(v)
 	}
 
 	newRuleID, err := r.api().Update(ctx, updateReq)
@@ -427,6 +464,11 @@ func (r *cdnRuleResource) readRuleInto(ctx context.Context, model *CDNRuleModel)
 	model.Name = types.StringValue(rule.Name)
 	model.RulePattern = types.StringValue(rule.RulePattern)
 	model.Weight = types.Int64Value(rule.Weight)
+
+	// OriginsGroupID and OriginProtocol are intentionally NOT updated here: the
+	// CDN API's Rule message does not carry them back, so we preserve whatever
+	// the caller already had in the model (the configured/state value). After
+	// import they remain null because there is nothing to read.
 
 	var diags diag.Diagnostics
 	model.Options = flattenOptions(ctx, rule.Options, priorOptions, &diags)
