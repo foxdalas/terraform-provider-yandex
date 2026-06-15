@@ -246,8 +246,28 @@ func flattenYandexCloudregistryRegistryProperties(ctx context.Context, yandexClo
 		}
 		return types.MapNull(types.StringType)
 	}
+
+	// The cloudregistry API injects server-managed properties (e.g. "subtype")
+	// that the user never configured. When the prior plan/state pinned a known
+	// set of keys, project the API map onto exactly those keys so the applied
+	// value can't gain a key the plan never had — otherwise Terraform fails with
+	// "Provider produced inconsistent result after apply: .properties: new
+	// element ... has appeared". When the prior is null/unknown (Optional+Computed
+	// not yet resolved, e.g. first create without config, or data source reads),
+	// surface the full map so computed values still land in state.
+	projectToPrior := !listState.IsNull() && !listState.IsUnknown()
+	var priorKeys map[string]attr.Value
+	if projectToPrior {
+		priorKeys = listState.Elements()
+	}
+
 	yandexCloudregistryRegistryPropertiesValues := make(map[string]attr.Value)
 	for k, elem := range yandexCloudregistryRegistryProperties {
+		if projectToPrior {
+			if _, ok := priorKeys[k]; !ok {
+				continue
+			}
+		}
 		val := types.StringValue(elem)
 		yandexCloudregistryRegistryPropertiesValues[k] = val
 	}
