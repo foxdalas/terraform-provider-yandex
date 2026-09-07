@@ -3,6 +3,7 @@ package mdb_clickhouse_user_test
 import (
 	"context"
 	"fmt"
+	"github.com/yandex-cloud/go-sdk/services/mdb/clickhouse/v1"
 	"sort"
 	"testing"
 
@@ -11,10 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
+	"github.com/yandex-cloud/terraform-provider-yandex/pkg/chcommon/usersettings"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/resourceid"
 	test "github.com/yandex-cloud/terraform-provider-yandex/pkg/testhelpers"
 	yandex_framework "github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/provider"
-	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/mdb_clickhouse_user"
 )
 
 // TestMain - add sweepers flag to the go test command
@@ -29,8 +30,9 @@ func mdbClickHouseUserImportStep(name string) resource.TestStep {
 		ImportState:       true,
 		ImportStateVerify: true,
 		ImportStateVerifyIgnore: []string{
-			"password",          // sensitive
-			"generate_password", // does not return
+			"password",            // sensitive
+			"password_wo_version", // write-only password versions are not returned
+			"generate_password",   // does not return
 		},
 	}
 
@@ -90,8 +92,37 @@ func TestAccMDBClickHouseUser_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMDBClickHouseUserResourceIDField(makeCHUserResource(chUserResourceName2)),
 					testAccCheckMDBClickHouseClusterHasUsers(chClusterResourceID, []string{chUserResourceName2, chUserResourceName3}),
+					resource.TestCheckResourceAttr(makeCHUserResource(chUserResourceName2), "permissions.#", "0"),
 				),
 			},
+		},
+	})
+}
+
+func TestAccMDBClickHouseUser_iamAuth(t *testing.T) {
+	t.Parallel()
+
+	clusterName := acctest.RandomWithPrefix("tf-clickhouse-user-iam-auth")
+	description := "Clickhouse User Terraform IAM authentication Test"
+	chUserResourceID := makeCHUserResource("iam_user")
+	chUserName := "tesuser@domain.com"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { test.AccPreCheck(t) },
+		ProtoV6ProviderFactories: test.AccProviderFactories,
+		CheckDestroy:             testAccCheckMDBClickHouseUserDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMDBClickHouseUserConfig_iamAuth(clusterName, description, chUserName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseUserResourceIDField(chUserResourceID),
+					resource.TestCheckResourceAttr(chUserResourceID, "name", chUserName),
+					resource.TestCheckResourceAttr(chUserResourceID, "auth_method", "iam"),
+					resource.TestCheckResourceAttr(chUserResourceID, "generate_password", "false"),
+					testAccCheckMDBClickHouseUserAuthMethod(chUserResourceID, clickhouse.AuthMethod_AUTH_METHOD_IAM),
+				),
+			},
+			mdbClickHouseUserImportStep(chUserResourceID),
 		},
 	})
 }
@@ -102,7 +133,7 @@ func TestAccMDBClickHouseUser_settings(t *testing.T) {
 	clusterName := acctest.RandomWithPrefix("tf-clickhouse-user-settings")
 	description := "Clickhouse User Terraform full settings Test"
 
-	settingsCreate := mdb_clickhouse_user.Setting{
+	settingsCreate := usersettings.Setting{
 		Readonly:                            types.Int64Value(0),
 		AllowDdl:                            types.BoolValue(false),
 		AllowIntrospectionFunctions:         types.BoolValue(false),
@@ -269,7 +300,7 @@ func TestAccMDBClickHouseUser_settings(t *testing.T) {
 		S3UseAdaptiveTimeouts:                         types.BoolValue(false),
 	}
 
-	settingsUpdate := mdb_clickhouse_user.Setting{
+	settingsUpdate := usersettings.Setting{
 		Readonly:                            types.Int64Value(1),
 		AllowDdl:                            types.BoolValue(true),
 		AllowIntrospectionFunctions:         types.BoolValue(true),
@@ -481,6 +512,7 @@ func testAccMDBClickHouseUserConfig_basic_create(name string, description string
 	      database_name = %s.name
 	  	}
 	}
+
 	`, chUserResourceName1, chClusterResourceIDLink, chUserResourceName1, makeCHDBResource(chDBResourceName1))
 }
 
@@ -511,6 +543,7 @@ func testAccMDBClickHouseUserConfig_basic_update(name string, description string
 		}
 
 	}
+
 	`, chUserResourceName1, chClusterResourceIDLink, chUserResourceName1,
 		makeCHDBResource(chDBResourceName1), makeCHDBResource(chDBResourceName2))
 }
@@ -527,17 +560,24 @@ func testAccMDBClickHouseUserConfig_basic_several(name, description string, user
 		cluster_id = %s
 		name       = "%s"
 		password   = "mysecureP@ssw0rd"
-		permission {
-	      database_name = %s.name
-	  	}
 	}
-	`, userName, chClusterResourceIDLink, userName, makeCHDBResource(chDBResourceName1))
+	`, userName, chClusterResourceIDLink, userName)
 	}
 
 	return planAll
 }
 
-func testAccMDBClickHouseUserWithFullSettings(name, desc, userName, dbName string, settings mdb_clickhouse_user.Setting) string {
+func testAccMDBClickHouseUserConfig_iamAuth(name, description, userName string) string {
+	return testAccMDBClickHouseClusterConfigMain(name, description) + fmt.Sprintf(`
+	resource "yandex_mdb_clickhouse_user" "iam_user" {
+		cluster_id  = %s
+		name        = "%s"
+		auth_method = "iam"
+	}
+	`, chClusterResourceIDLink, userName)
+}
+
+func testAccMDBClickHouseUserWithFullSettings(name, desc, userName, dbName string, settings usersettings.Setting) string {
 	return testAccMDBClickHouseClusterConfigMain(name, desc) + fmt.Sprintf(`
    resource "yandex_mdb_clickhouse_user" "%s" {
     cluster_id = %s
@@ -882,7 +922,7 @@ func testAccMDBClickHouseUserWithFullSettings(name, desc, userName, dbName strin
 	)
 }
 
-func testAccCheckMDBClickHouseUserSettingsSet(chUserID string, settings mdb_clickhouse_user.Setting) resource.TestCheckFunc {
+func testAccCheckMDBClickHouseUserSettingsSet(chUserID string, settings usersettings.Setting) resource.TestCheckFunc {
 	return resource.ComposeTestCheckFunc(
 		resource.TestCheckResourceAttr(chUserID, "settings.readonly", settings.Readonly.String()),
 		resource.TestCheckResourceAttr(chUserID, "settings.allow_ddl", settings.AllowDdl.String()),
@@ -1048,7 +1088,7 @@ func testAccCheckMDBClickHouseUserHasDatabases(r string, databases []string) res
 
 		config := test.AccProvider.(*yandex_framework.Provider).GetConfig()
 
-		resp, err := config.SDK.MDB().Clickhouse().User().Get(context.Background(), &clickhouse.GetUserRequest{
+		resp, err := clickhousesdk.NewUserClient(config.SDKv2).Get(context.Background(), &clickhouse.GetUserRequest{
 			ClusterId: clusterId,
 			UserName:  userName,
 		})
@@ -1074,6 +1114,44 @@ func testAccCheckMDBClickHouseUserHasDatabases(r string, databases []string) res
 	}
 }
 
+func testAccCheckMDBClickHouseUserAuthMethod(r string, authMethod clickhouse.AuthMethod) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[r]
+		if !ok {
+			return fmt.Errorf("Not found: %s", r)
+		}
+
+		if rs.Type != "yandex_mdb_clickhouse_user" {
+			return fmt.Errorf("Invalid resource type: %s", rs.Type)
+		}
+
+		if rs.Primary.ID == "" {
+			return fmt.Errorf("No ID is set")
+		}
+
+		clusterId, userName, err := resourceid.Deconstruct(rs.Primary.ID)
+		if err != nil {
+			return err
+		}
+
+		config := test.AccProvider.(*yandex_framework.Provider).GetConfig()
+
+		resp, err := clickhousesdk.NewUserClient(config.SDKv2).Get(context.Background(), &clickhouse.GetUserRequest{
+			ClusterId: clusterId,
+			UserName:  userName,
+		})
+		if err != nil {
+			return err
+		}
+
+		if resp.AuthMethod != authMethod {
+			return fmt.Errorf("User %s has auth method %s. Expected %s", userName, resp.AuthMethod.String(), authMethod.String())
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckMDBClickHouseClusterHasUsers(r string, users []string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
@@ -1086,7 +1164,7 @@ func testAccCheckMDBClickHouseClusterHasUsers(r string, users []string) resource
 
 		cid := rs.Primary.ID
 
-		resp, err := config.SDK.MDB().Clickhouse().User().List(context.Background(), &clickhouse.ListUsersRequest{
+		resp, err := clickhousesdk.NewUserClient(config.SDKv2).List(context.Background(), &clickhouse.ListUsersRequest{
 			ClusterId: cid,
 			PageSize:  100,
 		})

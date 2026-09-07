@@ -12,7 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
-	ycsdk "github.com/yandex-cloud/go-sdk"
+	clickhouseConfig "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1/config"
+	ycsdk "github.com/yandex-cloud/go-sdk/v2"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/mdbcommon"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/timestamp"
 	provider_config "github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/provider/config"
@@ -22,10 +23,11 @@ import (
 )
 
 const (
-	yandexMDBClickHouseClusterCreateTimeout = 60 * time.Minute
-	yandexMDBClickHouseClusterDeleteTimeout = 30 * time.Minute
-	yandexMDBClickHouseClusterUpdateTimeout = 90 * time.Minute
-	yandexMDBClickHouseClusterPollInterval  = 10 * time.Second
+	yandexMDBClickHouseClusterCreateTimeout  = 60 * time.Minute
+	yandexMDBClickHouseClusterDeleteTimeout  = 30 * time.Minute
+	yandexMDBClickHouseClusterUpdateTimeout  = 90 * time.Minute
+	yandexMDBClickHouseClusterPollInterval   = 10 * time.Second
+	yandexMDBClickHouseClusterRestoreTimeout = 48 * time.Hour
 )
 
 var _ resource.ResourceWithModifyPlan = &clusterResource{}
@@ -60,9 +62,36 @@ func (r *clusterResource) Configure(_ context.Context,
 	r.providerConfig = providerConfig
 }
 
+func clickHouseClusterAdminPasswordForCreate(plan *models.ClusterResource, passwordWo types.String) string {
+	if !passwordWo.IsNull() && !passwordWo.IsUnknown() {
+		return passwordWo.ValueString()
+	}
+	return plan.AdminPassword.ValueString()
+}
+
+func clickHouseClusterAdminPasswordChange(plan, state *models.ClusterResource, passwordWo types.String) (string, bool, diag.Diagnostics) {
+	password := plan.AdminPassword.ValueString()
+	passwordChanged := !plan.AdminPassword.IsNull() && !plan.AdminPassword.Equal(state.AdminPassword)
+
+	if plan.AdminPasswordWoVersion.IsNull() || plan.AdminPasswordWoVersion.Equal(state.AdminPasswordWoVersion) {
+		return password, passwordChanged, nil
+	}
+	if passwordWo.IsNull() || passwordWo.IsUnknown() {
+		diagnostics := diag.Diagnostics{}
+		diagnostics.AddAttributeError(
+			path.Root("admin_password_wo"),
+			"Missing ClickHouse admin password",
+			"admin_password_wo must be configured when admin_password_wo_version changes",
+		)
+		return "", false, diagnostics
+	}
+
+	return passwordWo.ValueString(), true, nil
+}
+
 func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Load the current state of the resource
-	var state models.Cluster
+	var state models.ClusterResource
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -71,7 +100,7 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Update Resource State
 	prevState := state
-	refreshState(ctx, &prevState, &state, r.providerConfig.SDK, &resp.Diagnostics)
+	refreshState(ctx, &prevState, &state, r.providerConfig.SDKv2, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -81,14 +110,31 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan models.Cluster
+	var (
+		plan                  models.ClusterResource
+		existingFormatSchemas []*clickhouse.FormatSchema
+		existingMlModels      []*clickhouse.MlModel
+		existingShardGroups   []*clickhouse.ShardGroup
+		existingExtensions    []*clickhouse.ClusterExtension
+		existingDicts         []*clickhouseConfig.ClickhouseConfig_ExternalDictionary
+	)
+
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
+	var passwordWo types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("admin_password_wo"), &passwordWo)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	createTimeout, diags := plan.Timeouts.Create(ctx, yandexMDBClickHouseClusterCreateTimeout)
+	isRestore := !plan.Restore.IsNull() && !plan.Restore.IsUnknown()
+
+	defaultCreateTimeout := yandexMDBClickHouseClusterCreateTimeout
+	if isRestore {
+		defaultCreateTimeout = yandexMDBClickHouseClusterRestoreTimeout
+	}
+
+	createTimeout, diags := plan.Timeouts.Create(ctx, defaultCreateTimeout)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -97,52 +143,99 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 	defer cancel()
 
 	hostSpecsSlice, diags := mdbcommon.CreateClusterHosts(ctx, clickhouseHostService, plan.HostSpecs)
-	if resp.Diagnostics.Append(diags...); resp.Diagnostics.HasError() {
-		return
+
+	// Create or restore cluster
+	adminPassword := clickHouseClusterAdminPasswordForCreate(&plan, passwordWo)
+	if isRestore {
+		request, requestDiags := prepareRestoreRequest(
+			ctx,
+			&plan,
+			adminPassword,
+			&r.providerConfig.ProviderState,
+			hostSpecsSlice,
+		)
+		resp.Diagnostics.Append(requestDiags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		r.createClusterFromBackup(ctx, request, &plan, &resp.Diagnostics)
+	} else {
+		request := prepareClusterCreateRequest(
+			ctx,
+			&plan,
+			adminPassword,
+			&r.providerConfig.ProviderState,
+			&resp.Diagnostics,
+			hostSpecsSlice,
+		)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		r.createCluster(ctx, request, &plan, &resp.Diagnostics)
 	}
 
-	// Create cluster
-	r.createCluster(ctx, &plan, hostSpecsSlice, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	if isRestore {
+		cid := plan.Id.ValueString()
+		existingFormatSchemas = clickhouseApi.ListFormatSchemas(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
+		existingMlModels = clickhouseApi.ListMlModels(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
+		existingShardGroups = clickhouseApi.ListShardGroups(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
+		existingExtensions = clickhouseApi.ListExtensions(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
+		existingDicts = clickhouseApi.ListExternalDictionaries(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	// Create format schemas
-	r.createFormatSchemas(ctx, plan, &resp.Diagnostics)
+	r.createFormatSchemas(ctx, plan, existingFormatSchemas, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create ml models
-	r.createMlModels(ctx, plan, &resp.Diagnostics)
+	r.createMlModels(ctx, plan, existingMlModels, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create shard groups
-	r.createShardGroups(ctx, plan, &resp.Diagnostics)
+	r.createShardGroups(ctx, plan, existingShardGroups, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create extensions
-	r.createExtensions(ctx, plan, &resp.Diagnostics)
+	r.createExtensions(ctx, plan, existingExtensions, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create external dictionaries
+	r.createExternalDictionaries(ctx, plan, existingDicts, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Update state
 	prevState := plan
-	refreshState(ctx, &prevState, &plan, r.providerConfig.SDK, &resp.Diagnostics)
+	refreshState(ctx, &prevState, &plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan models.Cluster
-	var state models.Cluster
+	var plan models.ClusterResource
+	var state models.ClusterResource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	var passwordWo types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("admin_password_wo"), &passwordWo)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -155,16 +248,43 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
 	defer cancel()
 
-	tflog.Debug(ctx, "Updating ClickHouse Cluster", map[string]interface{}{"id": plan.Id.ValueString()})
-	tflog.Debug(ctx, fmt.Sprintf("Update ClickHouse Cluster state: %+v", state))
-	tflog.Debug(ctx, fmt.Sprintf("Update ClickHouse Cluster plan: %+v", plan))
+	tflog.Debug(ctx, "Updating ClickHouse Cluster", map[string]any{"id": plan.Id.ValueString()})
+	adminPassword, adminPasswordChanged, passwordDiags := clickHouseClusterAdminPasswordChange(&plan, &state, passwordWo)
+	resp.Diagnostics.Append(passwordDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	migrateToKeeper := detectKeeperMigration(ctx, state.HostSpecs, plan.HostSpecs, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	if migrateToKeeper && (plan.AllowDegradationToReadOnly.IsNull() ||
+		plan.AllowDegradationToReadOnly.IsUnknown() ||
+		!plan.AllowDegradationToReadOnly.ValueBool()) {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("allow_degradation_to_read_only"),
+			"Migration to Keeper requires read-only degradation allowance",
+			"Set allow_degradation_to_read_only to true when changing coordinator hosts from ZOOKEEPER to KEEPER.",
+		)
+		return
+	}
+
+	planChHostSpecs, planKeeperHostSpecs := splitHostSpecsByType(ctx, plan.HostSpecs, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	stateChHostSpecs, stateKeeperHostSpecs := splitHostSpecsByType(ctx, state.HostSpecs, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	if !state.FolderId.Equal(plan.FolderId) {
 		// Update folder id
 		tflog.Debug(ctx, "Updating ClickHouse folder id")
 		updateFolderIdRequest := prepareFolderIdUpdateRequest(&state, &plan)
 
-		clickhouseApi.MoveCluster(ctx, r.providerConfig.SDK, &resp.Diagnostics, updateFolderIdRequest)
+		clickhouseApi.MoveCluster(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, updateFolderIdRequest)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -175,7 +295,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		tflog.Debug(ctx, "Updating ClickHouse version")
 		updateVersionRequest := prepareVersionUpdateRequest(&state, &plan)
 
-		clickhouseApi.UpdateCluster(ctx, r.providerConfig.SDK, &resp.Diagnostics, updateVersionRequest)
+		clickhouseApi.UpdateCluster(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, updateVersionRequest)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -183,22 +303,18 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Update cluster settings
 	tflog.Debug(ctx, "Updating ClickHouse cluster settings")
-	updateRequest := prepareClusterUpdateRequest(ctx, &state, &plan, &resp.Diagnostics)
+	clusterSettingsPlan := plan
+	if migrateToKeeper {
+		// Coordinator resources are applied by MigrateToKeeper. Updating them here would resize
+		// the old ZooKeeper hosts immediately before replacing them with Keeper hosts.
+		clusterSettingsPlan.ZooKeeper = state.ZooKeeper
+	}
+	updateRequest := prepareClusterUpdateRequest(ctx, &state, &clusterSettingsPlan, adminPassword, adminPasswordChanged, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	clickhouseApi.UpdateCluster(ctx, r.providerConfig.SDK, &resp.Diagnostics, updateRequest)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Update hosts
-	planChHostSpecs, planKeeperHostSpecs := splitHostSpecsByType(ctx, plan.HostSpecs, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	stateChHostSpecs, stateKeeperHostSpecs := splitHostSpecsByType(ctx, state.HostSpecs, &resp.Diagnostics)
+	clickhouseApi.UpdateCluster(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, updateRequest)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -239,19 +355,36 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		PlanShardSpecByShardName: mapShardNameShardSpec,
 	}
 
-	// Update ZooKeeper/Keeper hosts
-	tflog.Debug(ctx, "Updating ZooKeeper/Keeper hosts")
-	mdbcommon.UpdateClusterHosts(
-		ctx,
-		r.providerConfig.SDK,
-		&resp.Diagnostics,
-		clickhouseHostService,
-		&clickhouseApi,
-		plan.Id.ValueString(),
-		opts,
-		planKeeperHostSpecs,
-		stateKeeperHostSpecs,
-	)
+	if migrateToKeeper {
+		migrationRequest := prepareMigrateToKeeperRequest(
+			ctx,
+			plan.Id.ValueString(),
+			planKeeperHostSpecs,
+			planZooKeeperResources,
+			plan.AllowDegradationToReadOnly.ValueBool(),
+			&resp.Diagnostics,
+		)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		clickhouseApi.MigrateToKeeper(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, migrationRequest)
+	} else {
+		// Migration creates Keeper hosts and removes ZooKeeper hosts atomically, so the generic
+		// host reconciler must not manage coordinator hosts in the same apply.
+		tflog.Debug(ctx, "Updating ZooKeeper/Keeper hosts")
+		mdbcommon.UpdateClusterHosts(
+			ctx,
+			r.providerConfig.SDKv2,
+			&resp.Diagnostics,
+			clickhouseHostService,
+			&clickhouseApi,
+			plan.Id.ValueString(),
+			opts,
+			planKeeperHostSpecs,
+			stateKeeperHostSpecs,
+		)
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -260,7 +393,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	tflog.Debug(ctx, "Updating ClickHouse hosts and shards")
 	mdbcommon.UpdateClusterHostsWithShards(
 		ctx,
-		r.providerConfig.SDK,
+		r.providerConfig.SDKv2,
 		&resp.Diagnostics,
 		clickhouseHostService,
 		&clickhouseApi,
@@ -276,7 +409,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !state.Shards.Equal(plan.Shards) {
 		// Update shards
 		tflog.Debug(ctx, "Updating Clickhouse shards")
-		updateShards(ctx, plan, r.providerConfig.SDK, &resp.Diagnostics)
+		updateShards(ctx, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -285,7 +418,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !state.FormatSchema.Equal(plan.FormatSchema) {
 		// Update format schemas
 		tflog.Debug(ctx, "Updating Clickhouse format schemas")
-		updateFormatSchemas(ctx, plan, r.providerConfig.SDK, &resp.Diagnostics)
+		updateFormatSchemas(ctx, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -294,7 +427,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !state.MLModel.Equal(plan.MLModel) {
 		// Update ml models
 		tflog.Debug(ctx, "Updating Clickhouse ml models")
-		updateMlModels(ctx, plan, r.providerConfig.SDK, &resp.Diagnostics)
+		updateMlModels(ctx, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -303,7 +436,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !state.ShardGroup.Equal(plan.ShardGroup) {
 		// Update shard groups
 		tflog.Debug(ctx, "Updating Clickhouse shard groups")
-		updateShardGroups(ctx, plan, r.providerConfig.SDK, &resp.Diagnostics)
+		updateShardGroups(ctx, state, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -312,7 +445,16 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 	if !state.Extension.Equal(plan.Extension) {
 		// Update extensions
 		tflog.Debug(ctx, "Updating Clickhouse extensions")
-		updateExtensions(ctx, plan, r.providerConfig.SDK, &resp.Diagnostics)
+		updateExtensions(ctx, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	if !state.ExternalDictionary.Equal(plan.ExternalDictionary) {
+		// Update external dictionaries
+		tflog.Debug(ctx, "Updating Clickhouse external dictionaries")
+		updateExternalDictionaries(ctx, state, plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -320,13 +462,13 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Update state
 	prevState := plan
-	refreshState(ctx, &prevState, &plan, r.providerConfig.SDK, &resp.Diagnostics)
+	refreshState(ctx, &prevState, &plan, r.providerConfig.SDKv2, &resp.Diagnostics)
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
 
 func (r *clusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state models.Cluster
+	var state models.ClusterResource
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -342,7 +484,7 @@ func (r *clusterResource) Delete(ctx context.Context, req resource.DeleteRequest
 	defer cancel()
 
 	cid := state.Id.ValueString()
-	clickhouseApi.DeleteCluster(ctx, r.providerConfig.SDK, &resp.Diagnostics, cid)
+	clickhouseApi.DeleteCluster(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -350,6 +492,7 @@ func (r *clusterResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 // Plan modify logic:
 // - add coordinator hosts without zookeeper.resources	  => zookeeper.resources 						  = Unknown
+// - migrate ZooKeeper hosts to Keeper                    => hosts[*].fqdn                                  = Unknown
 // - clickhouse.<resources|disk_size_autoscaling> changed => shards[*].<resources|disk_size_autoscaling>  = Unknown
 // - shards[*].<resources|disk_size_autoscaling> changed  => clickhouse.<resources|disk_size_autoscaling> = Unknown
 func (r *clusterResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -357,7 +500,7 @@ func (r *clusterResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 		return
 	}
 
-	var config, plan, state models.Cluster
+	var config, plan, state models.ClusterResource
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -374,6 +517,33 @@ func (r *clusterResource) ModifyPlan(ctx context.Context, req resource.ModifyPla
 	_, stateKeeperHosts := splitHostSpecsByType(ctx, state.HostSpecs, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	migrateToKeeper := detectKeeperMigration(ctx, state.HostSpecs, plan.HostSpecs, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if migrateToKeeper {
+		if plan.AllowDegradationToReadOnly.IsNull() ||
+			(!plan.AllowDegradationToReadOnly.IsUnknown() && !plan.AllowDegradationToReadOnly.ValueBool()) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("allow_degradation_to_read_only"),
+				"Migration to Keeper requires read-only degradation allowance",
+				"Set allow_degradation_to_read_only to true when changing coordinator hosts from ZOOKEEPER to KEEPER.",
+			)
+			return
+		}
+
+		planHosts := markKeeperFQDNsUnknown(ctx, plan.HostSpecs, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		resp.Diagnostics.Append(resp.Plan.SetAttribute(ctx, path.Root("hosts"), planHosts)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if len(planKeeperHosts.Elements()) > 0 && len(stateKeeperHosts.Elements()) == 0 {
@@ -473,7 +643,7 @@ func (r *clusterResource) ImportState(ctx context.Context, req resource.ImportSt
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func refreshState(ctx context.Context, prevState, state *models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func refreshState(ctx context.Context, prevState, state *models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	cid := state.Id.ValueString()
 	cluster := clickhouseApi.GetCluster(ctx, sdk, diags, cid)
 	if diags.HasError() {
@@ -523,16 +693,21 @@ func refreshState(ctx context.Context, prevState, state *models.Cluster, sdk *yc
 	state.DiskEncryptionKeyId = mdbcommon.FlattenStringWrapper(ctx, cluster.DiskEncryptionKeyId, diags)
 
 	state.Version = types.StringValue(cluster.Config.Version)
-	state.ClickHouse = models.FlattenClickHouse(ctx, prevState, cluster.Config.Clickhouse, diags)
+	state.ClickHouse = models.FlattenClickHouse(ctx, prevState.ClickHouse, cluster.Config.Clickhouse, diags)
 	state.ZooKeeper = models.FlattenZooKeeper(ctx, cluster.Config.Zookeeper, diags)
 	state.BackupWindowStart = mdbcommon.FlattenBackupWindowStart(ctx, cluster.Config.BackupWindowStart, diags)
 	state.Access = models.FlattenAccess(ctx, cluster.Config.Access, diags)
 	state.CloudStorage = models.FlattenCloudStorage(ctx, cluster.Config.CloudStorage, diags)
 	state.AdminPassword = prevState.AdminPassword
+	state.AdminPasswordWo = types.StringNull()
+	state.AdminPasswordWoVersion = prevState.AdminPasswordWoVersion
 	state.SqlDatabaseManagement = mdbcommon.FlattenBoolWrapper(ctx, cluster.Config.SqlDatabaseManagement, diags)
 	state.SqlUserManagement = mdbcommon.FlattenBoolWrapper(ctx, cluster.Config.SqlUserManagement, diags)
 	state.EmbeddedKeeper = mdbcommon.FlattenBoolWrapper(ctx, cluster.Config.EmbeddedKeeper, diags)
 	state.BackupRetainPeriodDays = mdbcommon.FlattenInt64Wrapper(ctx, cluster.Config.BackupRetainPeriodDays, diags)
+	state.PerformanceDiagnostics = models.FlattenPerformanceDiagnostics(ctx, cluster.Config.PerformanceDiagnostics, diags)
+	state.Monitoring = models.FlattenListMonitoring(ctx, cluster.Monitoring, diags)
+	state.FullVersion = types.StringValue(cluster.Config.FullVersion)
 
 	currentFormatSchemas := clickhouseApi.ListFormatSchemas(ctx, sdk, diags, cid)
 	state.FormatSchema = models.FlattenListFormatSchema(ctx, currentFormatSchemas, diags)
@@ -544,16 +719,19 @@ func refreshState(ctx context.Context, prevState, state *models.Cluster, sdk *yc
 	state.Shards = models.FlattenListShard(ctx, currentShards, diags)
 
 	currentShardGroups := clickhouseApi.ListShardGroups(ctx, sdk, diags, cid)
-	state.ShardGroup = models.FlattenListShardGroup(ctx, currentShardGroups, diags)
+	state.ShardGroup = models.FlattenListShardGroup(ctx, currentShardGroups, prevState.ShardGroup, diags)
 
 	currentExtensions := clickhouseApi.ListExtensions(ctx, sdk, diags, cid)
 	state.Extension = models.FlattenListExtensions(ctx, currentExtensions, diags)
+
+	currentDicts := clickhouseApi.ListExternalDictionaries(ctx, sdk, diags, cid)
+	state.ExternalDictionary = models.FlattenExternalDictionaries(ctx, currentDicts, prevState.ExternalDictionary, diags)
 }
 
 func shardOverridesChanged(
 	ctx context.Context,
 	configOverrides map[string]types.Object,
-	state models.Cluster,
+	state models.ClusterResource,
 	diags *diag.Diagnostics,
 	getter func(models.Shard) types.Object,
 ) bool {
@@ -583,7 +761,7 @@ func shardOverridesChanged(
 
 func setShardsAttrUnknown(
 	ctx context.Context,
-	plan *models.Cluster,
+	plan *models.ClusterResource,
 	attrName string,
 	attrTypes map[string]attr.Type,
 	resp *resource.ModifyPlanResponse,
@@ -614,7 +792,7 @@ func setShardsAttrUnknown(
 
 func getShardOverrides(
 	ctx context.Context,
-	cluster models.Cluster,
+	cluster models.ClusterResource,
 	diags *diag.Diagnostics,
 	getter func(models.Shard) types.Object,
 ) (map[string]types.Object, bool) {

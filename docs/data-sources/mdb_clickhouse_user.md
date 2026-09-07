@@ -38,6 +38,7 @@ output "permissions" {
 
 ### Read-Only
 
+- `auth_method` (String) Authentication method for the user. Possible values are `password`, `iam`. Default is `password`.
 - `connection_manager` (Attributes) Connection Manager connection configuration. Filled in by the server automatically. (see [below for nested schema](#nestedatt--connection_manager))
 - `id` (String) The resource identifier.
 - `password` (String, Sensitive) Password of the ClickHouse user. Provided by the client when the user is created.

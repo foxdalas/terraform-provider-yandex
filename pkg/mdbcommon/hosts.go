@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	ycsdk "github.com/yandex-cloud/go-sdk"
 	utils "github.com/yandex-cloud/terraform-provider-yandex/pkg/wrappers"
 )
 
@@ -37,29 +36,29 @@ type ProtoHostWithShard interface {
 // HostApiService is an interface that defines methods for API operations involving hosts.
 // It is parameterized with types `ProtoHost`, `ProtoHostSpec`, `UpdateSpec`, and `Options`.
 // Each implementation determines the structure and semantics of the `Options` type.
-type HostApiService[ProtoHost any, ProtoHostSpec any, UpdateSpec any, Options any] interface {
-	ListHosts(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string) []ProtoHost
-	CreateHosts(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string, specs []ProtoHostSpec, opts Options)
-	UpdateHosts(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string, specs []*UpdateSpec)
-	DeleteHosts(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string, fqdns []string)
+type HostApiService[ProtoHost any, ProtoHostSpec any, UpdateSpec any, Options any, SDK any] interface {
+	ListHosts(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string) []ProtoHost
+	CreateHosts(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string, specs []ProtoHostSpec, opts Options)
+	UpdateHosts(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string, specs []*UpdateSpec)
+	DeleteHosts(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string, fqdns []string)
 }
 
 // BatchShardsOperations is an optional interface that can be implemented alongside HostApiServiceWithShards
 // to enable efficient batch creation and deletion of shards.
 // It is parameterized with types `ProtoHostSpec` and `Options`.
 // If not implemented, the system will fall back to sequential shard operations.
-type BatchShardsOperations[ProtoHostSpec any, Options any] interface {
-	CreateShards(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string, hostSpecsByShardName map[string][]ProtoHostSpec, opts Options)
-	DeleteShards(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid string, shardNames []string)
+type BatchShardsOperations[ProtoHostSpec any, Options any, SDK any] interface {
+	CreateShards(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string, hostSpecsByShardName map[string][]ProtoHostSpec, opts Options)
+	DeleteShards(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid string, shardNames []string)
 }
 
 // HostApiService is an interface that defines methods for API operations involving hosts with shards.
 // It is parameterized with types `ProtoHost`, `ProtoHostSpec`, `UpdateSpec`, and `Options`.
 // Each implementation determines the structure and semantics of the `Options` type.
-type HostApiServiceWithShards[ProtoHost any, ProtoHostSpec any, UpdateSpec any, Options any] interface {
-	HostApiService[ProtoHost, ProtoHostSpec, UpdateSpec, Options]
-	CreateShard(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid, shardName string, hostSpecs []ProtoHostSpec, opts Options)
-	DeleteShard(ctx context.Context, sdk *ycsdk.SDK, diag *diag.Diagnostics, cid, shardName string)
+type HostApiServiceWithShards[ProtoHost any, ProtoHostSpec any, UpdateSpec any, Options any, SDK any] interface {
+	HostApiService[ProtoHost, ProtoHostSpec, UpdateSpec, Options, SDK]
+	CreateShard(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid, shardName string, hostSpecs []ProtoHostSpec, opts Options)
+	DeleteShard(ctx context.Context, sdk SDK, diag *diag.Diagnostics, cid, shardName string)
 }
 
 // CmpHostService is an interface for implementing common parsing methods for host models.
@@ -127,12 +126,12 @@ func CreateClusterHosts[T Host, H any, HS any, U any](ctx context.Context,
 // 7) Update existing hosts
 // 8) Delete shards
 // 9) Delete remaining hosts
-func UpdateClusterHostsWithShards[T HostWithShard, H any, HS ProtoHostWithShard, U any, O any](
+func UpdateClusterHostsWithShards[T HostWithShard, H any, HS ProtoHostWithShard, U any, O any, S any](
 	ctx context.Context,
-	sdk *ycsdk.SDK,
+	sdk S,
 	diagnostics *diag.Diagnostics,
 	utilsHostService CmpHostService[T, H, HS, U],
-	hostsApiService HostApiServiceWithShards[H, HS, U, O],
+	hostsApiService HostApiServiceWithShards[H, HS, U, O, S],
 	cid string,
 	opts O,
 	plan, state types.Map,
@@ -172,7 +171,7 @@ func UpdateClusterHostsWithShards[T HostWithShard, H any, HS ProtoHostWithShard,
 
 	// Create shards - use batch operation if available
 	if len(toCreateShards) > 0 {
-		if batchOperations, ok := hostsApiService.(BatchShardsOperations[HS, O]); ok {
+		if batchOperations, ok := hostsApiService.(BatchShardsOperations[HS, O, S]); ok {
 			tflog.Debug(ctx, "using batch shard creation")
 			shardsSpecs := make(map[string][]HS)
 			for shardName, hosts := range toCreateShards {
@@ -213,7 +212,7 @@ func UpdateClusterHostsWithShards[T HostWithShard, H any, HS ProtoHostWithShard,
 
 	// Delete shards - use batch operation if available
 	if len(toDeleteShards) > 0 {
-		if batchOptions, ok := hostsApiService.(BatchShardsOperations[HS, O]); ok {
+		if batchOptions, ok := hostsApiService.(BatchShardsOperations[HS, O, S]); ok {
 			tflog.Debug(ctx, "using batch shard deletion")
 			shardNames := make([]string, 0, len(toDeleteShards))
 			for shardName := range toDeleteShards {
@@ -251,12 +250,12 @@ func UpdateClusterHostsWithShards[T HostWithShard, H any, HS ProtoHostWithShard,
 // 3) Create remaining hosts
 // 4) Update existing hosts
 // 5) Delete remaining hosts
-func UpdateClusterHosts[T Host, H any, HS any, U any, O any](
+func UpdateClusterHosts[T Host, H any, HS any, U any, O any, S any](
 	ctx context.Context,
-	sdk *ycsdk.SDK,
+	sdk S,
 	diagnostics *diag.Diagnostics,
 	utilsHostService CmpHostService[T, H, HS, U],
-	hostsApiService HostApiService[H, HS, U, O],
+	hostsApiService HostApiService[H, HS, U, O, S],
 	cid string,
 	opts O,
 	plan, state types.Map,
@@ -499,12 +498,12 @@ func ModifyStateDependsPlan[T Host, H any, HS any, U any](
 // 1. Map hosts from api to hosts in state by fqdn
 // 2. Map hosts from api to hosts in state without fqdn by equal attributes
 // 3. Add hosts from api to state if not mapped
-func ReadHosts[T Host, H ProtoHost, HS any, U any, O any](
+func ReadHosts[T Host, H ProtoHost, HS any, U any, O any, S any](
 	ctx context.Context,
-	sdk *ycsdk.SDK, // The SDK instance to interact with the relevant API.
+	sdk S, // The SDK instance to interact with the relevant API.
 	diags *diag.Diagnostics,
 	utilsHostService CmpHostService[T, H, HS, U], // A service utility for comparative host operations involving generic types.
-	hostsApiService HostApiService[H, HS, U, O], // The API service used to manage hosts, facilitating operations on host data.
+	hostsApiService HostApiService[H, HS, U, O, S], // The API service used to manage hosts, facilitating operations on host data.
 	stateHosts basetypes.MapValue, // A map representing the state of hosts, used for validation and updates.
 	cid string,
 ) map[string]T {

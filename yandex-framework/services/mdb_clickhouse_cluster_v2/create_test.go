@@ -4,16 +4,21 @@ import (
 	"context"
 	"math/big"
 	"testing"
+	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	clickhouse "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
 	clickhouseConfig "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1/config"
 	"google.golang.org/genproto/googleapis/type/timeofday"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
+	"github.com/yandex-cloud/terraform-provider-yandex/pkg/chcommon/usersettings"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/datasize"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/mdbcommon"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/provider/config"
@@ -21,11 +26,24 @@ import (
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/mdb_clickhouse_cluster_v2/utils"
 )
 
+func makeDefaultUserSettingsTF(settings usersettings.Setting) types.Object {
+	if settings.JoinAlgorithm.IsNull() {
+		settings.JoinAlgorithm = types.SetNull(types.StringType)
+	}
+
+	obj, diags := types.ObjectValueFrom(context.Background(), usersettings.AttrTypes, settings)
+	if diags.HasError() {
+		panic(diags)
+	}
+
+	return obj
+}
+
 var (
 	clusterId = "cluster-id"
 
 	minimalConfig = types.ObjectValueMust(
-		models.ClusterAttrTypes,
+		models.ClusterResourceAttrTypes,
 		map[string]attr.Value{
 			"id":                        types.StringValue(clusterId),
 			"cluster_id":                types.StringValue(clusterId),
@@ -36,7 +54,7 @@ var (
 			"labels":                    types.MapNull(types.StringType),
 			"environment":               types.StringValue("PRESTABLE"),
 			"network_id":                types.StringValue("test-network"),
-			"version":                   types.StringValue("25.8"),
+			"version":                   types.StringValue("26.3"),
 			"maintenance_window":        types.ObjectNull(models.MaintenanceWindowAttrTypes),
 			"clickhouse":                types.ObjectNull(models.ClickhouseAttrTypes),
 			"zookeeper":                 types.ObjectNull(models.ZookeeperAttrTypes),
@@ -47,6 +65,8 @@ var (
 			"sql_database_management":   types.BoolNull(),
 			"sql_user_management":       types.BoolNull(),
 			"admin_password":            types.StringNull(),
+			"admin_password_wo":         types.StringNull(),
+			"admin_password_wo_version": types.Int64Null(),
 			"embedded_keeper":           types.BoolNull(),
 			"backup_retain_period_days": types.Int64Null(),
 			"deletion_protection":       types.BoolNull(),
@@ -57,17 +77,24 @@ var (
 			"shards":                    types.MapNull(types.ObjectType{AttrTypes: models.ShardAttrTypes}),
 			"shard_group":               types.ListNull(types.ObjectType{AttrTypes: models.ShardGroupAttrTypes}),
 			"extension":                 types.SetNull(types.ObjectType{AttrTypes: models.ExtensionAttrTypes}),
+			"external_dictionary":       types.MapNull(types.ObjectType{AttrTypes: models.ExternalDictionaryAttrTypes}),
 			"hosts": types.MapValueMust(types.StringType, map[string]attr.Value{
 				"host1": types.StringValue("host1"),
 				"host2": types.StringValue("host2"),
 			}),
-			"timeouts":                 timeouts.Value{},
-			"copy_schema_on_new_hosts": types.BoolNull(),
+			"timeouts":                       timeouts.Value{},
+			"copy_schema_on_new_hosts":       types.BoolNull(),
+			"allow_host_recreation":          types.BoolNull(),
+			"allow_degradation_to_read_only": types.BoolNull(),
+			"restore":                        types.ObjectNull(models.RestoreAttrTypes),
+			"performance_diagnostics":        types.ObjectNull(models.PerformanceDiagnosticsAttrTypes),
+			"monitoring":                     types.ListNull(types.ObjectType{AttrTypes: models.MonitoringAttrTypes}),
+			"full_version":                   types.StringNull(),
 		},
 	)
 
 	maximalConfig = types.ObjectValueMust(
-		models.ClusterAttrTypes,
+		models.ClusterResourceAttrTypes,
 		map[string]attr.Value{
 			"id":          types.StringValue(clusterId),
 			"cluster_id":  types.StringValue(clusterId),
@@ -80,7 +107,7 @@ var (
 			}),
 			"environment": types.StringValue("PRESTABLE"),
 			"network_id":  types.StringValue("test-network"),
-			"version":     types.StringValue("25.3"),
+			"version":     types.StringValue("25.8"),
 			"maintenance_window": types.ObjectValueMust(
 				mdbcommon.MaintenanceWindowType.AttrTypes,
 				map[string]attr.Value{
@@ -415,6 +442,15 @@ var (
 									),
 								},
 							),
+							"mark_cache_size":                                    types.Int64Value(5368709120),
+							"vector_similarity_index_cache_size":                 types.Int64Value(1073741824),
+							"vector_similarity_index_cache_max_entries":          types.Int64Value(10000),
+							"max_build_vector_similarity_index_thread_pool_size": types.Int64Value(4),
+							"tls": types.ObjectValueMust(models.ClickhouseTlsAttrTypes, map[string]attr.Value{
+								"trusted_certificates": types.ListValueMust(types.StringType, []attr.Value{
+									types.StringValue("-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n"),
+								}),
+							}),
 						},
 					),
 					"resources": types.ObjectValueMust(
@@ -433,6 +469,14 @@ var (
 							"emergency_usage_threshold": types.Int64Value(20),
 						},
 					),
+					"default_user_settings": makeDefaultUserSettingsTF(usersettings.Setting{
+						MaxThreads:       types.Int64Value(8),
+						MaxMemoryUsage:   types.Int64Value(1000000000),
+						ReadOverflowMode: types.StringValue("throw"),
+						JoinAlgorithm: types.SetValueMust(types.StringType, []attr.Value{
+							types.StringValue("hash"),
+						}),
+					}),
 				},
 			),
 			"zookeeper": types.ObjectValueMust(
@@ -544,6 +588,10 @@ var (
 									types.StringValue("shard2"),
 								},
 							),
+							"external_shard": types.ListValueMust(
+								types.ObjectType{AttrTypes: models.ExternalShardAttrTypes},
+								[]attr.Value{},
+							),
 						},
 					),
 					types.ObjectValueMust(
@@ -556,6 +604,10 @@ var (
 								[]attr.Value{
 									types.StringValue("shard3"),
 								},
+							),
+							"external_shard": types.ListValueMust(
+								types.ObjectType{AttrTypes: models.ExternalShardAttrTypes},
+								[]attr.Value{},
 							),
 						},
 					),
@@ -625,6 +677,8 @@ var (
 			"sql_database_management":   types.BoolValue(true),
 			"sql_user_management":       types.BoolValue(true),
 			"admin_password":            types.StringNull(),
+			"admin_password_wo":         types.StringNull(),
+			"admin_password_wo_version": types.Int64Null(),
 			"embedded_keeper":           types.BoolValue(false),
 			"backup_retain_period_days": types.Int64Value(14),
 			"deletion_protection":       types.BoolValue(true),
@@ -634,11 +688,143 @@ var (
 				"host1": types.StringValue("host1"),
 				"host2": types.StringValue("host2"),
 			}),
-			"timeouts":                 timeouts.Value{},
-			"copy_schema_on_new_hosts": types.BoolNull(),
+			"external_dictionary":            types.MapNull(types.ObjectType{AttrTypes: models.ExternalDictionaryAttrTypes}),
+			"timeouts":                       timeouts.Value{},
+			"copy_schema_on_new_hosts":       types.BoolNull(),
+			"allow_host_recreation":          types.BoolNull(),
+			"allow_degradation_to_read_only": types.BoolNull(),
+			"restore":                        types.ObjectNull(models.RestoreAttrTypes),
+			"performance_diagnostics": types.ObjectValueMust(
+				models.PerformanceDiagnosticsAttrTypes,
+				map[string]attr.Value{
+					"enabled":                    types.BoolValue(true),
+					"processes_refresh_interval": types.StringValue("20s"),
+				},
+			),
+			"monitoring":   types.ListNull(types.ObjectType{AttrTypes: models.MonitoringAttrTypes}),
+			"full_version": types.StringNull(),
 		},
 	)
+
+	dictFlatLayoutTF = types.ObjectValueMust(models.DictionaryLayoutAttrTypes, map[string]attr.Value{
+		"type":                                   types.StringValue("FLAT"),
+		"size_in_cells":                          types.Int64Value(0),
+		"allow_read_expired_keys":                types.BoolNull(),
+		"max_update_queue_size":                  types.Int64Value(0),
+		"update_queue_push_timeout_milliseconds": types.Int64Value(0),
+		"query_wait_timeout_milliseconds":        types.Int64Value(0),
+		"max_threads_for_updates":                types.Int64Value(0),
+		"initial_array_size":                     types.Int64Value(0),
+		"max_array_size":                         types.Int64Value(0),
+		"access_to_key_from_attributes":          types.BoolNull(),
+		"block_size":                             types.Int64Value(0),
+		"file_size":                              types.Int64Value(0),
+		"read_buffer_size":                       types.Int64Value(0),
+		"write_buffer_size":                      types.Int64Value(0),
+	})
+
+	dictSsdCacheLayoutTF = types.ObjectValueMust(models.DictionaryLayoutAttrTypes, map[string]attr.Value{
+		"type":                                   types.StringValue("SSD_CACHE"),
+		"size_in_cells":                          types.Int64Value(0),
+		"allow_read_expired_keys":                types.BoolNull(),
+		"max_update_queue_size":                  types.Int64Value(0),
+		"update_queue_push_timeout_milliseconds": types.Int64Value(0),
+		"query_wait_timeout_milliseconds":        types.Int64Value(0),
+		"max_threads_for_updates":                types.Int64Value(0),
+		"initial_array_size":                     types.Int64Value(0),
+		"max_array_size":                         types.Int64Value(0),
+		"access_to_key_from_attributes":          types.BoolNull(),
+		"block_size":                             types.Int64Value(4096),
+		"file_size":                              types.Int64Value(4294967296),
+		"read_buffer_size":                       types.Int64Value(65536),
+		"write_buffer_size":                      types.Int64Value(4096),
+	})
+
+	dictFixed300LifetimeTF = types.ObjectValueMust(models.DictionaryLifetimeAttrTypes, map[string]attr.Value{
+		"fixed_lifetime": types.Int64Value(300),
+		"range":          types.ObjectNull(models.DictionaryLifetimeRangeAttrTypes),
+	})
+
+	dictEmptyStructureTF = types.ObjectValueMust(models.DictionaryStructureAttrTypes, map[string]attr.Value{
+		"id":        types.ObjectNull(models.DictionaryIdAttrTypes),
+		"key":       types.ObjectNull(models.DictionaryKeyAttrTypes),
+		"range_min": types.ObjectNull(models.DictionaryAttributeAttrTypes),
+		"range_max": types.ObjectNull(models.DictionaryAttributeAttrTypes),
+		"attributes": types.ListValueMust(
+			types.ObjectType{AttrTypes: models.DictionaryAttributeAttrTypes}, []attr.Value{},
+		),
+	})
+
+	httpDictSourceTF = makeDictSourceTF("http_source", types.ObjectValueMust(models.DictionaryHttpSourceAttrTypes, map[string]attr.Value{
+		"url":     types.StringValue("https://example.com/dict"),
+		"format":  types.StringValue("CSV"),
+		"headers": types.ListNull(types.ObjectType{AttrTypes: models.DictionaryHttpHeaderAttrTypes}),
+	}))
+	httpDictModifiedSourceTF = makeDictSourceTF("http_source", types.ObjectValueMust(models.DictionaryHttpSourceAttrTypes, map[string]attr.Value{
+		"url":     types.StringValue("https://example.com/dict"),
+		"format":  types.StringValue("TSV"),
+		"headers": types.ListNull(types.ObjectType{AttrTypes: models.DictionaryHttpHeaderAttrTypes}),
+	}))
+	chDictSourceTF = makeDictSourceTF("clickhouse_source", types.ObjectValueMust(models.DictionaryClickhouseSourceAttrTypes, map[string]attr.Value{
+		"db": types.StringValue("default"), "table": types.StringValue("cities"),
+		"host": types.StringValue("rc1a-ch.mdb.yandexcloud.net"), "port": types.Int64Value(9000),
+		"user": types.StringValue("ch_user"), "password": types.StringValue("ch_pass"),
+		"where": types.StringValue(""), "secure": types.BoolNull(),
+	}))
+	mysqlDictSourceTF = makeDictSourceTF("mysql_source", types.ObjectValueMust(models.DictionaryMysqlSourceAttrTypes, map[string]attr.Value{
+		"db": types.StringValue("mydb"), "table": types.StringValue("cities"),
+		"port": types.Int64Value(3306), "user": types.StringValue("mysql_user"),
+		"password": types.StringValue("mysql_pass"), "where": types.StringValue(""),
+		"invalidate_query": types.StringValue(""), "close_connection": types.BoolNull(),
+		"share_connection": types.BoolNull(),
+		"replicas": types.ListValueMust(types.ObjectType{AttrTypes: models.DictionaryMysqlReplicaAttrTypes}, []attr.Value{
+			types.ObjectValueMust(models.DictionaryMysqlReplicaAttrTypes, map[string]attr.Value{
+				"host":     types.StringValue("rc1b-mysql.mdb.yandexcloud.net"),
+				"priority": types.Int64Value(1), "port": types.Int64Value(3306),
+				"user": types.StringValue("replica_user"), "password": types.StringValue("replica1_pass"),
+			}),
+			types.ObjectValueMust(models.DictionaryMysqlReplicaAttrTypes, map[string]attr.Value{
+				"host":     types.StringValue("rc1d-mysql.mdb.yandexcloud.net"),
+				"priority": types.Int64Value(2), "port": types.Int64Value(3306),
+				"user": types.StringValue("replica_user"), "password": types.StringValue("replica2_pass"),
+			}),
+		}),
+	}))
+
+	httpDictTF         = makeDictMapTF(map[string]types.Object{"http_dict": makeDictTF(httpDictSourceTF)})
+	httpDictModifiedTF = makeDictMapTF(map[string]types.Object{"http_dict": makeDictTF(httpDictModifiedSourceTF)})
+	mysqlDictTF        = makeDictMapTF(map[string]types.Object{"mysql_dict": makeDictTF(mysqlDictSourceTF)})
+	emptyDictMapTF     = makeDictMapTF(map[string]types.Object{})
 )
+
+func makeDictSourceTF(sourceKey string, sourceVal attr.Value) types.Object {
+	attrs := map[string]attr.Value{
+		"http_source":       types.ObjectNull(models.DictionaryHttpSourceAttrTypes),
+		"clickhouse_source": types.ObjectNull(models.DictionaryClickhouseSourceAttrTypes),
+		"mongodb_source":    types.ObjectNull(models.DictionaryMongodbSourceAttrTypes),
+		"postgresql_source": types.ObjectNull(models.DictionaryPostgresqlSourceAttrTypes),
+		"mysql_source":      types.ObjectNull(models.DictionaryMysqlSourceAttrTypes),
+	}
+	attrs[sourceKey] = sourceVal
+	return types.ObjectValueMust(models.DictionarySourceAttrTypes, attrs)
+}
+
+func makeDictMapTF(dicts map[string]types.Object) types.Map {
+	elems := make(map[string]attr.Value, len(dicts))
+	for k, v := range dicts {
+		elems[k] = v
+	}
+	return types.MapValueMust(types.ObjectType{AttrTypes: models.ExternalDictionaryAttrTypes}, elems)
+}
+
+func makeDictTF(source types.Object) types.Object {
+	return types.ObjectValueMust(models.ExternalDictionaryAttrTypes, map[string]attr.Value{
+		"structure": dictEmptyStructureTF,
+		"layout":    dictFlatLayoutTF,
+		"lifetime":  dictFixed300LifetimeTF,
+		"source":    source,
+	})
+}
 
 func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) {
 	t.Parallel()
@@ -674,7 +860,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 				},
 				ServiceAccountId: "",
 				ConfigSpec: &clickhouse.ConfigSpec{
-					Version:                "25.8",
+					Version:                "26.3",
 					Clickhouse:             nil,
 					Zookeeper:              nil,
 					BackupWindowStart:      &timeofday.TimeOfDay{},
@@ -685,6 +871,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 					AdminPassword:          "",
 					EmbeddedKeeper:         nil,
 					BackupRetainPeriodDays: nil,
+					PerformanceDiagnostics: nil,
 				},
 				DeletionProtection:  false,
 				SecurityGroupIds:    nil,
@@ -714,7 +901,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 				},
 				ServiceAccountId: "sa-id",
 				ConfigSpec: &clickhouse.ConfigSpec{
-					Version: "25.3",
+					Version: "25.8",
 					Clickhouse: &clickhouse.ConfigSpec_Clickhouse{
 						Config: &clickhouseConfig.ClickhouseConfig{
 							LogLevel:           clickhouseConfig.ClickhouseConfig_TRACE,
@@ -776,21 +963,28 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 								SelectFromSystemDbRequiresGrant:          wrapperspb.Bool(true),
 								SelectFromInformationSchemaRequiresGrant: wrapperspb.Bool(false),
 							},
-							MaxConnections:                      wrapperspb.Int64(1024),
-							MaxConcurrentQueries:                wrapperspb.Int64(512),
-							MaxTableSizeToDrop:                  wrapperspb.Int64(256),
-							MaxPartitionSizeToDrop:              wrapperspb.Int64(128),
-							KeepAliveTimeout:                    wrapperspb.Int64(64),
-							UncompressedCacheSize:               wrapperspb.Int64(32),
-							Timezone:                            "MSK",
-							GeobaseEnabled:                      wrapperspb.Bool(false),
-							GeobaseUri:                          "geobase_uri",
-							DefaultDatabase:                     wrapperspb.String("default_database"),
-							TotalMemoryProfilerStep:             wrapperspb.Int64(16),
-							TotalMemoryTrackerSampleProbability: wrapperspb.Double(10),
-							AsyncInsertThreads:                  wrapperspb.Int64(128),
-							BackupThreads:                       wrapperspb.Int64(512),
-							RestoreThreads:                      wrapperspb.Int64(64),
+							MaxConnections:                              wrapperspb.Int64(1024),
+							MaxConcurrentQueries:                        wrapperspb.Int64(512),
+							MaxTableSizeToDrop:                          wrapperspb.Int64(256),
+							MaxPartitionSizeToDrop:                      wrapperspb.Int64(128),
+							KeepAliveTimeout:                            wrapperspb.Int64(64),
+							UncompressedCacheSize:                       wrapperspb.Int64(32),
+							Timezone:                                    "MSK",
+							GeobaseEnabled:                              wrapperspb.Bool(false),
+							GeobaseUri:                                  "geobase_uri",
+							DefaultDatabase:                             wrapperspb.String("default_database"),
+							TotalMemoryProfilerStep:                     wrapperspb.Int64(16),
+							TotalMemoryTrackerSampleProbability:         wrapperspb.Double(10),
+							AsyncInsertThreads:                          wrapperspb.Int64(128),
+							BackupThreads:                               wrapperspb.Int64(512),
+							RestoreThreads:                              wrapperspb.Int64(64),
+							MarkCacheSize:                               wrapperspb.Int64(5368709120),
+							VectorSimilarityIndexCacheSize:              wrapperspb.Int64(1073741824),
+							VectorSimilarityIndexCacheMaxEntries:        wrapperspb.Int64(10000),
+							MaxBuildVectorSimilarityIndexThreadPoolSize: wrapperspb.Int64(4),
+							Tls: &clickhouseConfig.ClickhouseConfig_Tls{
+								TrustedCertificates: []string{"-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n"},
+							},
 							MergeTree: &clickhouseConfig.ClickhouseConfig_MergeTree{
 								ReplicatedDeduplicationWindow:                  wrapperspb.Int64(100),
 								ReplicatedDeduplicationWindowSeconds:           wrapperspb.Int64(200),
@@ -958,6 +1152,14 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 							PlannedUsageThreshold:   wrapperspb.Int64(20),
 							EmergencyUsageThreshold: wrapperspb.Int64(20),
 						},
+						DefaultUserSettings: &clickhouse.UserSettings{
+							MaxThreads:       wrapperspb.Int64(8),
+							MaxMemoryUsage:   wrapperspb.Int64(1000000000),
+							ReadOverflowMode: clickhouse.UserSettings_OVERFLOW_MODE_THROW,
+							JoinAlgorithm: []clickhouse.UserSettings_JoinAlgorithm{
+								clickhouse.UserSettings_JOIN_ALGORITHM_HASH,
+							},
+						},
 					},
 					Zookeeper: &clickhouse.ConfigSpec_Zookeeper{
 						Resources: &clickhouse.Resources{
@@ -995,6 +1197,16 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 					AdminPassword:          "",
 					EmbeddedKeeper:         wrapperspb.Bool(false),
 					BackupRetainPeriodDays: wrapperspb.Int64(14),
+					PerformanceDiagnostics: &clickhouse.PerformanceDiagnostics{
+						Enabled:                  wrapperspb.Bool(true),
+						ProcessesRefreshInterval: durationpb.New(time.Duration(20 * time.Second)),
+					},
+				},
+				DatabaseSpecs: []*clickhouse.DatabaseSpec{
+					&clickhouse.DatabaseSpec{
+						Name:   "default_database",
+						Engine: clickhouse.DatabaseEngine_DATABASE_ENGINE_UNSPECIFIED,
+					},
 				},
 				ShardSpecs: []*clickhouse.ShardSpec{
 					{
@@ -1097,7 +1309,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 		t.Run(c.testname, func(t *testing.T) {
 			t.Parallel()
 
-			cluster := &models.Cluster{}
+			cluster := &models.ClusterResource{}
 			diags := c.reqVal.As(ctx, cluster, datasize.DefaultOpts)
 			if diags.HasError() {
 				t.Errorf(
@@ -1109,7 +1321,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 			}
 
 			// Check create cluster request
-			req := prepareClusterCreateRequest(ctx, cluster, &config.State{}, &diags, c.hostSpecs)
+			req := prepareClusterCreateRequest(ctx, cluster, "", &config.State{}, &diags, c.hostSpecs)
 			if diags.HasError() != c.expectedError {
 				t.Errorf(
 					"Unexpected diagnostics status %s: expectedError=%t, actual=%t, errors=%v",
@@ -1123,7 +1335,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 			utils.AssertProtoEqual(t, c.testname, c.expectedClusterRequest, req)
 
 			// Check create format schema requests
-			fsReqs := prepareFormatSchemasCreateRequests(ctx, cluster, &diags)
+			fsReqs := prepareFormatSchemasCreateRequests(ctx, cluster, nil, &diags)
 			if diags.HasError() != c.expectedError {
 				t.Errorf(
 					"Unexpected diagnostics status %s: expectedError=%t, actual=%t, errors=%v",
@@ -1160,7 +1372,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 			}
 
 			// Check create ml model requests
-			mlReqs := prepareMlModelsCreateRequests(ctx, cluster, &diags)
+			mlReqs := prepareMlModelsCreateRequests(ctx, cluster, nil, &diags)
 			if diags.HasError() != c.expectedError {
 				t.Errorf(
 					"Unexpected diagnostics status %s: expectedError=%t, actual=%t, errors=%v",
@@ -1197,7 +1409,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 			}
 
 			// Check create shard group requests
-			sgReqs := prepareShardGroupsCreateRequests(ctx, cluster, &diags)
+			sgReqs := prepareShardGroupsCreateRequests(ctx, cluster, nil, &diags)
 			if diags.HasError() != c.expectedError {
 				t.Errorf(
 					"Unexpected diagnostics status %s: expectedError=%t, actual=%t, errors=%v",
@@ -1234,7 +1446,7 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 			}
 
 			// Check create extension requests
-			extReqs := prepareExtensionsCreateRequests(ctx, cluster, &diags)
+			extReqs := prepareExtensionsCreateRequests(ctx, cluster, nil, &diags)
 			if diags.HasError() != c.expectedError {
 				t.Errorf(
 					"Unexpected diagnostics status %s: expectedError=%t, actual=%t, errors=%v",
@@ -1268,6 +1480,601 @@ func TestYandexProvider_MDBClickHouseClusterPrepareCreateRequests(t *testing.T) 
 					return
 				}
 				utils.AssertProtoEqual(t, c.testname, expReq, actReq)
+			}
+		})
+	}
+}
+
+func TestYandexProvider_MDBClickHouseClusterPrepareRestoreRequest(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	hostSpecs := []*clickhouse.HostSpec{
+		{ZoneId: "ru-central1-a", ShardName: "shard1", Type: clickhouse.Host_CLICKHOUSE},
+	}
+
+	baseExpected := &clickhouse.RestoreClusterRequest{
+		BackupId:    "test-backup-id",
+		Name:        "test-cluster",
+		FolderId:    "test-folder-1",
+		NetworkId:   "test-network",
+		Environment: clickhouse.Cluster_PRESTABLE,
+		HostSpecs:   hostSpecs,
+		ConfigSpec:  &clickhouse.ConfigSpec{Version: "26.3", BackupWindowStart: &timeofday.TimeOfDay{}},
+	}
+
+	makeCluster := func(includePatterns, excludePatterns []attr.Value) *models.ClusterResource {
+		cfg := minimalConfig.Attributes()
+		cfg["restore"] = types.ObjectValueMust(
+			models.RestoreAttrTypes,
+			map[string]attr.Value{
+				"backup_id":        types.StringValue("test-backup-id"),
+				"include_patterns": types.ListValueMust(types.StringType, includePatterns),
+				"exclude_patterns": types.ListValueMust(types.StringType, excludePatterns),
+			},
+		)
+		reqVal := types.ObjectValueMust(models.ClusterResourceAttrTypes, cfg)
+		cluster := &models.ClusterResource{}
+		diags := reqVal.As(ctx, cluster, datasize.DefaultOpts)
+		if diags.HasError() {
+			t.Fatalf("Unexpected diagnostics in As(): %v", diags.Errors())
+		}
+		return cluster
+	}
+
+	t.Run("include_patterns", func(t *testing.T) {
+		cluster := makeCluster([]attr.Value{types.StringValue("default.*")}, nil)
+		expected := proto.Clone(baseExpected).(*clickhouse.RestoreClusterRequest)
+		expected.PartialRestore = &clickhouse.PartialRestoreSpec{
+			IncludePatterns: []string{"default.*"},
+		}
+		req, diags := prepareRestoreRequest(ctx, cluster, "", &config.State{}, hostSpecs)
+		if diags.HasError() {
+			t.Fatalf("Unexpected error: %v", diags.Errors())
+		}
+		utils.AssertProtoEqual(t, "PartialRestore include", expected, req)
+	})
+
+	t.Run("exclude_patterns", func(t *testing.T) {
+		cluster := makeCluster(nil, []attr.Value{types.StringValue("secret.*")})
+		expected := proto.Clone(baseExpected).(*clickhouse.RestoreClusterRequest)
+		expected.PartialRestore = &clickhouse.PartialRestoreSpec{
+			ExcludePatterns: []string{"secret.*"},
+		}
+		req, diags := prepareRestoreRequest(ctx, cluster, "", &config.State{}, hostSpecs)
+		if diags.HasError() {
+			t.Fatalf("Unexpected error: %v", diags.Errors())
+		}
+		utils.AssertProtoEqual(t, "PartialRestore exclude", expected, req)
+	})
+}
+
+func TestExpandCloudStorage_EnabledTrueWithUnknownOptionalFields(t *testing.T) {
+	ctx := context.Background()
+
+	cs := types.ObjectValueMust(
+		models.CloudStorageAttrTypes,
+		map[string]attr.Value{
+			"enabled":             types.BoolValue(true),
+			"move_factor":         types.NumberUnknown(),
+			"data_cache_enabled":  types.BoolUnknown(),
+			"data_cache_max_size": types.Int64Unknown(),
+			"prefer_not_to_merge": types.BoolUnknown(),
+		},
+	)
+
+	var diags diag.Diagnostics
+	got := models.ExpandCloudStorage(ctx, cs, &diags)
+	if diags.HasError() {
+		t.Fatalf("unexpected diagnostics: %v", diags.Errors())
+	}
+	if got == nil {
+		t.Fatalf("expected non-nil CloudStorage, got nil")
+	}
+	if !got.Enabled {
+		t.Errorf("expected Enabled=true, got false")
+	}
+	if got.MoveFactor != nil {
+		t.Errorf("expected MoveFactor to be nil for Unknown, got %v", got.MoveFactor)
+	}
+	if got.DataCacheEnabled != nil {
+		t.Errorf("expected DataCacheEnabled to be nil for Unknown, got %v", got.DataCacheEnabled)
+	}
+	if got.DataCacheMaxSize != nil {
+		t.Errorf("expected DataCacheMaxSize to be nil for Unknown, got %v", got.DataCacheMaxSize)
+	}
+	if got.PreferNotToMerge != nil {
+		t.Errorf("expected PreferNotToMerge to be nil for Unknown, got %v", got.PreferNotToMerge)
+	}
+}
+
+func TestYandexProvider_MDBClickHouseClusterPrepareExternalDictionaryCreateRequests(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	makeCluster := func(dicts types.Map) *models.ClusterResource {
+		cfg := minimalConfig.Attributes()
+		cfg["external_dictionary"] = dicts
+		reqVal := types.ObjectValueMust(models.ClusterResourceAttrTypes, cfg)
+		cluster := &models.ClusterResource{}
+		diags := reqVal.As(ctx, cluster, datasize.DefaultOpts)
+		if diags.HasError() {
+			t.Fatalf("Unexpected diagnostics in As(): %v", diags.Errors())
+		}
+		return cluster
+	}
+
+	dictStructure := types.ObjectValueMust(
+		models.DictionaryStructureAttrTypes,
+		map[string]attr.Value{
+			"id": types.ObjectValueMust(
+				models.DictionaryIdAttrTypes,
+				map[string]attr.Value{"name": types.StringValue("id")},
+			),
+			"key":       types.ObjectNull(models.DictionaryKeyAttrTypes),
+			"range_min": types.ObjectNull(models.DictionaryAttributeAttrTypes),
+			"range_max": types.ObjectNull(models.DictionaryAttributeAttrTypes),
+			"attributes": types.ListValueMust(
+				types.ObjectType{AttrTypes: models.DictionaryAttributeAttrTypes},
+				[]attr.Value{
+					types.ObjectValueMust(
+						models.DictionaryAttributeAttrTypes,
+						map[string]attr.Value{
+							"name":         types.StringValue("city"),
+							"type":         types.StringValue("String"),
+							"null_value":   types.StringValue(""),
+							"expression":   types.StringValue(""),
+							"hierarchical": types.BoolValue(false),
+							"injective":    types.BoolValue(false),
+						},
+					),
+				},
+			),
+		},
+	)
+
+	rangeLifetime := types.ObjectValueMust(
+		models.DictionaryLifetimeAttrTypes,
+		map[string]attr.Value{
+			"fixed_lifetime": types.Int64Null(),
+			"range": types.ObjectValueMust(
+				models.DictionaryLifetimeRangeAttrTypes,
+				map[string]attr.Value{
+					"min": types.Int64Value(100),
+					"max": types.Int64Value(500),
+				},
+			),
+		},
+	)
+
+	makeDict := func(lifetime types.Object, source types.Object) types.Object {
+		return types.ObjectValueMust(
+			models.ExternalDictionaryAttrTypes,
+			map[string]attr.Value{
+				"structure": dictStructure,
+				"layout":    dictFlatLayoutTF,
+				"lifetime":  lifetime,
+				"source":    source,
+			},
+		)
+	}
+
+	expectedStructure := &clickhouseConfig.ClickhouseConfig_ExternalDictionary_Structure{
+		Id: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_Structure_Id{Name: "id"},
+		Attributes: []*clickhouseConfig.ClickhouseConfig_ExternalDictionary_Structure_Attribute{
+			{Name: "city", Type: "String"},
+		},
+	}
+	expectedLayout := &clickhouseConfig.ClickhouseConfig_ExternalDictionary_Layout{
+		Type: clickhouseConfig.ClickhouseConfig_ExternalDictionary_Layout_FLAT,
+	}
+	expectedFixedLifetime := &clickhouseConfig.ClickhouseConfig_ExternalDictionary_FixedLifetime{
+		FixedLifetime: 300,
+	}
+	expectedRangeLifetime := &clickhouseConfig.ClickhouseConfig_ExternalDictionary_LifetimeRange{
+		LifetimeRange: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_Range{Min: 100, Max: 500},
+	}
+
+	httpSource := makeDictSourceTF("http_source", types.ObjectValueMust(
+		models.DictionaryHttpSourceAttrTypes,
+		map[string]attr.Value{
+			"url":     types.StringValue("https://example.com/dict"),
+			"format":  types.StringValue("CSV"),
+			"headers": types.ListNull(types.ObjectType{AttrTypes: models.DictionaryHttpHeaderAttrTypes}),
+		},
+	))
+
+	cases := []struct {
+		name             string
+		dicts            types.Map
+		expectedRequests []*clickhouse.CreateClusterExternalDictionaryRequest
+	}{
+		{
+			name:  "http_source",
+			dicts: makeDictMapTF(map[string]types.Object{"http_dict": makeDict(dictFixed300LifetimeTF, httpSource)}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "http_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_{
+							HttpSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource{
+								Url:    "https://example.com/dict",
+								Format: "CSV",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "http_source_with_headers",
+			dicts: makeDictMapTF(map[string]types.Object{"http_headers_dict": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("http_source",
+				types.ObjectValueMust(
+					models.DictionaryHttpSourceAttrTypes,
+					map[string]attr.Value{
+						"url":    types.StringValue("https://example.com/dict"),
+						"format": types.StringValue("TSV"),
+						"headers": types.ListValueMust(
+							types.ObjectType{AttrTypes: models.DictionaryHttpHeaderAttrTypes},
+							[]attr.Value{
+								types.ObjectValueMust(
+									models.DictionaryHttpHeaderAttrTypes,
+									map[string]attr.Value{
+										"name":  types.StringValue("X-Auth-Token"),
+										"value": types.StringValue("secret123"),
+									},
+								),
+							},
+						),
+					},
+				),
+			))}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "http_headers_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_{
+							HttpSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource{
+								Url:    "https://example.com/dict",
+								Format: "TSV",
+								Headers: []*clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_Header{
+									{Name: "X-Auth-Token", Value: "secret123"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "clickhouse_source",
+			dicts: makeDictMapTF(map[string]types.Object{"ch_dict": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("clickhouse_source",
+				types.ObjectValueMust(
+					models.DictionaryClickhouseSourceAttrTypes,
+					map[string]attr.Value{
+						"db":       types.StringValue("default"),
+						"table":    types.StringValue("cities"),
+						"host":     types.StringValue("rc1a-ch.mdb.yandexcloud.net"),
+						"port":     types.Int64Value(9000),
+						"user":     types.StringValue("ch_user"),
+						"password": types.StringValue("ch_pass"),
+						"where":    types.StringValue(""),
+						"secure":   types.BoolNull(),
+					},
+				),
+			))}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "ch_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource_{
+							ClickhouseSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource{
+								Db:       "default",
+								Table:    "cities",
+								Host:     "rc1a-ch.mdb.yandexcloud.net",
+								Port:     9000,
+								User:     "ch_user",
+								Password: "ch_pass",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mongodb_source",
+			dicts: makeDictMapTF(map[string]types.Object{"mongo_dict": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("mongodb_source",
+				types.ObjectValueMust(
+					models.DictionaryMongodbSourceAttrTypes,
+					map[string]attr.Value{
+						"db":         types.StringValue("default"),
+						"collection": types.StringValue("cities"),
+						"host":       types.StringValue("rc1a-mongo.mdb.yandexcloud.net"),
+						"port":       types.Int64Value(27018),
+						"user":       types.StringValue("mongo_user"),
+						"password":   types.StringValue("mongo_pass"),
+						"options":    types.StringValue(""),
+					},
+				),
+			))}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "mongo_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_MongodbSource_{
+							MongodbSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_MongodbSource{
+								Db:         "default",
+								Collection: "cities",
+								Host:       "rc1a-mongo.mdb.yandexcloud.net",
+								Port:       27018,
+								User:       "mongo_user",
+								Password:   "mongo_pass",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "postgresql_source",
+			dicts: makeDictMapTF(map[string]types.Object{"pg_dict": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("postgresql_source",
+				types.ObjectValueMust(
+					models.DictionaryPostgresqlSourceAttrTypes,
+					map[string]attr.Value{
+						"db":               types.StringValue("mydb"),
+						"table":            types.StringValue("cities"),
+						"hosts":            types.ListValueMust(types.StringType, []attr.Value{types.StringValue("rc1b-pg.mdb.yandexcloud.net")}),
+						"port":             types.Int64Value(6432),
+						"user":             types.StringValue("pg_user"),
+						"password":         types.StringValue("pg_pass"),
+						"invalidate_query": types.StringValue(""),
+						"ssl_mode":         types.StringValue("VERIFY_FULL"),
+					},
+				),
+			))}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "pg_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_PostgresqlSource_{
+							PostgresqlSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_PostgresqlSource{
+								Db:       "mydb",
+								Table:    "cities",
+								Hosts:    []string{"rc1b-pg.mdb.yandexcloud.net"},
+								Port:     6432,
+								User:     "pg_user",
+								Password: "pg_pass",
+								SslMode:  clickhouseConfig.ClickhouseConfig_ExternalDictionary_PostgresqlSource_VERIFY_FULL,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "mysql_source",
+			dicts: makeDictMapTF(map[string]types.Object{"mysql_dict": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("mysql_source",
+				types.ObjectValueMust(
+					models.DictionaryMysqlSourceAttrTypes,
+					map[string]attr.Value{
+						"db":               types.StringValue("mydb"),
+						"table":            types.StringValue("cities"),
+						"port":             types.Int64Value(3306),
+						"user":             types.StringValue("mysql_user"),
+						"password":         types.StringValue("mysql_pass"),
+						"where":            types.StringValue(""),
+						"invalidate_query": types.StringValue(""),
+						"close_connection": types.BoolNull(),
+						"share_connection": types.BoolNull(),
+						"replicas": types.ListValueMust(
+							types.ObjectType{AttrTypes: models.DictionaryMysqlReplicaAttrTypes},
+							[]attr.Value{
+								types.ObjectValueMust(
+									models.DictionaryMysqlReplicaAttrTypes,
+									map[string]attr.Value{
+										"host":     types.StringValue("rc1b-mysql.mdb.yandexcloud.net"),
+										"priority": types.Int64Value(1),
+										"port":     types.Int64Value(3306),
+										"user":     types.StringValue("replica_user"),
+										"password": types.StringValue("replica_pass"),
+									},
+								),
+								types.ObjectValueMust(
+									models.DictionaryMysqlReplicaAttrTypes,
+									map[string]attr.Value{
+										"host":     types.StringValue("rc1d-mysql.mdb.yandexcloud.net"),
+										"priority": types.Int64Value(2),
+										"port":     types.Int64Value(3306),
+										"user":     types.StringValue("replica_user"),
+										"password": types.StringValue("replica_pass"),
+									},
+								),
+							},
+						),
+					},
+				),
+			))}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "mysql_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_MysqlSource_{
+							MysqlSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_MysqlSource{
+								Db:       "mydb",
+								Table:    "cities",
+								Port:     3306,
+								User:     "mysql_user",
+								Password: "mysql_pass",
+								Replicas: []*clickhouseConfig.ClickhouseConfig_ExternalDictionary_MysqlSource_Replica{
+									{Host: "rc1b-mysql.mdb.yandexcloud.net", Priority: 1, Port: 3306, User: "replica_user", Password: "replica_pass"},
+									{Host: "rc1d-mysql.mdb.yandexcloud.net", Priority: 2, Port: 3306, User: "replica_user", Password: "replica_pass"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "range_lifetime",
+			dicts: makeDictMapTF(map[string]types.Object{"range_dict": makeDict(rangeLifetime, httpSource)}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "range_dict",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedRangeLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_{
+							HttpSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource{
+								Url:    "https://example.com/dict",
+								Format: "CSV",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:             "empty_list",
+			dicts:            types.MapValueMust(types.ObjectType{AttrTypes: models.ExternalDictionaryAttrTypes}, map[string]attr.Value{}),
+			expectedRequests: nil,
+		},
+		{
+			name: "multiple_dicts",
+			dicts: makeDictMapTF(map[string]types.Object{
+				"dict_one": makeDict(dictFixed300LifetimeTF, httpSource),
+				"dict_two": makeDict(dictFixed300LifetimeTF, makeDictSourceTF("clickhouse_source",
+					types.ObjectValueMust(
+						models.DictionaryClickhouseSourceAttrTypes,
+						map[string]attr.Value{
+							"db":       types.StringValue("default"),
+							"table":    types.StringValue("regions"),
+							"host":     types.StringValue("rc1b-ch.mdb.yandexcloud.net"),
+							"port":     types.Int64Value(9000),
+							"user":     types.StringValue("ch_user"),
+							"password": types.StringValue("ch_pass"),
+							"where":    types.StringValue(""),
+							"secure":   types.BoolNull(),
+						},
+					),
+				)),
+			}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "dict_one",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_{
+							HttpSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource{
+								Url:    "https://example.com/dict",
+								Format: "CSV",
+							},
+						},
+					},
+				},
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "dict_two",
+						Structure: expectedStructure,
+						Layout:    expectedLayout,
+						Lifetime:  expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource_{
+							ClickhouseSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource{
+								Db:       "default",
+								Table:    "regions",
+								Host:     "rc1b-ch.mdb.yandexcloud.net",
+								Port:     9000,
+								User:     "ch_user",
+								Password: "ch_pass",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "ssd_cache_layout",
+			dicts: makeDictMapTF(map[string]types.Object{
+				"ssd_dict": types.ObjectValueMust(
+					models.ExternalDictionaryAttrTypes,
+					map[string]attr.Value{
+						"structure": dictStructure,
+						"layout":    dictSsdCacheLayoutTF,
+						"lifetime":  dictFixed300LifetimeTF,
+						"source":    httpSource,
+					},
+				),
+			}),
+			expectedRequests: []*clickhouse.CreateClusterExternalDictionaryRequest{
+				{
+					ClusterId: clusterId,
+					ExternalDictionary: &clickhouseConfig.ClickhouseConfig_ExternalDictionary{
+						Name:      "ssd_dict",
+						Structure: expectedStructure,
+						Layout: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_Layout{
+							Type:            clickhouseConfig.ClickhouseConfig_ExternalDictionary_Layout_SSD_CACHE,
+							BlockSize:       4096,
+							FileSize:        4294967296,
+							ReadBufferSize:  65536,
+							WriteBufferSize: 4096,
+						},
+						Lifetime: expectedFixedLifetime,
+						Source: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource_{
+							HttpSource: &clickhouseConfig.ClickhouseConfig_ExternalDictionary_HttpSource{
+								Url:    "https://example.com/dict",
+								Format: "CSV",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			var diags diag.Diagnostics
+			cluster := makeCluster(c.dicts)
+			reqs := prepareExternalDictionariesCreateRequests(ctx, cluster, nil, &diags)
+			if diags.HasError() {
+				t.Fatalf("Unexpected diagnostics: %v", diags.Errors())
+			}
+			if len(reqs) != len(c.expectedRequests) {
+				t.Fatalf("Expected %d request(s), got %d", len(c.expectedRequests), len(reqs))
+			}
+			for i, expected := range c.expectedRequests {
+				utils.AssertProtoEqual(t, c.name, expected, reqs[i])
 			}
 		})
 	}

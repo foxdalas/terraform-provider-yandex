@@ -92,10 +92,13 @@ resource "yandex_mdb_clickhouse_user" "foo" {
 
 ### Optional
 
-- `generate_password` (Boolean) Generate password using Connection Manager. Allowed values: `true` or `false`. It's used only during user creation and is ignored during updating.
+- `auth_method` (String) Authentication method for the user. Possible values are `password`, `iam`. Default is `password`.
+- `generate_password` (Boolean) Generate password using Connection Manager. Allowed values: `true` or `false`.
 
-~> **Must specify either password or generate_password**.
+~> **For password authentication, must specify exactly one of password, password_wo, or generate_password**.
 - `password` (String, Sensitive) Password of the ClickHouse user. Provided by the client when the user is created.
+- `password_wo` (String, Sensitive) Password of the ClickHouse user. This attribute is write-only and is not stored in state. Requires `password_wo_version` to trigger updates. Write-only arguments are supported in Terraform 1.11 and later.
+- `password_wo_version` (Number) A version number for the write-only password. Increment this to trigger a password update.
 - `permission` (Block Set) Block represents databases that are permitted to user. (see [below for nested schema](#nestedblock--permission))
 - `quota` (Block Set) ClickHouse quota representation. Each quota associated with an user and limits it resource usage for an interval. For more information, see [the official documentation](https://clickhouse.com/docs/en/operations/quotas) (see [below for nested schema](#nestedblock--quota))
 - `settings` (Block, Optional) Block represents ClickHouse user settings. For more information, see [the official documentation](https://clickhouse.com/docs/ru/operations/settings/settings) (see [below for nested schema](#nestedblock--settings))

@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/operation"
+	sdkoperation "github.com/yandex-cloud/go-sdk/v2/pkg/operation"
 	"github.com/yandex-cloud/terraform-provider-yandex/common"
 	"google.golang.org/grpc/codes"
 )
@@ -108,6 +109,23 @@ func SweepWithRetryByFunc(conf *provider_config.Config, message string, sf func(
 
 	DebugLog("failed to sweep %s", message)
 	return false
+}
+
+type sweepOperation interface {
+	Abstract() sdkoperation.AbstractOperation
+}
+
+// HandleSweepOperationV2 waits for an operation returned by an SDK v2 service client.
+func HandleSweepOperationV2(ctx context.Context, op sweepOperation, err error) error {
+	if err != nil {
+		if validate.IsStatusWithCode(err, codes.NotFound) {
+			return nil
+		}
+		return err
+	}
+
+	_, err = op.Abstract().Wait(ctx)
+	return err
 }
 
 func HandleSweepOperation(ctx context.Context, conf *provider_config.Config, op *operation.Operation, err error) error {

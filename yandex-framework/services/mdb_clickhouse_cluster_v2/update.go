@@ -2,23 +2,24 @@ package mdb_clickhouse_cluster_v2
 
 import (
 	"context"
-	"reflect"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
-	ycsdk "github.com/yandex-cloud/go-sdk"
+	clickhouseConfig "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1/config"
+	ycsdk "github.com/yandex-cloud/go-sdk/v2"
+	"github.com/yandex-cloud/terraform-provider-yandex/pkg/chcommon/usersettings"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/datasize"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/mdbcommon"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/mdb_clickhouse_cluster_v2/models"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Folder id
 
-func prepareFolderIdUpdateRequest(state, plan *models.Cluster) *clickhouse.MoveClusterRequest {
+func prepareFolderIdUpdateRequest(state, plan *models.ClusterResource) *clickhouse.MoveClusterRequest {
 	if state.FolderId.Equal(plan.FolderId) {
 		return nil
 	}
@@ -31,7 +32,7 @@ func prepareFolderIdUpdateRequest(state, plan *models.Cluster) *clickhouse.MoveC
 
 // Version
 
-func prepareVersionUpdateRequest(state, plan *models.Cluster) *clickhouse.UpdateClusterRequest {
+func prepareVersionUpdateRequest(state, plan *models.ClusterResource) *clickhouse.UpdateClusterRequest {
 	if state.Version.Equal(plan.Version) {
 		return nil
 	}
@@ -49,7 +50,7 @@ func prepareVersionUpdateRequest(state, plan *models.Cluster) *clickhouse.Update
 
 // Cluster
 
-func prepareClusterUpdateRequest(ctx context.Context, state, plan *models.Cluster, diags *diag.Diagnostics) *clickhouse.UpdateClusterRequest {
+func prepareClusterUpdateRequest(ctx context.Context, state, plan *models.ClusterResource, adminPassword string, adminPasswordChanged bool, diags *diag.Diagnostics) *clickhouse.UpdateClusterRequest {
 	request := &clickhouse.UpdateClusterRequest{
 		ClusterId:  state.Id.ValueString(),
 		UpdateMask: &field_mask.FieldMask{},
@@ -73,7 +74,7 @@ func prepareClusterUpdateRequest(ctx context.Context, state, plan *models.Cluste
 		request.UpdateMask.Paths = append(request.UpdateMask.Paths, "labels")
 	}
 
-	config, updateMaskPaths := prepareClusterConfigSpec(ctx, plan, state, diags)
+	config, updateMaskPaths := prepareClusterConfigSpec(ctx, plan, state, adminPassword, adminPasswordChanged, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -109,14 +110,18 @@ func prepareClusterUpdateRequest(ctx context.Context, state, plan *models.Cluste
 
 	if len(request.UpdateMask.Paths) == 0 {
 		return nil
-	} else {
-		return request
 	}
+
+	if !plan.AllowHostRecreation.IsNull() && !plan.AllowHostRecreation.IsUnknown() {
+		request.SetAllowHostRecreation(&wrapperspb.BoolValue{Value: plan.AllowHostRecreation.ValueBool()})
+	}
+
+	return request
 }
 
 // Cluster config
 
-func prepareClusterConfigSpec(ctx context.Context, plan, state *models.Cluster, diags *diag.Diagnostics) (*clickhouse.ConfigSpec, []string) {
+func prepareClusterConfigSpec(ctx context.Context, plan, state *models.ClusterResource, adminPassword string, adminPasswordChanged bool, diags *diag.Diagnostics) (*clickhouse.ConfigSpec, []string) {
 	var updateMaskPaths []string
 	config := &clickhouse.ConfigSpec{}
 
@@ -146,6 +151,8 @@ func prepareClusterConfigSpec(ctx context.Context, plan, state *models.Cluster, 
 				"config_spec.clickhouse.disk_size_autoscaling",
 			)
 		}
+
+		updateMaskPaths = append(updateMaskPaths, getDefaultUserSettingsUpdatePaths(planClickHouse, stateClickHouse)...)
 
 		// Get update paths for clickhouse config
 		updateMaskPaths = append(updateMaskPaths, getClickHouseConfigUpdatePaths(ctx, planClickHouse, stateClickHouse, diags)...)
@@ -228,6 +235,11 @@ func prepareClusterConfigSpec(ctx context.Context, plan, state *models.Cluster, 
 		updateMaskPaths = append(updateMaskPaths, "config_spec.sql_user_management")
 	}
 
+	if adminPasswordChanged {
+		config.SetAdminPassword(adminPassword)
+		updateMaskPaths = append(updateMaskPaths, "config_spec.admin_password")
+	}
+
 	if !plan.EmbeddedKeeper.Equal(state.EmbeddedKeeper) {
 		config.SetEmbeddedKeeper(&wrapperspb.BoolValue{Value: plan.EmbeddedKeeper.ValueBool()})
 		updateMaskPaths = append(updateMaskPaths, "config_spec.embedded_keeper")
@@ -241,7 +253,39 @@ func prepareClusterConfigSpec(ctx context.Context, plan, state *models.Cluster, 
 		updateMaskPaths = append(updateMaskPaths, "config_spec.backup_retain_period_days")
 	}
 
+	if !plan.PerformanceDiagnostics.Equal(state.PerformanceDiagnostics) {
+		config.SetPerformanceDiagnostics(models.ExpandPerformanceDiagnostics(ctx, plan.PerformanceDiagnostics, diags))
+
+		if diags.HasError() {
+			return config, updateMaskPaths
+		}
+
+		updateMaskPaths = append(updateMaskPaths, "config_spec.performance_diagnostics")
+	}
+
 	return config, updateMaskPaths
+}
+
+func getDefaultUserSettingsUpdatePaths(planClickHouse, stateClickHouse models.Clickhouse) []string {
+	var updateMaskPaths []string
+
+	if planClickHouse.DefaultUserSettings.Equal(stateClickHouse.DefaultUserSettings) {
+		return updateMaskPaths
+	}
+
+	planAttrs := planClickHouse.DefaultUserSettings.Attributes()
+	stateAttrs := stateClickHouse.DefaultUserSettings.Attributes()
+	for setting := range usersettings.AttrTypes {
+		planVal := planAttrs[setting]
+		if planVal != nil && !planVal.IsUnknown() && !planVal.Equal(stateAttrs[setting]) {
+			updateMaskPaths = append(
+				updateMaskPaths,
+				"config_spec.clickhouse.default_user_settings."+setting,
+			)
+		}
+	}
+
+	return updateMaskPaths
 }
 
 func getClickHouseConfigUpdatePaths(ctx context.Context, planClickHouse, stateClickHouse models.Clickhouse, diags *diag.Diagnostics) []string {
@@ -305,10 +349,28 @@ func getClickHouseConfigUpdatePaths(ctx context.Context, planClickHouse, stateCl
 					models.JdbcBridgeAttrTypes,
 					"config_spec.clickhouse.config.jdbc_bridge.",
 				)
+			case "tls":
+				planTls := planClickHouseConfig.Tls
+				stateTls := stateClickHouseConfig.Tls
+				switch {
+				case planTls.IsNull() && stateTls.IsNull():
+				case planTls.IsNull() || stateTls.IsNull():
+					for field := range models.ClickhouseTlsAttrTypes {
+						updateMaskPaths = append(updateMaskPaths, "config_spec.clickhouse.config.tls."+field)
+					}
+				default:
+					updateMaskPaths = appendNestedConfigUpdatePaths(
+						updateMaskPaths,
+						planTls.Attributes(),
+						stateTls.Attributes(),
+						models.ClickhouseTlsAttrTypes,
+						"config_spec.clickhouse.config.tls.",
+					)
+				}
 			default:
 				planVal := planClickHouse.Config.Attributes()[setting]
 				stateVal := stateClickHouse.Config.Attributes()[setting]
-				if !planVal.Equal(stateVal) {
+				if planVal != nil && !planVal.IsUnknown() && !planVal.Equal(stateVal) {
 					updateMaskPaths = append(
 						updateMaskPaths,
 						"config_spec.clickhouse.config."+setting,
@@ -323,7 +385,7 @@ func getClickHouseConfigUpdatePaths(ctx context.Context, planClickHouse, stateCl
 
 // Format schemas
 
-func updateFormatSchemas(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateFormatSchemas(ctx context.Context, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	cid := plan.Id.ValueString()
 	currentFormatSchemas := clickhouseApi.ListFormatSchemas(ctx, sdk, diags, cid)
 	if diags.HasError() {
@@ -357,7 +419,7 @@ func updateFormatSchemas(ctx context.Context, plan models.Cluster, sdk *ycsdk.SD
 	}
 }
 
-func prepareFormatSchemaUpdateRequests(ctx context.Context, currentSchemas []*clickhouse.FormatSchema, plan *models.Cluster, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateFormatSchemaRequest, []*clickhouse.CreateFormatSchemaRequest) {
+func prepareFormatSchemaUpdateRequests(ctx context.Context, currentSchemas []*clickhouse.FormatSchema, plan *models.ClusterResource, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateFormatSchemaRequest, []*clickhouse.CreateFormatSchemaRequest) {
 	targetSchemas := models.ExpandListFormatSchema(ctx, plan.FormatSchema, plan.Id.ValueString(), diags)
 	if diags.HasError() {
 		return nil, nil, nil
@@ -411,7 +473,7 @@ func prepareFormatSchemaUpdateRequests(ctx context.Context, currentSchemas []*cl
 
 // Ml models
 
-func updateMlModels(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateMlModels(ctx context.Context, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	cid := plan.Id.ValueString()
 	currentMlModels := clickhouseApi.ListMlModels(ctx, sdk, diags, cid)
 	if diags.HasError() {
@@ -445,7 +507,7 @@ func updateMlModels(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, di
 	}
 }
 
-func prepareMlModelUpdateRequests(ctx context.Context, currentModels []*clickhouse.MlModel, plan *models.Cluster, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateMlModelRequest, []*clickhouse.CreateMlModelRequest) {
+func prepareMlModelUpdateRequests(ctx context.Context, currentModels []*clickhouse.MlModel, plan *models.ClusterResource, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateMlModelRequest, []*clickhouse.CreateMlModelRequest) {
 	targetModels := models.ExpandListMLModel(ctx, plan.MLModel, plan.Id.ValueString(), diags)
 	if diags.HasError() {
 		return nil, nil, nil
@@ -499,14 +561,19 @@ func prepareMlModelUpdateRequests(ctx context.Context, currentModels []*clickhou
 
 // Shard groups
 
-func updateShardGroups(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateShardGroups(ctx context.Context, state, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	cid := plan.Id.ValueString()
 	currentShardGroups := clickhouseApi.ListShardGroups(ctx, sdk, diags, cid)
 	if diags.HasError() {
 		return
 	}
 
-	deleteShardGroupNames, updateShardGroupRequests, createShardGroupRequests := prepareShardGroupUpdateRequests(ctx, currentShardGroups, &plan, diags)
+	stateShardGroups := models.ExpandListShardGroup(ctx, state.ShardGroup, cid, diags)
+	if diags.HasError() {
+		return
+	}
+
+	deleteShardGroupNames, updateShardGroupRequests, createShardGroupRequests := prepareShardGroupUpdateRequests(ctx, currentShardGroups, stateShardGroups, &plan, diags)
 	if diags.HasError() {
 		return
 	}
@@ -533,7 +600,7 @@ func updateShardGroups(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK,
 	}
 }
 
-func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*clickhouse.ShardGroup, plan *models.Cluster, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateClusterShardGroupRequest, []*clickhouse.CreateClusterShardGroupRequest) {
+func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups, stateShardGroups []*clickhouse.ShardGroup, plan *models.ClusterResource, diags *diag.Diagnostics) ([]string, []*clickhouse.UpdateClusterShardGroupRequest, []*clickhouse.CreateClusterShardGroupRequest) {
 	targetShardGroups := models.ExpandListShardGroup(ctx, plan.ShardGroup, plan.Id.ValueString(), diags)
 	if diags.HasError() {
 		return nil, nil, nil
@@ -542,6 +609,11 @@ func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*
 	var toDelete []string
 	var toUpdate []*clickhouse.ShardGroup
 
+	stateByName := map[string]*clickhouse.ShardGroup{}
+	for _, group := range stateShardGroups {
+		stateByName[group.Name] = group
+	}
+
 	mapTargetShardGroupName := map[string]*clickhouse.ShardGroup{}
 	for _, group := range targetShardGroups {
 		mapTargetShardGroupName[group.Name] = group
@@ -549,7 +621,8 @@ func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*
 
 	for _, currentShardGroup := range currentShardGroups {
 		if targetShardGroup, ok := mapTargetShardGroupName[currentShardGroup.Name]; ok {
-			if currentShardGroup.Description != targetShardGroup.Description || !reflect.DeepEqual(currentShardGroup.ShardNames, targetShardGroup.ShardNames) {
+			currWithPasswords := restoreExternalShardProtoPasswords(currentShardGroup, stateByName[currentShardGroup.Name])
+			if !proto.Equal(currWithPasswords, targetShardGroup) {
 				toUpdate = append(toUpdate, targetShardGroup)
 			}
 			delete(mapTargetShardGroupName, currentShardGroup.Name)
@@ -565,7 +638,8 @@ func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*
 			ShardGroupName: group.Name,
 			Description:    group.Description,
 			ShardNames:     group.ShardNames,
-			UpdateMask:     &field_mask.FieldMask{Paths: []string{"description", "shard_names"}},
+			ExternalShards: group.ExternalShards,
+			UpdateMask:     &field_mask.FieldMask{Paths: []string{"description", "shard_names", "external_shards"}},
 		})
 	}
 
@@ -576,6 +650,7 @@ func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*
 			ShardGroupName: group.Name,
 			Description:    group.Description,
 			ShardNames:     group.ShardNames,
+			ExternalShards: group.ExternalShards,
 		})
 	}
 
@@ -584,7 +659,7 @@ func prepareShardGroupUpdateRequests(ctx context.Context, currentShardGroups []*
 
 // Shards
 
-func updateShards(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateShards(ctx context.Context, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	cid := plan.Id.ValueString()
 
 	shards := models.ExpandListShard(ctx, plan.Shards, cid, diags)
@@ -592,15 +667,20 @@ func updateShards(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diag
 		return
 	}
 
+	var allowHostRecreation *wrapperspb.BoolValue
+	if !plan.AllowHostRecreation.IsNull() && !plan.AllowHostRecreation.IsUnknown() {
+		allowHostRecreation = &wrapperspb.BoolValue{Value: plan.AllowHostRecreation.ValueBool()}
+	}
+
 	for _, shard := range shards {
-		updateShard(ctx, cid, shard, sdk, diags)
+		updateShard(ctx, cid, shard, allowHostRecreation, sdk, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 }
 
-func updateShard(ctx context.Context, cid string, shardSpec *clickhouse.ShardSpec, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateShard(ctx context.Context, cid string, shardSpec *clickhouse.ShardSpec, allowHostRecreation *wrapperspb.BoolValue, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	var updateMaskPaths []string
 	currentShard := clickhouseApi.GetShard(ctx, sdk, diags, cid, shardSpec.Name)
 	if diags.HasError() {
@@ -653,9 +733,10 @@ func updateShard(ctx context.Context, cid string, shardSpec *clickhouse.ShardSpe
 	}
 
 	clickhouseApi.UpdateShard(ctx, sdk, diags, &clickhouse.UpdateClusterShardRequest{
-		ClusterId:  cid,
-		ShardName:  shardSpec.Name,
-		ConfigSpec: shardSpec.ConfigSpec,
+		ClusterId:           cid,
+		ShardName:           shardSpec.Name,
+		ConfigSpec:          shardSpec.ConfigSpec,
+		AllowHostRecreation: allowHostRecreation,
 		UpdateMask: &fieldmaskpb.FieldMask{
 			Paths: updateMaskPaths,
 		},
@@ -667,13 +748,123 @@ func updateShard(ctx context.Context, cid string, shardSpec *clickhouse.ShardSpe
 
 // Extensions
 
-func updateExtensions(ctx context.Context, plan models.Cluster, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+func updateExtensions(ctx context.Context, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
 	specs := models.ExpandListExtensions(ctx, plan.Extension, diags)
 	if diags.HasError() {
 		return
 	}
 
 	clickhouseApi.SetExtensions(ctx, sdk, diags, plan.Id.ValueString(), specs)
+}
+
+// External Dictionaries
+
+func updateExternalDictionaries(ctx context.Context, state, plan models.ClusterResource, sdk *ycsdk.SDK, diags *diag.Diagnostics) {
+	cid := plan.Id.ValueString()
+
+	currentDicts := clickhouseApi.ListExternalDictionaries(ctx, sdk, diags, cid)
+	if diags.HasError() {
+		return
+	}
+
+	stateDicts := models.ExpandExternalDictionaries(ctx, state.ExternalDictionary, diags)
+	if diags.HasError() {
+		return
+	}
+
+	toDelete, toCreate := prepareExternalDictionaryUpdateOps(ctx, cid, currentDicts, stateDicts, &plan, diags)
+	if diags.HasError() {
+		return
+	}
+
+	for _, name := range toDelete {
+		clickhouseApi.DeleteExternalDictionary(ctx, sdk, diags, cid, name)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	for _, req := range toCreate {
+		clickhouseApi.CreateExternalDictionary(ctx, sdk, diags, req)
+		if diags.HasError() {
+			return
+		}
+	}
+}
+
+func prepareExternalDictionaryUpdateOps(
+	ctx context.Context,
+	cid string,
+	current []*clickhouseConfig.ClickhouseConfig_ExternalDictionary,
+	state []*clickhouseConfig.ClickhouseConfig_ExternalDictionary,
+	plan *models.ClusterResource,
+	diags *diag.Diagnostics,
+) (toDelete []string, toCreate []*clickhouse.CreateClusterExternalDictionaryRequest) {
+	currentByName := make(map[string]*clickhouseConfig.ClickhouseConfig_ExternalDictionary, len(current))
+	for _, d := range current {
+		currentByName[d.Name] = d
+	}
+
+	stateByName := make(map[string]*clickhouseConfig.ClickhouseConfig_ExternalDictionary, len(state))
+	for _, d := range state {
+		stateByName[d.Name] = d
+	}
+
+	planDicts := models.ExpandExternalDictionaries(ctx, plan.ExternalDictionary, diags)
+	if diags.HasError() {
+		return
+	}
+
+	planNames := make(map[string]struct{}, len(planDicts))
+	for _, d := range planDicts {
+		planNames[d.Name] = struct{}{}
+	}
+
+	for name := range currentByName {
+		if _, inPlan := planNames[name]; !inPlan {
+			toDelete = append(toDelete, name)
+		}
+	}
+
+	for _, dict := range planDicts {
+		if curr, exists := currentByName[dict.Name]; exists {
+			currWithPasswords := restoreDictProtoPasswords(curr, stateByName[dict.Name])
+			if proto.Equal(currWithPasswords, dict) {
+				continue
+			}
+			toDelete = append(toDelete, dict.Name)
+		}
+		toCreate = append(toCreate, &clickhouse.CreateClusterExternalDictionaryRequest{
+			ClusterId:          cid,
+			ExternalDictionary: dict,
+		})
+	}
+
+	return
+}
+
+func restoreExternalShardProtoPasswords(curr, state *clickhouse.ShardGroup) *clickhouse.ShardGroup {
+	if curr == nil || state == nil {
+		return curr
+	}
+	cloned := proto.Clone(curr).(*clickhouse.ShardGroup)
+	statePwd := map[string]string{}
+	for _, s := range state.ExternalShards {
+		for _, r := range s.Replicas {
+			statePwd[s.Name+"\x00"+r.Host] = r.Password
+		}
+	}
+	for _, s := range cloned.ExternalShards {
+		for _, r := range s.Replicas {
+			if r.Password != "" {
+				continue
+			}
+			if pwd, ok := statePwd[s.Name+"\x00"+r.Host]; ok {
+				r.Password = pwd
+			}
+		}
+	}
+	return cloned
 }
 
 // Utils
@@ -693,4 +884,42 @@ func appendNestedConfigUpdatePaths(
 		}
 	}
 	return updateMaskPaths
+}
+
+func restoreDictProtoPasswords(
+	curr *clickhouseConfig.ClickhouseConfig_ExternalDictionary,
+	state *clickhouseConfig.ClickhouseConfig_ExternalDictionary,
+) *clickhouseConfig.ClickhouseConfig_ExternalDictionary {
+	if state == nil {
+		return curr
+	}
+	cloned := proto.Clone(curr).(*clickhouseConfig.ClickhouseConfig_ExternalDictionary)
+	switch currSrc := cloned.Source.(type) {
+	case *clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource_:
+		if stateSrc, ok := state.Source.(*clickhouseConfig.ClickhouseConfig_ExternalDictionary_ClickhouseSource_); ok {
+			currSrc.ClickhouseSource.Password = stateSrc.ClickhouseSource.Password
+		}
+	case *clickhouseConfig.ClickhouseConfig_ExternalDictionary_MongodbSource_:
+		if stateSrc, ok := state.Source.(*clickhouseConfig.ClickhouseConfig_ExternalDictionary_MongodbSource_); ok {
+			currSrc.MongodbSource.Password = stateSrc.MongodbSource.Password
+		}
+	case *clickhouseConfig.ClickhouseConfig_ExternalDictionary_PostgresqlSource_:
+		if stateSrc, ok := state.Source.(*clickhouseConfig.ClickhouseConfig_ExternalDictionary_PostgresqlSource_); ok {
+			currSrc.PostgresqlSource.Password = stateSrc.PostgresqlSource.Password
+		}
+	case *clickhouseConfig.ClickhouseConfig_ExternalDictionary_MysqlSource_:
+		if stateSrc, ok := state.Source.(*clickhouseConfig.ClickhouseConfig_ExternalDictionary_MysqlSource_); ok {
+			currSrc.MysqlSource.Password = stateSrc.MysqlSource.Password
+			stateReplicaPasswords := make(map[string]string, len(stateSrc.MysqlSource.Replicas))
+			for _, r := range stateSrc.MysqlSource.Replicas {
+				stateReplicaPasswords[r.Host] = r.Password
+			}
+			for _, replica := range currSrc.MysqlSource.Replicas {
+				if pwd, ok := stateReplicaPasswords[replica.Host]; ok {
+					replica.Password = pwd
+				}
+			}
+		}
+	}
+	return cloned
 }

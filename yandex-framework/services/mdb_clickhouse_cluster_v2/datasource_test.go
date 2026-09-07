@@ -13,10 +13,14 @@ import (
 )
 
 var ignoreAttrsSet = map[string]struct{}{
-	// Senserive attributies:
+	// Total attribute count differs because datasource omits resource-only attrs:
+	"%": {},
+	// Sensitive attributes:
 	"admin_password":                        {},
 	"clickhouse.config.kafka.sasl_password": {},
 	"clickhouse.config.rabbitmq.password":   {},
+	// Resource-only attributes not present in datasource:
+	"restore": {},
 }
 
 var ignoreByPrefixAttrsSet = map[string]struct{}{
@@ -189,6 +193,11 @@ resource "yandex_mdb_clickhouse_cluster_v2" "foo" {
 		resource_preset_id = "s2.micro"
 		disk_type_id       = "network-ssd"
 		disk_size          = 10
+	  }
+
+	  default_user_settings = {
+		max_threads    = 8
+		join_algorithm = ["hash"]
 	  }
   }
 

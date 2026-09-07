@@ -26,6 +26,10 @@ Manages a ClickHouse cluster within the Yandex Cloud. For more information, see 
 
 - `access` (Attributes) Access policy to the ClickHouse cluster. (see [below for nested schema](#nestedatt--access))
 - `admin_password` (String, Sensitive) A password used to authorize as user `admin` when `sql_user_management` enabled.
+- `admin_password_wo` (String, Sensitive) A password used to authorize as user `admin` when `sql_user_management` enabled. This attribute is write-only and is not stored in state. Requires `admin_password_wo_version` to trigger updates. Write-only arguments are supported in Terraform 1.11 and later.
+- `admin_password_wo_version` (Number) A version number for the write-only password. Increment this to trigger a password update.
+- `allow_degradation_to_read_only` (Boolean) Allows the cluster to become read-only during migration from ZooKeeper to ClickHouse Keeper. Must be enabled when changing coordinator host types from `ZOOKEEPER` to `KEEPER`.
+- `allow_host_recreation` (Boolean) Allows or denies re-creation of hosts during cluster configuration changes that require it, such as a disk type change. Note: only data of replicated tables is preserved during host re-creation; data of non-replicated tables is lost.
 - `backup_retain_period_days` (Number) The period in days during which backups are stored.
 - `backup_window_start` (Attributes) Time to start the daily backup, in the UTC timezone. (see [below for nested schema](#nestedatt--backup_window_start))
 - `clickhouse` (Attributes) Configuration of the ClickHouse subcluster. (see [below for nested schema](#nestedatt--clickhouse))
@@ -35,17 +39,21 @@ Manages a ClickHouse cluster within the Yandex Cloud. For more information, see 
 - `description` (String) The resource description.
 - `disk_encryption_key_id` (String) ID of the KMS key for cluster disk encryption.
 - `embedded_keeper` (Boolean) Whether to use ClickHouse Keeper as a coordination system.
+- `extension` (Block Set) A set of cluster extensions. (see [below for nested schema](#nestedblock--extension))
+- `external_dictionary` (Attributes Map) External dictionaries configuration. The map key is the dictionary name. (see [below for nested schema](#nestedatt--external_dictionary))
 - `folder_id` (String) The folder identifier that resource belongs to. If it is not provided, the default provider `folder-id` is used.
 - `format_schema` (Block Set) A set of `protobuf` or `capnproto` format schemas. (see [below for nested schema](#nestedblock--format_schema))
 - `labels` (Map of String) A set of key/value label pairs which assigned to resource.
 - `maintenance_window` (Block, Optional) Maintenance window settings. (see [below for nested schema](#nestedblock--maintenance_window))
 - `ml_model` (Block Set) A group of machine learning models. (see [below for nested schema](#nestedblock--ml_model))
+- `performance_diagnostics` (Attributes) Performance diagnostics configuration (see [below for nested schema](#nestedatt--performance_diagnostics))
+- `restore` (Attributes) The cluster will be created from the specified backup. (see [below for nested schema](#nestedatt--restore))
 - `security_group_ids` (Set of String) The list of security groups applied to resource or their components.
 - `service_account_id` (String) [Service account](https://yandex.cloud/docs/iam/concepts/users/service-accounts) which linked to the resource.
 - `shard_group` (Block List) A group of clickhouse shards. (see [below for nested schema](#nestedblock--shard_group))
 - `shards` (Attributes Map) A shards of the ClickHouse cluster. (see [below for nested schema](#nestedatt--shards))
-- `sql_database_management` (Boolean) Grants `admin` user database management permission.
-- `sql_user_management` (Boolean) Enables `admin` user with user management permission.
+- `sql_database_management` (Boolean) Grants `admin` user database management permission. Can be enabled in-place, disabling requires the cluster to be recreated.
+- `sql_user_management` (Boolean) Enables `admin` user with user management permission. Can be enabled in-place, disabling requires the cluster to be recreated.
 - `timeouts` (Attributes) (see [below for nested schema](#nestedatt--timeouts))
 - `version` (String) Version of the ClickHouse server software.
 - `zookeeper` (Attributes) Configuration of the ZooKeeper subcluster. (see [below for nested schema](#nestedatt--zookeeper))
@@ -54,14 +62,16 @@ Manages a ClickHouse cluster within the Yandex Cloud. For more information, see 
 
 - `cluster_id` (String) ID of the ClickHouse cluster. This ID is assigned by MDB at creation time.
 - `created_at` (String) The creation timestamp of the resource.
+- `full_version` (String) Full version of the ClickHouse server software.
 - `id` (String) The resource identifier.
+- `monitoring` (Attributes List) Description of monitoring systems relevant to the ClickHouse cluster. (see [below for nested schema](#nestedatt--monitoring))
 
 <a id="nestedatt--hosts"></a>
 ### Nested Schema for `hosts`
 
 Required:
 
-- `type` (String) The type of the host to be deployed. Can be either `CLICKHOUSE` or `ZOOKEEPER`.
+- `type` (String) The type of the host to be deployed. Can be `CLICKHOUSE`, `ZOOKEEPER`, or `KEEPER`.
 - `zone` (String) The [availability zone](https://yandex.cloud/docs/overview/concepts/geo-scope) where resource is located. If it is not provided, the default provider zone will be used.
 
 Optional:
@@ -103,6 +113,7 @@ Optional:
 Optional:
 
 - `config` (Attributes) Configuration of the ClickHouse subcluster. (see [below for nested schema](#nestedatt--clickhouse--config))
+- `default_user_settings` (Attributes) Settings that are applied to all users of the ClickHouse cluster by default. They are overridden by the settings of a particular user. For more information, see [the official documentation](https://clickhouse.com/docs/ru/operations/settings/settings). (see [below for nested schema](#nestedatt--clickhouse--default_user_settings))
 - `disk_size_autoscaling` (Attributes) Cluster disk size autoscaling settings. (see [below for nested schema](#nestedatt--clickhouse--disk_size_autoscaling))
 - `resources` (Attributes) Resources allocated to hosts. (see [below for nested schema](#nestedatt--clickhouse--resources))
 
@@ -143,6 +154,8 @@ Optional:
 - `kafka` (Attributes) Kafka connection configuration. (see [below for nested schema](#nestedatt--clickhouse--config--kafka))
 - `keep_alive_timeout` (Number) The number of seconds that ClickHouse waits for incoming requests for HTTP protocol before closing the connection.
 - `log_level` (String) Logging level.
+- `mark_cache_size` (Number) Size of the cache for marks (index blocks). For details, see [ClickHouse documentation](https://clickhouse.com/docs/operations/server-configuration-parameters/settings#mark_cache_size).
+- `max_build_vector_similarity_index_thread_pool_size` (Number) Maximum number of threads for building vector similarity indexes. For details, see [ClickHouse documentation](https://clickhouse.com/docs/operations/server-configuration-parameters/settings#max_build_vector_similarity_index_thread_pool_size).
 - `max_concurrent_queries` (Number) Limit on total number of concurrently executed queries.
 - `max_connections` (Number) Max server connections.
 - `max_partition_size_to_drop` (Number) Restriction on dropping partitions.
@@ -183,12 +196,15 @@ Optional:
 - `text_log_retention_size` (Number) The maximum size that text_log can grow to before old data will be removed.
 - `text_log_retention_time` (Number) The maximum time that text_log records will be retained before removal.
 - `timezone` (String) The server's time zone.
+- `tls` (Attributes) TLS configuration for outgoing connections from ClickHouse (e.g. remote tables, dictionaries). Change of the settings is applied with restart. (see [below for nested schema](#nestedatt--clickhouse--config--tls))
 - `total_memory_profiler_step` (Number) Whenever server memory usage becomes larger than every next step in number of bytes the memory profiler will collect the allocating stack trace.
 - `total_memory_tracker_sample_probability` (Number) Allows to collect random allocations and de-allocations and writes them in the system.trace_log system table with trace_type equal to a MemorySample with the specified probability.
 - `trace_log_enabled` (Boolean) Enable or disable trace_log system table.
 - `trace_log_retention_size` (Number) The maximum size that trace_log can grow to before old data will be removed.
 - `trace_log_retention_time` (Number) The maximum time that trace_log records will be retained before removal.
 - `uncompressed_cache_size` (Number) Cache size (in bytes) for uncompressed data used by table engines from the MergeTree family. Zero means disabled.
+- `vector_similarity_index_cache_max_entries` (Number) Maximum number of entries in the vector similarity index cache. For details, see [ClickHouse documentation](https://clickhouse.com/docs/operations/server-configuration-parameters/settings#vector_similarity_index_cache_max_entries).
+- `vector_similarity_index_cache_size` (Number) Maximum size of the cache for vector similarity index. For details, see [ClickHouse documentation](https://clickhouse.com/docs/operations/server-configuration-parameters/settings#vector_similarity_index_cache_size).
 - `zookeeper_log_enabled` (Boolean) Enable or disable zookeeper_log system table.
 - `zookeeper_log_retention_size` (Number) The maximum size that zookeeper_log can grow to before old data will be removed.
 - `zookeeper_log_retention_time` (Number) The maximum time that zookeeper_log records will be retained before removal.
@@ -250,10 +266,10 @@ Required:
 Optional:
 
 - `regexp` (String) Regular expression that the metric name must match.
-- `retention` (Attributes List) Retain parameters. (see [below for nested schema](#nestedatt--clickhouse--config--graphite_rollup--patterns--retention))
+- `retention` (Attributes List) Retain parameters. (see [below for nested schema](#nestedatt--clickhouse--config--graphite_rollup--version_column_name--retention))
 
-<a id="nestedatt--clickhouse--config--graphite_rollup--patterns--retention"></a>
-### Nested Schema for `clickhouse.config.graphite_rollup.patterns.retention`
+<a id="nestedatt--clickhouse--config--graphite_rollup--version_column_name--retention"></a>
+### Nested Schema for `clickhouse.config.graphite_rollup.version_column_name.retention`
 
 Required:
 
@@ -281,9 +297,11 @@ Optional:
 Optional:
 
 - `auto_offset_reset` (String) Action when no initial offset: 'smallest','earliest','largest','latest','error'.
+- `batch_size` (Number) Maximum size (in bytes) of all messages batched in one MessageSet, including protocol framing overhead.
 - `debug` (String) A comma-separated list of debug contexts to enable.
 - `enable_ssl_certificate_verification` (Boolean) Enable verification of SSL certificates.
 - `max_poll_interval_ms` (Number) Maximum allowed time between calls to consume messages. If exceeded, consumer is considered failed.
+- `message_max_bytes` (Number) Maximum Kafka protocol request message size.
 - `sasl_mechanism` (String) SASL mechanism used in kafka authentication.
 - `sasl_password` (String, Sensitive) User password on kafka server.
 - `sasl_username` (String) Username on kafka server.
@@ -367,6 +385,190 @@ Optional:
 - `vhost` (String) RabbitMQ vhost. Default: `\`.
 
 
+<a id="nestedatt--clickhouse--config--tls"></a>
+### Nested Schema for `clickhouse.config.tls`
+
+Optional:
+
+- `trusted_certificates` (List of String) CA certificates in PEM format. Each element must contain a single self-signed CA certificate or a certificate chain ordered as leaf -> intermediates -> self-signed root. Change of the setting is applied with restart.
+
+
+
+<a id="nestedatt--clickhouse--default_user_settings"></a>
+### Nested Schema for `clickhouse.default_user_settings`
+
+Optional:
+
+- `add_http_cors_header` (Boolean) Include CORS headers in HTTP response.
+- `allow_ddl` (Boolean) Allows or denies DDL queries.
+- `allow_introspection_functions` (Boolean) Enables or disables introspection functions for query profiling.
+- `allow_suspicious_low_cardinality_types` (Boolean) Allows specifying LowCardinality modifier for types of small fixed size (8 or less) in CREATE TABLE statements. Enabling this may increase merge times and memory consumption.
+- `any_join_distinct_right_table_keys` (Boolean) Enables legacy ClickHouse server behaviour in ANY INNER|LEFT JOIN operations.
+- `async_insert` (Boolean) Enables asynchronous inserts. Disabled by default.
+- `async_insert_busy_timeout` (Number) The maximum timeout in milliseconds since the first INSERT query before inserting collected data. If the parameter is set to 0, the timeout is disabled. Default value: 200.
+- `async_insert_max_data_size` (Number) The maximum size of the unparsed data in bytes collected per query before being inserted. If the parameter is set to 0, asynchronous insertions are disabled. Default value: 100000.
+- `async_insert_stale_timeout` (Number) The maximum timeout in milliseconds since the last INSERT query before dumping collected data. If enabled, the settings prolongs the async_insert_busy_timeout with every INSERT query as long as async_insert_max_data_size is not exceeded.
+- `async_insert_threads` (Number) The maximum number of threads for background data parsing and insertion. If the parameter is set to 0, asynchronous insertions are disabled. Default value: 16.
+- `async_insert_use_adaptive_busy_timeout` (Boolean) If it is set to true, use adaptive busy timeout for asynchronous inserts.
+- `cancel_http_readonly_queries_on_client_close` (Boolean) Cancels HTTP read-only queries (e.g. SELECT) when a client closes the connection without waiting for the response. Default value: false.
+- `compile_expressions` (Boolean) Enable or disable compilation of some scalar functions and operators to native code.
+- `connect_timeout` (Number) Connection timeout in milliseconds.
+- `connect_timeout_with_failover` (Number) The timeout in milliseconds for connecting to a remote server for a Distributed table engine.  Applies only if the cluster uses sharding and replication. If unsuccessful, several attempts are made to connect to various replicas.
+- `count_distinct_implementation` (String) Specifies which of the uniq* functions should be used to perform the COUNT(DISTINCT …) construction.
+- `data_type_default_nullable` (Boolean) Allows data types without explicit modifiers NULL or NOT NULL in column definition will be Nullable.
+- `date_time_input_format` (String) Allows choosing a parser of the text representation of date and time, one of: `best_effort`, `basic`, `best_effort_us`. Default value: `basic`. Cloud default value: `best_effort`.
+- `date_time_output_format` (String) Allows choosing different output formats of the text representation of date and time, one of: `simple`, `iso`, `unix_timestamp`. Default value: `simple`.
+- `deduplicate_blocks_in_dependent_materialized_views` (Boolean) Enables or disables the deduplication check for materialized views that receive data from Replicated* tables.
+- `distinct_overflow_mode` (String) Sets behaviour on overflow when using DISTINCT.
+- `distributed_aggregation_memory_efficient` (Boolean) Enables of disables memory saving mode when doing distributed aggregation.
+- `distributed_ddl_output_mode` (String) Determines the format of distributed DDL query result.
+- `distributed_ddl_task_timeout` (Number) Timeout for DDL queries, in milliseconds.
+- `distributed_product_mode` (String) Determine the behavior of distributed subqueries.
+- `do_not_merge_across_partitions_select_final` (Boolean) Enable or disable independent processing of partitions for **SELECT** queries with **FINAL**.
+- `empty_result_for_aggregation_by_empty_set` (Boolean) Allows to retunr empty result.
+- `enable_analyzer` (Boolean) Enable new query analyzer.
+- `enable_http_compression` (Boolean) Enables or disables data compression in the response to an HTTP request.
+- `enable_reads_from_query_cache` (Boolean) If turned on, results of SELECT queries are retrieved from the query cache.
+- `enable_writes_to_query_cache` (Boolean) If turned on, results of SELECT queries are stored in the query cache.
+- `fallback_to_stale_replicas_for_distributed_queries` (Boolean) Enables or disables query forcing to a stale replica in case the actual data is unavailable. If enabled, ClickHouse will choose the most up-to-date replica and force the query to use the data in this replica.
+- `flatten_nested` (Boolean) Sets the data format of a nested columns.
+- `force_index_by_date` (Boolean) Disable query execution if the index cannot be used by date.
+- `force_primary_key` (Boolean) Disable query execution if indexing by the primary key is not possible.
+- `format_avro_schema_registry_url` (String) Avro schema registry URL.
+- `format_regexp` (String) Regular expression (for Regexp format).
+- `format_regexp_skip_unmatched` (Boolean) Skip lines unmatched by regular expression.
+- `group_by_overflow_mode` (String) Sets behaviour on overflow while GROUP BY operation.
+- `group_by_two_level_threshold` (Number) Sets the threshold of the number of keys, after that the two-level aggregation should be used.
+- `group_by_two_level_threshold_bytes` (Number) Sets the threshold of the number of bytes, after that the two-level aggregation should be used.
+- `hedged_connection_timeout_ms` (Number) Connection timeout for establishing connection with replica for Hedged requests. Default value: 50 milliseconds.
+- `http_connection_timeout` (Number) Timeout for HTTP connection in milliseconds.
+- `http_headers_progress_interval` (Number) Sets minimal interval between notifications about request process in HTTP header X-ClickHouse-Progress.
+- `http_max_field_name_size` (Number) Maximum length of field name in HTTP header.
+- `http_max_field_value_size` (Number) Maximum length of field value in HTTP header.
+- `http_receive_timeout` (Number) Timeout for HTTP connection in milliseconds.
+- `http_send_timeout` (Number) Timeout for HTTP connection in milliseconds.
+- `idle_connection_timeout` (Number) Timeout to close idle TCP connections after specified number of seconds. Default value: 3600 seconds.
+- `ignore_materialized_views_with_dropped_target_table` (Boolean) Ignore materialized views with dropped target table during pushing to views.
+- `input_format_defaults_for_omitted_fields` (Boolean) When performing INSERT queries, replace omitted input column values with default values of the respective columns.
+- `input_format_import_nested_json` (Boolean) Enables or disables the insertion of JSON data with nested objects.
+- `input_format_null_as_default` (Boolean) Enables or disables the initialization of NULL fields with default values, if data type of these fields is not nullable.
+- `input_format_parallel_parsing` (Boolean) Enables or disables order-preserving parallel parsing of data formats. Supported only for TSV, TKSV, CSV and JSONEachRow formats.
+- `input_format_values_interpret_expressions` (Boolean) Enables or disables the full SQL parser if the fast stream parser can’t parse the data.
+- `input_format_with_names_use_header` (Boolean) Enables or disables checking the column order when inserting data.
+- `insert_keeper_max_retries` (Number) The setting sets the maximum number of retries for ClickHouse Keeper (or ZooKeeper) requests during insert into replicated MergeTree. Only Keeper requests which failed due to network error, Keeper session timeout, or request timeout are considered for retries.
+- `insert_null_as_default` (Boolean) Enables the insertion of default values instead of NULL into columns with not nullable data type. Default value: true.
+- `insert_quorum` (Number) Enables the quorum writes.
+- `insert_quorum_parallel` (Boolean) Enables or disables parallelism for quorum INSERT queries.
+- `insert_quorum_timeout` (Number) Quorum write timeout in milliseconds.
+- `join_algorithm` (Set of String) Specifies which JOIN algorithm to use.
+- `join_overflow_mode` (String) Sets behaviour on overflow in JOIN.
+- `join_use_nulls` (Boolean) Sets the type of JOIN behaviour. When merging tables, empty cells may appear. ClickHouse fills them differently based on this setting.
+- `joined_subquery_requires_alias` (Boolean) Require aliases for subselects and table functions in FROM that more than one table is present.
+- `load_balancing` (String) Specifies the algorithm of replicas selection that is used for distributed query processing, one of: random, nearest_hostname, in_order, first_or_random, round_robin. Default value: random.
+- `local_filesystem_read_method` (String) Method of reading data from local filesystem. Possible values: 
+* 'read' - abort query execution, return an error.  
+* 'pread' - abort query execution, return an error.  
+* 'pread_threadpool' - stop query execution, return partial result. 
+If the parameter is set to 0 (default), no hops is allowed.
+- `log_processors_profiles` (Boolean) Enabled or disable logging of processors level profiling data to the the system.processors_profile_log table.
+- `log_queries_probability` (Number) Log queries with the specified probability.
+- `log_query_threads` (Boolean) Setting up query threads logging. Query threads log into the system.query_thread_log table. This setting has effect only when log_queries is true. Queries’ threads run by ClickHouse with this setup are logged according to the rules in the query_thread_log server configuration parameter. Default value: true.
+- `log_query_views` (Boolean) Enables or disables query views logging to the the system.query_views_log table.
+- `low_cardinality_allow_in_native_format` (Boolean) Allows or restricts using the LowCardinality data type with the Native format.
+- `max_ast_depth` (Number) Limits the maximum depth of query syntax tree.
+- `max_ast_elements` (Number) Limits the maximum size of query syntax tree in number of nodes.
+- `max_block_size` (Number) A recommendation for what size of the block (in a count of rows) to load from tables.
+- `max_bytes_before_external_group_by` (Number) Limit in bytes for using memoru for GROUP BY before using swap on disk.
+- `max_bytes_before_external_sort` (Number) This setting is equivalent of the max_bytes_before_external_group_by setting, except for it is for sort operation (ORDER BY), not aggregation.
+- `max_bytes_in_distinct` (Number) Limits the maximum size of a hash table in bytes (uncompressed data) when using DISTINCT.
+- `max_bytes_in_join` (Number) Limit on maximum size of the hash table for JOIN, in bytes.
+- `max_bytes_in_set` (Number) Limit on the number of bytes in the set resulting from the execution of the IN section.
+- `max_bytes_to_read` (Number) Limits the maximum number of bytes (uncompressed data) that can be read from a table when running a query.
+- `max_bytes_to_sort` (Number) Limits the maximum number of bytes (uncompressed data) that can be read from a table for sorting.
+- `max_bytes_to_transfer` (Number) Limits the maximum number of bytes (uncompressed data) that can be passed to a remote server or saved in a temporary table when using GLOBAL IN.
+- `max_columns_to_read` (Number) Limits the maximum number of columns that can be read from a table in a single query.
+- `max_concurrent_queries_for_user` (Number) The maximum number of concurrent requests per user. Default value: 0 (no limit).
+- `max_execution_time` (Number) Limits the maximum query execution time in milliseconds.
+- `max_expanded_ast_elements` (Number) Limits the maximum size of query syntax tree in number of nodes after expansion of aliases and the asterisk values.
+- `max_final_threads` (Number) Sets the maximum number of parallel threads for the SELECT query data read phase with the FINAL modifier.
+- `max_http_get_redirects` (Number) Limits the maximum number of HTTP GET redirect hops for URL-engine tables.
+- `max_insert_block_size` (Number) The size of blocks (in a count of rows) to form for insertion into a table.
+- `max_insert_threads` (Number) The maximum number of threads to execute the INSERT SELECT query. Default value: 0.
+- `max_memory_usage` (Number) Maximum memory usage for processing all concurrently running queries for the user. Zero means unlimited.
+- `max_memory_usage_for_user` (Number) Maximum memory usage for processing all concurrently running queries for the user. Zero means unlimited.
+- `max_network_bandwidth` (Number) Limits the speed of the data exchange over the network in bytes per second.  This setting applies to every query.
+- `max_network_bandwidth_for_user` (Number) Limits the speed of the data exchange over the network in bytes per second. This setting applies to all concurrently running queries performed by a single user.
+- `max_parser_depth` (Number) Limits maximum recursion depth in the recursive descent parser. Allows controlling the stack size.
+- `max_partitions_per_insert_block` (Number) Limits the maximum number of partitions in a single inserted block.
+- `max_query_size` (Number) The maximum part of a query that can be taken to RAM for parsing with the SQL parser.
+- `max_read_buffer_size` (Number) The maximum size of the buffer to read from the filesystem.
+- `max_replica_delay_for_distributed_queries` (Number) Max replica delay in milliseconds. If a replica lags more than the set value,this replica is not used and becomes a stale one.
+- `max_result_bytes` (Number) Limits the number of bytes in the result.
+- `max_result_rows` (Number) Limits the number of rows in the result.
+- `max_rows_in_distinct` (Number) Limits the maximum number of different rows when using DISTINCT.
+- `max_rows_in_join` (Number) Limit on maximum size of the hash table for JOIN, in rows.
+- `max_rows_in_set` (Number) Limit on the number of rows in the set resulting from the execution of the IN section.
+- `max_rows_to_group_by` (Number) Limits the maximum number of unique keys received from aggregation function.
+- `max_rows_to_read` (Number) Limits the maximum number of rows that can be read from a table when running a query.
+- `max_rows_to_sort` (Number) Limits the maximum number of rows that can be read from a table for sorting.
+- `max_rows_to_transfer` (Number) Limits the maximum number of rows that can be passed to a remote server or saved in a temporary table when using GLOBAL IN.
+- `max_temporary_columns` (Number) Limits the maximum number of temporary columns that must be kept in RAM at the same time when running a query, including constant columns.
+- `max_temporary_data_on_disk_size_for_query` (Number) The maximum amount of data consumed by temporary files on disk in bytes for all concurrently running queries. Zero means unlimited.
+- `max_temporary_data_on_disk_size_for_user` (Number) The maximum amount of data consumed by temporary files on disk in bytes for all concurrently running user queries. Zero means unlimited.
+- `max_temporary_non_const_columns` (Number) Limits the maximum number of temporary columns that must be kept in RAM at the same time when running a query, excluding constant columns.
+- `max_threads` (Number) The maximum number of query processing threads, excluding threads for retrieving data from remote servers.
+- `memory_overcommit_ratio_denominator` (Number) It represents soft memory limit in case when hard limit is reached on user level. This value is used to compute overcommit ratio for the query. Zero means skip the query.
+- `memory_overcommit_ratio_denominator_for_user` (Number) It represents soft memory limit in case when hard limit is reached on global level. This value is used to compute overcommit ratio for the query. Zero means skip the query.
+- `memory_profiler_sample_probability` (Number) Collect random allocations and deallocations and write them into system.trace_log with 'MemorySample' trace_type. The probability is for every alloc/free regardless to the size of the allocation. Possible values: from 0 to 1. Default: 0.
+- `memory_profiler_step` (Number) Memory profiler step (in bytes). If the next query step requires more memory than this parameter specifies, the memory profiler collects the allocating stack trace. Values lower than a few megabytes slow down query processing. Default value: 4194304 (4 MB). Zero means disabled memory profiler.
+- `memory_usage_overcommit_max_wait_microseconds` (Number) Maximum time thread will wait for memory to be freed in the case of memory overcommit on a user level. If the timeout is reached and memory is not freed, an exception is thrown.
+- `merge_tree_max_bytes_to_use_cache` (Number) If ClickHouse should read more than merge_tree_max_bytes_to_use_cache bytes in one query, it doesn’t use the cache of uncompressed blocks.
+- `merge_tree_max_rows_to_use_cache` (Number) If ClickHouse should read more than merge_tree_max_rows_to_use_cache rows in one query, it doesn’t use the cache of uncompressed blocks.
+- `merge_tree_min_bytes_for_concurrent_read` (Number) If the number of bytes to read from one file of a MergeTree-engine table exceeds merge_tree_min_bytes_for_concurrent_read, then ClickHouse tries to concurrently read from this file in several threads.
+- `merge_tree_min_rows_for_concurrent_read` (Number) If the number of rows to be read from a file of a MergeTree table exceeds merge_tree_min_rows_for_concurrent_read then ClickHouse tries to perform a concurrent reading from this file on several threads.
+- `min_bytes_to_use_direct_io` (Number) The minimum data volume required for using direct I/O access to the storage disk.
+- `min_count_to_compile_expression` (Number) Minimum count of executing same expression before it is get compiled.
+- `min_execution_speed` (Number) Minimal execution speed in rows per second.
+- `min_execution_speed_bytes` (Number) Minimal execution speed in bytes per second.
+- `min_insert_block_size_bytes` (Number) Sets the minimum number of bytes in the block which can be inserted into a table by an INSERT query.
+- `min_insert_block_size_rows` (Number) Sets the minimum number of rows in the block which can be inserted into a table by an INSERT query.
+- `output_format_json_quote_64bit_integers` (Boolean) If the value is true, integers appear in quotes when using JSON* Int64 and UInt64 formats (for compatibility with most JavaScript implementations); otherwise, integers are output without the quotes.
+- `output_format_json_quote_denormals` (Boolean) Enables +nan, -nan, +inf, -inf outputs in JSON output format.
+- `prefer_localhost_replica` (Boolean) Enables/disables preferable using the localhost replica when processing distributed queries. Default value: true.
+- `priority` (Number) Priority of the query.
+- `query_cache_max_entries` (Number) The maximum number of query results the current user may store in the query cache. 0 means unlimited.
+- `query_cache_max_size_in_bytes` (Number) The maximum amount of memory (in bytes) the current user may allocate in the query cache. 0 means unlimited.
+- `query_cache_min_query_duration` (Number) Minimum duration in milliseconds a query needs to run for its result to be stored in the query cache.
+- `query_cache_min_query_runs` (Number) Minimum number of times a SELECT query must run before its result is stored in the query cache.
+- `query_cache_nondeterministic_function_handling` (String) Controls how the query cache handles **SELECT** queries with non-deterministic functions like rand() or now().
+- `query_cache_share_between_users` (Boolean) If turned on, the result of SELECT queries cached in the query cache can be read by other users. It is not recommended to enable this setting due to security reasons.
+- `query_cache_system_table_handling` (String) Controls how the query cache handles **SELECT** queries against system tables.
+- `query_cache_tag` (String) A string which acts as a label for query cache entries. The same queries with different tags are considered different by the query cache.
+- `query_cache_ttl` (Number) After this time in seconds entries in the query cache become stale.
+- `quota_mode` (String) Quota accounting mode.
+- `read_overflow_mode` (String) Sets behaviour on overflow while read. Possible values: * throw - abort query execution, return an error.  * break - stop query execution, return partial result.
+- `readonly` (Number) Restricts permissions for non-DDL queries.
+- `receive_timeout` (Number) Receive timeout in milliseconds.
+- `remote_filesystem_read_method` (String) Method of reading data from remote filesystem, one of: `read`, `threadpool`.
+- `replication_alter_partitions_sync` (Number) Wait mode for asynchronous actions in ALTER queries on replicated tables.
+- `result_overflow_mode` (String) Sets behaviour on overflow in result.
+- `s3_use_adaptive_timeouts` (Boolean) Enables or disables adaptive timeouts for S3 requests.
+- `select_sequential_consistency` (Boolean) Determines the behavior of SELECT queries from replicated tables. If enabled, ClickHouse will terminate a query with error message in case the replica does not have a chunk written with the quorum and will not read the parts that have not yet been written with the quorum.
+- `send_progress_in_http_headers` (Boolean) Enables or disables X-ClickHouse-Progress HTTP response headers in clickhouse-server responses.
+- `send_timeout` (Number) Send timeout in milliseconds.
+- `set_overflow_mode` (String) Sets behaviour on overflow in the set resulting.
+- `skip_unavailable_shards` (Boolean) Enables or disables silent skipping of unavailable shards
+- `sort_overflow_mode` (String) Sets behaviour on overflow while sort.
+- `timeout_before_checking_execution_speed` (Number) Timeout (in seconds) between checks of execution speed. It is checked that execution speed is not less that specified in min_execution_speed parameter. Must be at least 1000.
+- `timeout_overflow_mode` (String) Sets behaviour on overflow.
+- `transfer_overflow_mode` (String) Sets behaviour on overflow.
+- `transform_null_in` (Boolean) Enables equality of NULL values for IN operator.
+- `use_hedged_requests` (Boolean) Enables hedged requests logic for remote queries. It allows to establish many connections with different replicas for query. New connection is enabled in case existent connection(s) with replica(s) were not established within hedged_connection_timeout or no data was received within receive_data_timeout. Query uses the first connection which send non empty progress packet (or data packet, if allow_changing_replica_until_first_data_packet); other connections are cancelled. Queries with max_parallel_replicas > 1 are supported. Default value: true.
+- `use_query_cache` (Boolean) If turned on, SELECT queries may utilize the query cache.
+- `use_uncompressed_cache` (Boolean) Whether to use a cache of uncompressed blocks.
+- `wait_for_async_insert` (Boolean) Enables waiting for processing of asynchronous insertion. If enabled, server returns OK only after the data is inserted.
+- `wait_for_async_insert_timeout` (Number) The timeout (in seconds) for waiting for processing of asynchronous insertion. Value must be at least 1000 (1 second).
+
 
 <a id="nestedatt--clickhouse--disk_size_autoscaling"></a>
 ### Nested Schema for `clickhouse.disk_size_autoscaling`
@@ -407,6 +609,285 @@ Optional:
 - `prefer_not_to_merge` (Boolean) Disables merging of data parts in `Yandex Object Storage`.
 
 
+<a id="nestedblock--extension"></a>
+### Nested Schema for `extension`
+
+Required:
+
+- `name` (String) The name of the extension.
+
+Optional:
+
+- `version` (String) Version of the extension.
+
+
+<a id="nestedatt--external_dictionary"></a>
+### Nested Schema for `external_dictionary`
+
+Required:
+
+- `layout` (Attributes) Layout of the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--layout))
+- `lifetime` (Attributes) Lifetime of the dictionary data. (see [below for nested schema](#nestedatt--external_dictionary--lifetime))
+- `source` (Attributes) Source of the external dictionary data. (see [below for nested schema](#nestedatt--external_dictionary--source))
+- `structure` (Attributes) Structure of the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure))
+
+<a id="nestedatt--external_dictionary--layout"></a>
+### Nested Schema for `external_dictionary.layout`
+
+Required:
+
+- `type` (String) Layout type.
+
+Optional:
+
+- `access_to_key_from_attributes` (Boolean) Allows to retrieve key attribute using dictGetString function.
+- `allow_read_expired_keys` (Boolean) Allow reading expired keys.
+- `block_size` (Number) Block size for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `file_size` (Number) Maximum cache file size in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `initial_array_size` (Number) Initial dictionary key size for FLAT layout.
+- `max_array_size` (Number) Maximum dictionary key size for FLAT layout.
+- `max_threads_for_updates` (Number) Max threads for cache dictionary update.
+- `max_update_queue_size` (Number) Max size of update queue.
+- `query_wait_timeout_milliseconds` (Number) Max wait timeout in milliseconds for update task to complete.
+- `read_buffer_size` (Number) RAM buffer size for reading from SSD in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `size_in_cells` (Number) Number of cells in the cache or initial array size.
+- `update_queue_push_timeout_milliseconds` (Number) Max timeout in milliseconds for push update task into queue.
+- `write_buffer_size` (Number) RAM buffer size for writing to SSD in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+
+
+<a id="nestedatt--external_dictionary--lifetime"></a>
+### Nested Schema for `external_dictionary.lifetime`
+
+Optional:
+
+- `fixed_lifetime` (Number) Fixed reload interval in seconds.
+- `range` (Attributes) Random reload interval in seconds. (see [below for nested schema](#nestedatt--external_dictionary--lifetime--range))
+
+<a id="nestedatt--external_dictionary--lifetime--range"></a>
+### Nested Schema for `external_dictionary.lifetime.range`
+
+Required:
+
+- `max` (Number) Maximum reload interval.
+- `min` (Number) Minimum reload interval.
+
+
+
+<a id="nestedatt--external_dictionary--source"></a>
+### Nested Schema for `external_dictionary.source`
+
+Optional:
+
+- `clickhouse_source` (Attributes) ClickHouse source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--clickhouse_source))
+- `http_source` (Attributes) HTTP source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--http_source))
+- `mongodb_source` (Attributes) MongoDB source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--mongodb_source))
+- `mysql_source` (Attributes) MySQL source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--mysql_source))
+- `postgresql_source` (Attributes) PostgreSQL source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--postgresql_source))
+
+<a id="nestedatt--external_dictionary--source--clickhouse_source"></a>
+### Nested Schema for `external_dictionary.source.clickhouse_source`
+
+Required:
+
+- `db` (String) ClickHouse database name.
+- `table` (String) ClickHouse table name.
+- `user` (String) ClickHouse user.
+
+Optional:
+
+- `host` (String) ClickHouse host. Defaults to localhost if not specified.
+- `password` (String, Sensitive) ClickHouse password.
+- `port` (Number) ClickHouse port. Defaults to 8123 if not specified.
+- `secure` (Boolean) Use TLS for the connection.
+- `where` (String) Selection criteria (WHERE clause).
+
+
+<a id="nestedatt--external_dictionary--source--http_source"></a>
+### Nested Schema for `external_dictionary.source.http_source`
+
+Required:
+
+- `format` (String) Data format (CSV, TSV, etc.).
+- `url` (String) URL of the HTTP source.
+
+Optional:
+
+- `headers` (Attributes List) HTTP headers. (see [below for nested schema](#nestedatt--external_dictionary--source--http_source--headers))
+
+<a id="nestedatt--external_dictionary--source--http_source--headers"></a>
+### Nested Schema for `external_dictionary.source.http_source.headers`
+
+Required:
+
+- `name` (String) Header name.
+- `value` (String) Header value.
+
+
+
+<a id="nestedatt--external_dictionary--source--mongodb_source"></a>
+### Nested Schema for `external_dictionary.source.mongodb_source`
+
+Required:
+
+- `collection` (String) MongoDB collection name.
+- `db` (String) MongoDB database name.
+- `host` (String) MongoDB host.
+- `user` (String) MongoDB user.
+
+Optional:
+
+- `options` (String) MongoDB connection options (e.g. authSource=admin).
+- `password` (String, Sensitive) MongoDB password.
+- `port` (Number) MongoDB port. Defaults to 27017 if not specified.
+
+
+<a id="nestedatt--external_dictionary--source--mysql_source"></a>
+### Nested Schema for `external_dictionary.source.mysql_source`
+
+Required:
+
+- `db` (String) MySQL database name.
+- `replicas` (Attributes List) MySQL replicas. (see [below for nested schema](#nestedatt--external_dictionary--source--mysql_source--replicas))
+- `table` (String) MySQL table name.
+- `user` (String) Default user for replicas.
+
+Optional:
+
+- `close_connection` (Boolean) Close connection after each query.
+- `invalidate_query` (String) Query to check if the dictionary data has changed.
+- `password` (String, Sensitive) Default password for replicas.
+- `port` (Number) Default port for replicas.
+- `share_connection` (Boolean) Share connection between threads.
+- `where` (String) WHERE clause for selecting rows.
+
+<a id="nestedatt--external_dictionary--source--mysql_source--replicas"></a>
+### Nested Schema for `external_dictionary.source.mysql_source.replicas`
+
+Required:
+
+- `host` (String) Replica host.
+- `priority` (Number) Replica priority.
+
+Optional:
+
+- `password` (String, Sensitive) Replica password.
+- `port` (Number) Replica port.
+- `user` (String) Replica user.
+
+
+
+<a id="nestedatt--external_dictionary--source--postgresql_source"></a>
+### Nested Schema for `external_dictionary.source.postgresql_source`
+
+Required:
+
+- `db` (String) PostgreSQL database name.
+- `hosts` (List of String) PostgreSQL hosts.
+- `table` (String) PostgreSQL table name.
+- `user` (String) PostgreSQL user.
+
+Optional:
+
+- `invalidate_query` (String) Query to check if the dictionary data has changed.
+- `password` (String, Sensitive) PostgreSQL password.
+- `port` (Number) PostgreSQL port. Defaults to 5432 if not specified.
+- `ssl_mode` (String) SSL mode for the PostgreSQL connection (DISABLE, ALLOW, PREFER, VERIFY_CA, VERIFY_FULL).
+
+
+
+<a id="nestedatt--external_dictionary--structure"></a>
+### Nested Schema for `external_dictionary.structure`
+
+Optional:
+
+- `attributes` (Attributes List) Dictionary attributes. (see [below for nested schema](#nestedatt--external_dictionary--structure--attributes))
+- `id` (Attributes) Single numeric key column for the dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure--id))
+- `key` (Attributes) Composite key for the dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure--key))
+- `range_max` (Attributes) Field holding the end of the range for RANGE_HASHED layout. (see [below for nested schema](#nestedatt--external_dictionary--structure--range_max))
+- `range_min` (Attributes) Field holding the beginning of the range for RANGE_HASHED layout. (see [below for nested schema](#nestedatt--external_dictionary--structure--range_min))
+
+<a id="nestedatt--external_dictionary--structure--attributes"></a>
+### Nested Schema for `external_dictionary.structure.attributes`
+
+Required:
+
+- `name` (String) Attribute name.
+- `type` (String) Attribute type.
+
+Optional:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `null_value` (String) Default value for null.
+
+
+<a id="nestedatt--external_dictionary--structure--id"></a>
+### Nested Schema for `external_dictionary.structure.id`
+
+Required:
+
+- `name` (String) Name of the numeric key column.
+
+
+<a id="nestedatt--external_dictionary--structure--key"></a>
+### Nested Schema for `external_dictionary.structure.key`
+
+Required:
+
+- `attributes` (Attributes List) Key attributes. (see [below for nested schema](#nestedatt--external_dictionary--structure--key--attributes))
+
+<a id="nestedatt--external_dictionary--structure--key--attributes"></a>
+### Nested Schema for `external_dictionary.structure.key.attributes`
+
+Required:
+
+- `name` (String) Attribute name.
+- `type` (String) Attribute type.
+
+Optional:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `null_value` (String) Default value for null.
+
+
+
+<a id="nestedatt--external_dictionary--structure--range_max"></a>
+### Nested Schema for `external_dictionary.structure.range_max`
+
+Required:
+
+- `name` (String) Attribute name.
+- `type` (String) Attribute type.
+
+Optional:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `null_value` (String) Default value for null.
+
+
+<a id="nestedatt--external_dictionary--structure--range_min"></a>
+### Nested Schema for `external_dictionary.structure.range_min`
+
+Required:
+
+- `name` (String) Attribute name.
+- `type` (String) Attribute type.
+
+Optional:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `null_value` (String) Default value for null.
+
+
+
+
 <a id="nestedblock--format_schema"></a>
 ### Nested Schema for `format_schema`
 
@@ -440,17 +921,69 @@ Required:
 - `uri` (String) Model file URL. You can only use models stored in Yandex Object Storage.
 
 
+<a id="nestedatt--performance_diagnostics"></a>
+### Nested Schema for `performance_diagnostics`
+
+Optional:
+
+- `enabled` (Boolean) Enabled performance diagnostics.
+- `processes_refresh_interval` (String) Refresh interval for performance diagnostics data. Specify the value duration format, for example `"15s"`, `"1m0s"`, or `"1h0m0s"`.
+
+
+<a id="nestedatt--restore"></a>
+### Nested Schema for `restore`
+
+Required:
+
+- `backup_id` (String) Backup ID. The cluster will be created from the specified backup.
+
+Optional:
+
+- `exclude_patterns` (List of String) Tables and databases to exclude from restore.
+- `include_patterns` (List of String) Tables and databases to include in restore.
+
+
 <a id="nestedblock--shard_group"></a>
 ### Nested Schema for `shard_group`
 
 Required:
 
 - `name` (String) The name of the shard group, used as cluster name in Distributed tables.
-- `shard_names` (List of String) List of shards names that belong to the shard group.
 
 Optional:
 
 - `description` (String) Description of the shard group.
+- `external_shard` (Block List) List of external shards in the shard group. At least one of shard_names or external_shard must be specified. (see [below for nested schema](#nestedblock--shard_group--external_shard))
+- `shard_names` (List of String) List of shards names that belong to the shard group. At least one of shard_names or external_shard must be specified.
+
+<a id="nestedblock--shard_group--external_shard"></a>
+### Nested Schema for `shard_group.external_shard`
+
+Required:
+
+- `name` (String) Name of the external shard.
+
+Optional:
+
+- `replica` (Block List) List of replicas in the external shard. (see [below for nested schema](#nestedblock--shard_group--external_shard--replica))
+- `weight` (Number) Relative weight of the external shard considered when writing data.
+
+<a id="nestedblock--shard_group--external_shard--replica"></a>
+### Nested Schema for `shard_group.external_shard.replica`
+
+Required:
+
+- `host` (String) Name (FQDN) or IP address of the external replica host.
+
+Optional:
+
+- `password` (String, Sensitive) Password of the user to authenticate with on the external replica.
+- `port` (Number) Port to connect to the external replica. Defaults to the ClickHouse native port (9000).
+- `priority` (Number) Priority of the external replica for load balancing. Lower value is preferred.
+- `secure` (Boolean) Whether to use a secure (SSL/TLS) connection.
+- `user` (String) Name of the user to authenticate with on the external replica.
+
+
 
 
 <a id="nestedatt--shards"></a>
@@ -525,3 +1058,14 @@ Optional:
 - `disk_size` (Number) Volume of the storage available to a host, in gigabytes.
 - `disk_type_id` (String) Type of the storage of hosts. For more information see [the official documentation](https://yandex.cloud/docs/managed-clickhouse/concepts/storage).
 - `resource_preset_id` (String) The ID of the preset for computational resources available to a host (CPU, memory etc.). For more information, see [the official documentation](https://yandex.cloud/docs/managed-clickhouse/concepts).
+
+
+
+<a id="nestedatt--monitoring"></a>
+### Nested Schema for `monitoring`
+
+Read-Only:
+
+- `description` (String) Description of the monitoring system.
+- `link` (String) Link to the monitoring system charts for the ClickHouse cluster.
+- `name` (String) Name of the monitoring system.

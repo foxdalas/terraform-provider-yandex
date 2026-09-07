@@ -9,9 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-timeouts/resource/timeouts"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
+	"github.com/yandex-cloud/terraform-provider-yandex/pkg/chcommon/usersettings"
 	"github.com/yandex-cloud/terraform-provider-yandex/pkg/resourceid"
 	provider_config "github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/provider/config"
 )
@@ -70,7 +72,7 @@ func (r *bindingResource) Read(ctx context.Context, req resource.ReadRequest, re
 	cid := state.ClusterID.ValueString()
 	userName := state.Name.ValueString()
 
-	user := readUser(ctx, r.providerConfig.SDK, &resp.Diagnostics, cid, userName)
+	user := readUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid, userName)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -95,6 +97,8 @@ func (r *bindingResource) Create(ctx context.Context, req resource.CreateRequest
 	var plan ResourceUser
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
+	var passwordWo types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("password_wo"), &passwordWo)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -109,14 +113,13 @@ func (r *bindingResource) Create(ctx context.Context, req resource.CreateRequest
 
 	cid := plan.ClusterID.ValueString()
 	userName := plan.Name.ValueString()
-	log.Printf("[DEBUG] User state: %v\n", plan)
-	userSpec, diags := userFromState(ctx, &plan)
-	log.Printf("[DEBUG] User spec from state: %v\n", userSpec)
+	configuredPassword := clickHouseUserPasswordForCreate(&plan, passwordWo)
+	userSpec, diags := userFromState(ctx, &plan, configuredPassword)
 
-	if !isValidPasswordConfiguration(userSpec) {
+	if err := validateAuthConfiguration(userSpec); err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid user configuration",
-			"must specify either password or generate_password",
+			err.Error(),
 		)
 	}
 
@@ -125,27 +128,51 @@ func (r *bindingResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	createUser(ctx, r.providerConfig.SDK, &resp.Diagnostics, cid, userSpec)
+	createUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid, userSpec)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	plan.Id = types.StringValue(resourceid.Construct(cid, userName))
-	r.refreshResourceState(ctx, &plan, &diags)
+	plannedPermissions := plan.Permissions
+	r.refreshResourceState(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// When we try to create user without permissions, API will create it with permissions to all DBs, even when providing empty permission list.
+	// We have to delete it separately.
+	if (plannedPermissions.IsNull() || plannedPermissions.IsUnknown()) && !plan.Permissions.Equal(plannedPermissions) {
+		log.Printf("[DEBUG] mdb_clickhouse_user: permissions drift after create. planned: %v, actual: %v. Forcing update.",
+			plannedPermissions, plan.Permissions)
+		plan.Permissions = plannedPermissions
+		userSpec, diags = userFromState(ctx, &plan, configuredPassword)
+		resp.Diagnostics.Append(diags...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		updateUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid, userSpec, []string{"permissions"})
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		r.refreshResourceState(ctx, &plan, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 }
 
-func getUpdatePaths(plan, state *ResourceUser) []string {
-	log.Printf("[DEBUG] Calculate update paths plan: %v state: %v\n", plan, state)
+func getUpdatePaths(plan, state *ResourceUser, passwordChanged bool) []string {
 	var updatePaths []string
-	if state.Password != plan.Password {
-		updatePaths = append(updatePaths, "password")
+	if state.AuthMethod != plan.AuthMethod {
+		updatePaths = append(updatePaths, "auth_method")
 	}
+	updatePaths = append(updatePaths, getPasswordUpdatePaths(plan, state, passwordChanged)...)
 	if !plan.Permissions.Equal(state.Permissions) {
 		updatePaths = append(updatePaths, "permissions")
 	}
@@ -163,6 +190,8 @@ func (r *bindingResource) Update(ctx context.Context, req resource.UpdateRequest
 	var state ResourceUser
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	var passwordWo types.String
+	resp.Diagnostics.Append(req.Config.GetAttribute(ctx, path.Root("password_wo"), &passwordWo)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -176,20 +205,26 @@ func (r *bindingResource) Update(ctx context.Context, req resource.UpdateRequest
 	defer cancel()
 
 	cid := plan.ClusterID.ValueString()
-	userPlan, diags := userFromState(ctx, &plan)
+	password, passwordChanged, passwordDiags := clickHouseUserPasswordChange(&plan, &state, passwordWo)
+	resp.Diagnostics.Append(passwordDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	userPlan, diags := userFromState(ctx, &plan, password)
 	resp.Diagnostics.Append(diags...)
 
-	if !isValidPasswordConfiguration(userPlan) {
+	passwordConfigured := clickHouseUserPasswordForCreate(&plan, passwordWo) != ""
+	if err := validateAuthConfigurationWithPassword(userPlan, passwordConfigured); err != nil {
 		resp.Diagnostics.AddError(
 			"Invalid user configuration",
-			"must specify either password or generate_password",
+			err.Error(),
 		)
 	}
 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	updatePaths := getUpdatePaths(&plan, &state)
+	updatePaths := getUpdatePaths(&plan, &state, passwordChanged)
 
 	if len(updatePaths) == 0 {
 		return
@@ -198,7 +233,7 @@ func (r *bindingResource) Update(ctx context.Context, req resource.UpdateRequest
 	userName := plan.Name.ValueString()
 	log.Printf("[DEBUG] Updating user %v with update_mask %v", userName, updatePaths)
 
-	updateUser(ctx, r.providerConfig.SDK, &resp.Diagnostics, cid, userPlan, updatePaths)
+	updateUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid, userPlan, updatePaths)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -228,7 +263,7 @@ func (r *bindingResource) Delete(ctx context.Context, req resource.DeleteRequest
 
 	cid := state.ClusterID.ValueString()
 	userName := state.Name.ValueString()
-	deleteUser(ctx, r.providerConfig.SDK, &resp.Diagnostics, cid, userName)
+	deleteUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, cid, userName)
 }
 
 func (r *bindingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -240,14 +275,14 @@ func (r *bindingResource) ImportState(ctx context.Context, req resource.ImportSt
 		)
 		return
 	}
-	user := readUser(ctx, r.providerConfig.SDK, &resp.Diagnostics, clusterId, userName)
+	user := readUser(ctx, r.providerConfig.SDKv2, &resp.Diagnostics, clusterId, userName)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state ResourceUser
 	// default settings object for correct import unchanged settings
-	state.SetSettings(types.ObjectNull(settingsType))
+	state.SetSettings(types.ObjectNull(usersettings.AttrTypes))
 
 	resp.Diagnostics.Append(userToState(ctx, user, &state)...)
 	state.Timeouts = timeouts.Value{
@@ -266,7 +301,7 @@ func (r *bindingResource) ImportState(ctx context.Context, req resource.ImportSt
 func (r *bindingResource) refreshResourceState(ctx context.Context, state *ResourceUser, respDiagnostics *diag.Diagnostics) {
 	cid := state.ClusterID.ValueString()
 	userName := state.Name.ValueString()
-	user := readUser(ctx, r.providerConfig.SDK, respDiagnostics, cid, userName)
+	user := readUser(ctx, r.providerConfig.SDKv2, respDiagnostics, cid, userName)
 	if respDiagnostics.HasError() {
 		return
 	}
@@ -277,10 +312,72 @@ func (r *bindingResource) refreshResourceState(ctx context.Context, state *Resou
 	}
 }
 
-func isValidPasswordConfiguration(userSpec *clickhouse.UserSpec) bool {
-	passwordSpecified := len(userSpec.Password) > 0
+func getPasswordUpdatePaths(plan, state *ResourceUser, passwordChanged bool) []string {
+	if getAuthMethodValue(plan.AuthMethod) != clickhouse.AuthMethod_AUTH_METHOD_PASSWORD {
+		return nil
+	}
 
-	isBothFieldNotSpecified := !passwordSpecified && !userSpec.GeneratePassword.GetValue()
-	isBothFieldSpecified := passwordSpecified && userSpec.GeneratePassword.GetValue()
-	return !isBothFieldNotSpecified && !isBothFieldSpecified
+	if plan.GeneratePassword.ValueBool() {
+		if state.GeneratePassword != plan.GeneratePassword {
+			return []string{"generate_password"}
+		}
+		return nil
+	}
+
+	var updatePaths []string
+	if passwordChanged {
+		updatePaths = append(updatePaths, "password")
+	}
+	if state.GeneratePassword != plan.GeneratePassword {
+		updatePaths = append(updatePaths, "generate_password")
+	}
+	return updatePaths
+}
+
+func validateAuthConfiguration(userSpec *clickhouse.UserSpec) error {
+	return validateAuthConfigurationWithPassword(userSpec, len(userSpec.Password) > 0)
+}
+
+func validateAuthConfigurationWithPassword(userSpec *clickhouse.UserSpec, passwordSpecified bool) error {
+	generatePassword := userSpec.GeneratePassword.GetValue()
+
+	switch normalizeAuthMethod(userSpec.AuthMethod) {
+	case clickhouse.AuthMethod_AUTH_METHOD_IAM:
+		if passwordSpecified || generatePassword {
+			return fmt.Errorf("iam auth_method does not support password, password_wo, or generate_password")
+		}
+	case clickhouse.AuthMethod_AUTH_METHOD_PASSWORD:
+		if passwordSpecified == generatePassword {
+			return fmt.Errorf("must specify exactly one of password, password_wo, or generate_password for password auth")
+		}
+	}
+
+	return nil
+}
+
+func clickHouseUserPasswordForCreate(plan *ResourceUser, passwordWo types.String) string {
+	if !passwordWo.IsNull() && !passwordWo.IsUnknown() {
+		return passwordWo.ValueString()
+	}
+	return plan.Password.ValueString()
+}
+
+func clickHouseUserPasswordChange(plan, state *ResourceUser, passwordWo types.String) (string, bool, diag.Diagnostics) {
+	password := plan.Password.ValueString()
+	passwordChanged := !plan.Password.IsNull() && !plan.Password.Equal(state.Password)
+
+	if plan.PasswordWoVersion.IsNull() || plan.PasswordWoVersion.Equal(state.PasswordWoVersion) {
+		return password, passwordChanged, nil
+	}
+	if passwordWo.IsNull() || passwordWo.IsUnknown() {
+		diagnostics := diag.Diagnostics{}
+		diagnostics.AddAttributeError(
+			path.Root("password_wo"),
+			"Missing ClickHouse user password",
+			"password_wo must be configured when password_wo_version changes",
+		)
+		return "", false, diagnostics
+	}
+
+	return passwordWo.ValueString(), true, nil
 }

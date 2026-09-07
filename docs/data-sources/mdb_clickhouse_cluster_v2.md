@@ -28,6 +28,7 @@ Get information about a Yandex Managed ClickHouse cluster. For more information,
 
 - `access` (Attributes) Access policy to the ClickHouse cluster. (see [below for nested schema](#nestedatt--access))
 - `admin_password` (String, Sensitive) A password used to authorize as user `admin` when `sql_user_management` enabled.
+- `allow_host_recreation` (Boolean) Allows or denies re-creation of hosts during cluster configuration changes that require it, such as a disk type change. Note: only data of replicated tables is preserved during host re-creation; data of non-replicated tables is lost.
 - `backup_retain_period_days` (Number) The period in days during which backups are stored.
 - `backup_window_start` (Attributes) Time to start the daily backup, in the UTC timezone. (see [below for nested schema](#nestedatt--backup_window_start))
 - `clickhouse` (Attributes) Configuration of the ClickHouse subcluster. (see [below for nested schema](#nestedatt--clickhouse))
@@ -39,14 +40,19 @@ Get information about a Yandex Managed ClickHouse cluster. For more information,
 - `disk_encryption_key_id` (String) ID of the KMS key for cluster disk encryption.
 - `embedded_keeper` (Boolean) Whether to use ClickHouse Keeper as a coordination system.
 - `environment` (String) Deployment environment of the ClickHouse cluster.
+- `extension` (Block Set) A set of cluster extensions. (see [below for nested schema](#nestedblock--extension))
+- `external_dictionary` (Attributes Map) External dictionaries configuration. The map key is the dictionary name. (see [below for nested schema](#nestedatt--external_dictionary))
 - `folder_id` (String) The folder identifier that resource belongs to. If it is not provided, the default provider `folder-id` is used.
 - `format_schema` (Block Set) A set of `protobuf` or `capnproto` format schemas. (see [below for nested schema](#nestedblock--format_schema))
+- `full_version` (String) Full version of the ClickHouse server software.
 - `hosts` (Attributes Map) A host configuration of the ClickHouse cluster. (see [below for nested schema](#nestedatt--hosts))
 - `id` (String) The resource identifier.
 - `labels` (Map of String) A set of key/value label pairs which assigned to resource.
 - `maintenance_window` (Block, Read-only) Maintenance window settings. (see [below for nested schema](#nestedblock--maintenance_window))
 - `ml_model` (Block Set) A group of machine learning models. (see [below for nested schema](#nestedblock--ml_model))
+- `monitoring` (Attributes List) Description of monitoring systems relevant to the ClickHouse cluster. (see [below for nested schema](#nestedatt--monitoring))
 - `network_id` (String) The `VPC Network ID` of subnets which resource attached to.
+- `performance_diagnostics` (Attributes) Performance diagnostics configuration (see [below for nested schema](#nestedatt--performance_diagnostics))
 - `security_group_ids` (Set of String) The list of security groups applied to resource or their components.
 - `service_account_id` (String) [Service account](https://yandex.cloud/docs/iam/concepts/users/service-accounts) which linked to the resource.
 - `shard_group` (Block List) A group of clickhouse shards. (see [below for nested schema](#nestedblock--shard_group))
@@ -94,6 +100,7 @@ Read-Only:
 Read-Only:
 
 - `config` (Attributes) Configuration of the ClickHouse subcluster. (see [below for nested schema](#nestedatt--clickhouse--config))
+- `default_user_settings` (Attributes) Settings that are applied to all users of the ClickHouse cluster by default. (see [below for nested schema](#nestedatt--clickhouse--default_user_settings))
 - `disk_size_autoscaling` (Attributes) Cluster disk size autoscaling settings. (see [below for nested schema](#nestedatt--clickhouse--disk_size_autoscaling))
 - `resources` (Attributes) Resources allocated to hosts. (see [below for nested schema](#nestedatt--clickhouse--resources))
 
@@ -134,6 +141,8 @@ Read-Only:
 - `kafka` (Attributes) Kafka connection configuration. (see [below for nested schema](#nestedatt--clickhouse--config--kafka))
 - `keep_alive_timeout` (Number) The number of seconds that ClickHouse waits for incoming requests for HTTP protocol before closing the connection.
 - `log_level` (String) Logging level.
+- `mark_cache_size` (Number) Size of the cache for marks (index blocks).
+- `max_build_vector_similarity_index_thread_pool_size` (Number) Maximum number of threads for building vector similarity indexes.
 - `max_concurrent_queries` (Number) Limit on total number of concurrently executed queries.
 - `max_connections` (Number) Max server connections.
 - `max_partition_size_to_drop` (Number) Restriction on dropping partitions.
@@ -174,12 +183,15 @@ Read-Only:
 - `text_log_retention_size` (Number) The maximum size that text_log can grow to before old data will be removed.
 - `text_log_retention_time` (Number) The maximum time that text_log records will be retained before removal.
 - `timezone` (String) The server's time zone.
+- `tls` (Attributes) TLS configuration for outgoing connections from ClickHouse. (see [below for nested schema](#nestedatt--clickhouse--config--tls))
 - `total_memory_profiler_step` (Number) Whenever server memory usage becomes larger than every next step in number of bytes the memory profiler will collect the allocating stack trace.
 - `total_memory_tracker_sample_probability` (Number) Allows to collect random allocations and de-allocations and writes them in the system.trace_log system table with trace_type equal to a MemorySample with the specified probability.
 - `trace_log_enabled` (Boolean) Enable or disable trace_log system table.
 - `trace_log_retention_size` (Number) The maximum size that trace_log can grow to before old data will be removed.
 - `trace_log_retention_time` (Number) The maximum time that trace_log records will be retained before removal.
 - `uncompressed_cache_size` (Number) Cache size (in bytes) for uncompressed data used by table engines from the MergeTree family. Zero means disabled.
+- `vector_similarity_index_cache_max_entries` (Number) Maximum number of entries in the vector similarity index cache.
+- `vector_similarity_index_cache_size` (Number) Maximum size of the cache for vector similarity index.
 - `zookeeper_log_enabled` (Boolean) Enable or disable zookeeper_log system table.
 - `zookeeper_log_retention_size` (Number) The maximum size that zookeeper_log can grow to before old data will be removed.
 - `zookeeper_log_retention_time` (Number) The maximum time that zookeeper_log records will be retained before removal.
@@ -232,10 +244,10 @@ Read-Only:
 
 - `function` (String) Aggregation function name.
 - `regexp` (String) Regular expression that the metric name must match.
-- `retention` (Attributes List) Retain parameters. (see [below for nested schema](#nestedatt--clickhouse--config--graphite_rollup--patterns--retention))
+- `retention` (Attributes List) Retain parameters. (see [below for nested schema](#nestedatt--clickhouse--config--graphite_rollup--version_column_name--retention))
 
-<a id="nestedatt--clickhouse--config--graphite_rollup--patterns--retention"></a>
-### Nested Schema for `clickhouse.config.graphite_rollup.patterns.retention`
+<a id="nestedatt--clickhouse--config--graphite_rollup--version_column_name--retention"></a>
+### Nested Schema for `clickhouse.config.graphite_rollup.version_column_name.retention`
 
 Read-Only:
 
@@ -260,9 +272,11 @@ Read-Only:
 Read-Only:
 
 - `auto_offset_reset` (String) Action when no initial offset: 'smallest','earliest','largest','latest','error'.
+- `batch_size` (Number) Maximum size (in bytes) of all messages batched in one MessageSet, including protocol framing overhead.
 - `debug` (String) A comma-separated list of debug contexts to enable.
 - `enable_ssl_certificate_verification` (Boolean) Enable verification of SSL certificates.
 - `max_poll_interval_ms` (Number) Maximum allowed time between calls to consume messages. If exceeded, consumer is considered failed.
+- `message_max_bytes` (Number) Maximum Kafka protocol request message size.
 - `sasl_mechanism` (String) SASL mechanism used in kafka authentication.
 - `sasl_password` (String, Sensitive) User password on kafka server.
 - `sasl_username` (String) Username on kafka server.
@@ -343,6 +357,186 @@ Read-Only:
 - `vhost` (String) RabbitMQ vhost. Default: `\`.
 
 
+<a id="nestedatt--clickhouse--config--tls"></a>
+### Nested Schema for `clickhouse.config.tls`
+
+Read-Only:
+
+- `trusted_certificates` (List of String) CA certificates in PEM format.
+
+
+
+<a id="nestedatt--clickhouse--default_user_settings"></a>
+### Nested Schema for `clickhouse.default_user_settings`
+
+Optional:
+
+- `add_http_cors_header` (Boolean)
+- `allow_ddl` (Boolean)
+- `allow_introspection_functions` (Boolean)
+- `allow_suspicious_low_cardinality_types` (Boolean)
+- `any_join_distinct_right_table_keys` (Boolean)
+- `async_insert` (Boolean)
+- `async_insert_busy_timeout` (Number)
+- `async_insert_max_data_size` (Number)
+- `async_insert_stale_timeout` (Number)
+- `async_insert_threads` (Number)
+- `async_insert_use_adaptive_busy_timeout` (Boolean) If it is set to true, use adaptive busy timeout for asynchronous inserts.
+- `cancel_http_readonly_queries_on_client_close` (Boolean)
+- `compile_expressions` (Boolean)
+- `connect_timeout` (Number)
+- `connect_timeout_with_failover` (Number)
+- `count_distinct_implementation` (String)
+- `data_type_default_nullable` (Boolean) Allows data types without explicit modifiers NULL or NOT NULL in column definition will be Nullable.
+- `date_time_input_format` (String)
+- `date_time_output_format` (String)
+- `deduplicate_blocks_in_dependent_materialized_views` (Boolean)
+- `distinct_overflow_mode` (String)
+- `distributed_aggregation_memory_efficient` (Boolean)
+- `distributed_ddl_output_mode` (String) Determines the format of distributed DDL query result.
+- `distributed_ddl_task_timeout` (Number)
+- `distributed_product_mode` (String)
+- `do_not_merge_across_partitions_select_final` (Boolean) Enable or disable independent processing of partitions for **SELECT** queries with **FINAL**.
+- `empty_result_for_aggregation_by_empty_set` (Boolean)
+- `enable_analyzer` (Boolean) Enable new query analyzer.
+- `enable_http_compression` (Boolean)
+- `enable_reads_from_query_cache` (Boolean) If turned on, results of SELECT queries are retrieved from the query cache.
+- `enable_writes_to_query_cache` (Boolean) If turned on, results of SELECT queries are stored in the query cache.
+- `fallback_to_stale_replicas_for_distributed_queries` (Boolean)
+- `flatten_nested` (Boolean)
+- `force_index_by_date` (Boolean)
+- `force_primary_key` (Boolean)
+- `format_avro_schema_registry_url` (String) Avro schema registry URL.
+- `format_regexp` (String)
+- `format_regexp_skip_unmatched` (Boolean)
+- `group_by_overflow_mode` (String)
+- `group_by_two_level_threshold` (Number)
+- `group_by_two_level_threshold_bytes` (Number)
+- `hedged_connection_timeout_ms` (Number)
+- `http_connection_timeout` (Number)
+- `http_headers_progress_interval` (Number)
+- `http_max_field_name_size` (Number) Maximum length of field name in HTTP header.
+- `http_max_field_value_size` (Number) Maximum length of field value in HTTP header.
+- `http_receive_timeout` (Number)
+- `http_send_timeout` (Number)
+- `idle_connection_timeout` (Number)
+- `ignore_materialized_views_with_dropped_target_table` (Boolean) Ignore materialized views with dropped target table during pushing to views.
+- `input_format_defaults_for_omitted_fields` (Boolean)
+- `input_format_import_nested_json` (Boolean)
+- `input_format_null_as_default` (Boolean)
+- `input_format_parallel_parsing` (Boolean)
+- `input_format_values_interpret_expressions` (Boolean)
+- `input_format_with_names_use_header` (Boolean)
+- `insert_keeper_max_retries` (Number)
+- `insert_null_as_default` (Boolean)
+- `insert_quorum` (Number)
+- `insert_quorum_parallel` (Boolean)
+- `insert_quorum_timeout` (Number)
+- `join_algorithm` (Set of String)
+- `join_overflow_mode` (String)
+- `join_use_nulls` (Boolean)
+- `joined_subquery_requires_alias` (Boolean)
+- `load_balancing` (String)
+- `local_filesystem_read_method` (String)
+- `log_processors_profiles` (Boolean) Enabled or disable logging of processors level profiling data to the the system.processors_profile_log table.
+- `log_queries_probability` (Number) Log queries with the specified probability.
+- `log_query_threads` (Boolean)
+- `log_query_views` (Boolean) Enables or disables query views logging to the the system.query_views_log table.
+- `low_cardinality_allow_in_native_format` (Boolean)
+- `max_ast_depth` (Number)
+- `max_ast_elements` (Number)
+- `max_block_size` (Number)
+- `max_bytes_before_external_group_by` (Number)
+- `max_bytes_before_external_sort` (Number)
+- `max_bytes_in_distinct` (Number)
+- `max_bytes_in_join` (Number)
+- `max_bytes_in_set` (Number)
+- `max_bytes_to_read` (Number)
+- `max_bytes_to_sort` (Number)
+- `max_bytes_to_transfer` (Number)
+- `max_columns_to_read` (Number)
+- `max_concurrent_queries_for_user` (Number)
+- `max_execution_time` (Number)
+- `max_expanded_ast_elements` (Number)
+- `max_final_threads` (Number)
+- `max_http_get_redirects` (Number)
+- `max_insert_block_size` (Number)
+- `max_insert_threads` (Number)
+- `max_memory_usage` (Number)
+- `max_memory_usage_for_user` (Number)
+- `max_network_bandwidth` (Number)
+- `max_network_bandwidth_for_user` (Number)
+- `max_parser_depth` (Number)
+- `max_partitions_per_insert_block` (Number)
+- `max_query_size` (Number)
+- `max_read_buffer_size` (Number)
+- `max_replica_delay_for_distributed_queries` (Number)
+- `max_result_bytes` (Number)
+- `max_result_rows` (Number)
+- `max_rows_in_distinct` (Number)
+- `max_rows_in_join` (Number)
+- `max_rows_in_set` (Number)
+- `max_rows_to_group_by` (Number)
+- `max_rows_to_read` (Number)
+- `max_rows_to_sort` (Number)
+- `max_rows_to_transfer` (Number)
+- `max_temporary_columns` (Number)
+- `max_temporary_data_on_disk_size_for_query` (Number)
+- `max_temporary_data_on_disk_size_for_user` (Number)
+- `max_temporary_non_const_columns` (Number)
+- `max_threads` (Number)
+- `memory_overcommit_ratio_denominator` (Number)
+- `memory_overcommit_ratio_denominator_for_user` (Number)
+- `memory_profiler_sample_probability` (Number)
+- `memory_profiler_step` (Number)
+- `memory_usage_overcommit_max_wait_microseconds` (Number)
+- `merge_tree_max_bytes_to_use_cache` (Number)
+- `merge_tree_max_rows_to_use_cache` (Number)
+- `merge_tree_min_bytes_for_concurrent_read` (Number)
+- `merge_tree_min_rows_for_concurrent_read` (Number)
+- `min_bytes_to_use_direct_io` (Number)
+- `min_count_to_compile_expression` (Number)
+- `min_execution_speed` (Number)
+- `min_execution_speed_bytes` (Number)
+- `min_insert_block_size_bytes` (Number)
+- `min_insert_block_size_rows` (Number)
+- `output_format_json_quote_64bit_integers` (Boolean)
+- `output_format_json_quote_denormals` (Boolean)
+- `prefer_localhost_replica` (Boolean)
+- `priority` (Number)
+- `query_cache_max_entries` (Number) The maximum number of query results the current user may store in the query cache. 0 means unlimited.
+- `query_cache_max_size_in_bytes` (Number) The maximum amount of memory (in bytes) the current user may allocate in the query cache. 0 means unlimited.
+- `query_cache_min_query_duration` (Number) Minimum duration in milliseconds a query needs to run for its result to be stored in the query cache.
+- `query_cache_min_query_runs` (Number) Minimum number of times a SELECT query must run before its result is stored in the query cache.
+- `query_cache_nondeterministic_function_handling` (String) Controls how the query cache handles **SELECT** queries with non-deterministic functions like rand() or now().
+- `query_cache_share_between_users` (Boolean) If turned on, the result of SELECT queries cached in the query cache can be read by other users. It is not recommended to enable this setting due to security reasons.
+- `query_cache_system_table_handling` (String) Controls how the query cache handles **SELECT** queries against system tables.
+- `query_cache_tag` (String) A string which acts as a label for query cache entries. The same queries with different tags are considered different by the query cache.
+- `query_cache_ttl` (Number) After this time in seconds entries in the query cache become stale.
+- `quota_mode` (String)
+- `read_overflow_mode` (String)
+- `readonly` (Number)
+- `receive_timeout` (Number)
+- `remote_filesystem_read_method` (String)
+- `replication_alter_partitions_sync` (Number)
+- `result_overflow_mode` (String)
+- `s3_use_adaptive_timeouts` (Boolean) Enables or disables adaptive timeouts for S3 requests.
+- `select_sequential_consistency` (Boolean)
+- `send_progress_in_http_headers` (Boolean)
+- `send_timeout` (Number)
+- `set_overflow_mode` (String)
+- `skip_unavailable_shards` (Boolean)
+- `sort_overflow_mode` (String)
+- `timeout_before_checking_execution_speed` (Number)
+- `timeout_overflow_mode` (String)
+- `transfer_overflow_mode` (String)
+- `transform_null_in` (Boolean)
+- `use_hedged_requests` (Boolean)
+- `use_query_cache` (Boolean) If turned on, SELECT queries may utilize the query cache.
+- `use_uncompressed_cache` (Boolean)
+- `wait_for_async_insert` (Boolean)
+- `wait_for_async_insert_timeout` (Number)
+
 
 <a id="nestedatt--clickhouse--disk_size_autoscaling"></a>
 ### Nested Schema for `clickhouse.disk_size_autoscaling`
@@ -377,6 +571,249 @@ Read-Only:
 - `prefer_not_to_merge` (Boolean) Disables merging of data parts in `Yandex Object Storage`.
 
 
+<a id="nestedblock--extension"></a>
+### Nested Schema for `extension`
+
+Read-Only:
+
+- `name` (String) The name of the extension.
+- `version` (String) Version of the extension.
+
+
+<a id="nestedatt--external_dictionary"></a>
+### Nested Schema for `external_dictionary`
+
+Read-Only:
+
+- `layout` (Attributes) Layout of the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--layout))
+- `lifetime` (Attributes) Lifetime of the dictionary data. (see [below for nested schema](#nestedatt--external_dictionary--lifetime))
+- `source` (Attributes) Source of the external dictionary data. (see [below for nested schema](#nestedatt--external_dictionary--source))
+- `structure` (Attributes) Structure of the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure))
+
+<a id="nestedatt--external_dictionary--layout"></a>
+### Nested Schema for `external_dictionary.layout`
+
+Read-Only:
+
+- `access_to_key_from_attributes` (Boolean) Allows to retrieve key attribute using dictGetString function.
+- `allow_read_expired_keys` (Boolean) Allow reading expired keys.
+- `block_size` (Number) Block size for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `file_size` (Number) Maximum cache file size in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `initial_array_size` (Number) Initial dictionary key size for FLAT layout.
+- `max_array_size` (Number) Maximum dictionary key size for FLAT layout.
+- `max_threads_for_updates` (Number) Max threads for cache dictionary update.
+- `max_update_queue_size` (Number) Max size of update queue.
+- `query_wait_timeout_milliseconds` (Number) Max wait timeout in milliseconds for update task to complete.
+- `read_buffer_size` (Number) RAM buffer size for reading from SSD in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+- `size_in_cells` (Number) Number of cells in the cache or initial array size.
+- `type` (String) Layout type (FLAT, HASHED, CACHE, etc.).
+- `update_queue_push_timeout_milliseconds` (Number) Max timeout in milliseconds for push update task into queue.
+- `write_buffer_size` (Number) RAM buffer size for writing to SSD in bytes for SSD_CACHE and COMPLEX_KEY_SSD_CACHE layout types.
+
+
+<a id="nestedatt--external_dictionary--lifetime"></a>
+### Nested Schema for `external_dictionary.lifetime`
+
+Read-Only:
+
+- `fixed_lifetime` (Number) Fixed reload interval in seconds.
+- `range` (Attributes) Random reload interval in seconds. (see [below for nested schema](#nestedatt--external_dictionary--lifetime--range))
+
+<a id="nestedatt--external_dictionary--lifetime--range"></a>
+### Nested Schema for `external_dictionary.lifetime.range`
+
+Read-Only:
+
+- `max` (Number) Maximum reload interval.
+- `min` (Number) Minimum reload interval.
+
+
+
+<a id="nestedatt--external_dictionary--source"></a>
+### Nested Schema for `external_dictionary.source`
+
+Read-Only:
+
+- `clickhouse_source` (Attributes) ClickHouse source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--clickhouse_source))
+- `http_source` (Attributes) HTTP source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--http_source))
+- `mongodb_source` (Attributes) MongoDB source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--mongodb_source))
+- `mysql_source` (Attributes) MySQL source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--mysql_source))
+- `postgresql_source` (Attributes) PostgreSQL source for the external dictionary. (see [below for nested schema](#nestedatt--external_dictionary--source--postgresql_source))
+
+<a id="nestedatt--external_dictionary--source--clickhouse_source"></a>
+### Nested Schema for `external_dictionary.source.clickhouse_source`
+
+Read-Only:
+
+- `db` (String) ClickHouse database name.
+- `host` (String) ClickHouse host.
+- `password` (String, Sensitive) ClickHouse password.
+- `port` (Number) ClickHouse port.
+- `secure` (Boolean) Use TLS for the connection.
+- `table` (String) ClickHouse table name.
+- `user` (String) ClickHouse user.
+- `where` (String) Selection criteria (WHERE clause).
+
+
+<a id="nestedatt--external_dictionary--source--http_source"></a>
+### Nested Schema for `external_dictionary.source.http_source`
+
+Read-Only:
+
+- `format` (String) Data format (CSV, TSV, etc.).
+- `headers` (Attributes List) HTTP headers. (see [below for nested schema](#nestedatt--external_dictionary--source--http_source--headers))
+- `url` (String) URL of the HTTP source.
+
+<a id="nestedatt--external_dictionary--source--http_source--headers"></a>
+### Nested Schema for `external_dictionary.source.http_source.headers`
+
+Read-Only:
+
+- `name` (String) Header name.
+- `value` (String) Header value.
+
+
+
+<a id="nestedatt--external_dictionary--source--mongodb_source"></a>
+### Nested Schema for `external_dictionary.source.mongodb_source`
+
+Read-Only:
+
+- `collection` (String) MongoDB collection name.
+- `db` (String) MongoDB database name.
+- `host` (String) MongoDB host.
+- `options` (String) MongoDB connection options (e.g. authSource=admin).
+- `password` (String, Sensitive) MongoDB password.
+- `port` (Number) MongoDB port.
+- `user` (String) MongoDB user.
+
+
+<a id="nestedatt--external_dictionary--source--mysql_source"></a>
+### Nested Schema for `external_dictionary.source.mysql_source`
+
+Read-Only:
+
+- `close_connection` (Boolean) Close connection after each query.
+- `db` (String) MySQL database name.
+- `invalidate_query` (String) Query to check if the dictionary data has changed.
+- `password` (String, Sensitive) Default password for replicas.
+- `port` (Number) Default port for replicas.
+- `replicas` (Attributes List) MySQL replicas. (see [below for nested schema](#nestedatt--external_dictionary--source--mysql_source--replicas))
+- `share_connection` (Boolean) Share connection between threads.
+- `table` (String) MySQL table name.
+- `user` (String) Default user for replicas.
+- `where` (String) WHERE clause for selecting rows.
+
+<a id="nestedatt--external_dictionary--source--mysql_source--replicas"></a>
+### Nested Schema for `external_dictionary.source.mysql_source.replicas`
+
+Read-Only:
+
+- `host` (String) Replica host.
+- `password` (String, Sensitive) Replica password.
+- `port` (Number) Replica port.
+- `priority` (Number) Replica priority.
+- `user` (String) Replica user.
+
+
+
+<a id="nestedatt--external_dictionary--source--postgresql_source"></a>
+### Nested Schema for `external_dictionary.source.postgresql_source`
+
+Read-Only:
+
+- `db` (String) PostgreSQL database name.
+- `hosts` (List of String) PostgreSQL hosts.
+- `invalidate_query` (String) Query to check if the dictionary data has changed.
+- `password` (String, Sensitive) PostgreSQL password.
+- `port` (Number) PostgreSQL port.
+- `ssl_mode` (String) SSL mode for the PostgreSQL connection (DISABLE, ALLOW, PREFER, VERIFY_CA, VERIFY_FULL).
+- `table` (String) PostgreSQL table name.
+- `user` (String) PostgreSQL user.
+
+
+
+<a id="nestedatt--external_dictionary--structure"></a>
+### Nested Schema for `external_dictionary.structure`
+
+Read-Only:
+
+- `attributes` (Attributes List) Dictionary attributes. (see [below for nested schema](#nestedatt--external_dictionary--structure--attributes))
+- `id` (Attributes) Single numeric key column for the dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure--id))
+- `key` (Attributes) Composite key for the dictionary. (see [below for nested schema](#nestedatt--external_dictionary--structure--key))
+- `range_max` (Attributes) Field holding the end of the range for RANGE_HASHED layout. (see [below for nested schema](#nestedatt--external_dictionary--structure--range_max))
+- `range_min` (Attributes) Field holding the beginning of the range for RANGE_HASHED layout. (see [below for nested schema](#nestedatt--external_dictionary--structure--range_min))
+
+<a id="nestedatt--external_dictionary--structure--attributes"></a>
+### Nested Schema for `external_dictionary.structure.attributes`
+
+Read-Only:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `name` (String) Attribute name.
+- `null_value` (String) Default value for null.
+- `type` (String) Attribute type.
+
+
+<a id="nestedatt--external_dictionary--structure--id"></a>
+### Nested Schema for `external_dictionary.structure.id`
+
+Read-Only:
+
+- `name` (String) Name of the numeric key column.
+
+
+<a id="nestedatt--external_dictionary--structure--key"></a>
+### Nested Schema for `external_dictionary.structure.key`
+
+Read-Only:
+
+- `attributes` (Attributes List) Key attributes. (see [below for nested schema](#nestedatt--external_dictionary--structure--key--attributes))
+
+<a id="nestedatt--external_dictionary--structure--key--attributes"></a>
+### Nested Schema for `external_dictionary.structure.key.attributes`
+
+Read-Only:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `name` (String) Attribute name.
+- `null_value` (String) Default value for null.
+- `type` (String) Attribute type.
+
+
+
+<a id="nestedatt--external_dictionary--structure--range_max"></a>
+### Nested Schema for `external_dictionary.structure.range_max`
+
+Read-Only:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `name` (String) Attribute name.
+- `null_value` (String) Default value for null.
+- `type` (String) Attribute type.
+
+
+<a id="nestedatt--external_dictionary--structure--range_min"></a>
+### Nested Schema for `external_dictionary.structure.range_min`
+
+Read-Only:
+
+- `expression` (String) Expression for computing the attribute.
+- `hierarchical` (Boolean) Is the attribute hierarchical.
+- `injective` (Boolean) Is the attribute injective.
+- `name` (String) Attribute name.
+- `null_value` (String) Default value for null.
+- `type` (String) Attribute type.
+
+
+
+
 <a id="nestedblock--format_schema"></a>
 ### Nested Schema for `format_schema`
 
@@ -396,7 +833,7 @@ Read-Only:
 - `fqdn` (String) The fully qualified domain name of the host.
 - `shard_name` (String) The name of the shard to which the host belongs.
 - `subnet_id` (String) ID of the subnet where the host is located.
-- `type` (String) The type of the host to be deployed. Can be either `CLICKHOUSE` or `ZOOKEEPER`.
+- `type` (String) The type of the host to be deployed. Can be `CLICKHOUSE`, `ZOOKEEPER`, or `KEEPER`.
 - `zone` (String) The [availability zone](https://yandex.cloud/docs/overview/concepts/geo-scope) where resource is located. If it is not provided, the default provider zone will be used.
 
 
@@ -420,14 +857,57 @@ Read-Only:
 - `uri` (String) Model file URL. You can only use models stored in Yandex Object Storage.
 
 
+<a id="nestedatt--monitoring"></a>
+### Nested Schema for `monitoring`
+
+Read-Only:
+
+- `description` (String) Description of the monitoring system.
+- `link` (String) Link to the monitoring system charts for the ClickHouse cluster.
+- `name` (String) Name of the monitoring system.
+
+
+<a id="nestedatt--performance_diagnostics"></a>
+### Nested Schema for `performance_diagnostics`
+
+Read-Only:
+
+- `enabled` (Boolean) Enabled performance diagnostics.
+- `processes_refresh_interval` (String) Refresh interval for performance diagnostics data. Specify the value duration format, for example `"15s"`, `"1m0s"`, or `"1h0m0s"`.
+
+
 <a id="nestedblock--shard_group"></a>
 ### Nested Schema for `shard_group`
 
 Read-Only:
 
-- `description` (String) MarkdownDescription of the shard group.
+- `description` (String) Description of the shard group.
+- `external_shard` (Block List) List of external shards in the shard group. (see [below for nested schema](#nestedblock--shard_group--external_shard))
 - `name` (String) The name of the shard group, used as cluster name in Distributed tables.
 - `shard_names` (List of String) List of shards names that belong to the shard group.
+
+<a id="nestedblock--shard_group--external_shard"></a>
+### Nested Schema for `shard_group.external_shard`
+
+Read-Only:
+
+- `name` (String) Name of the external shard.
+- `replica` (Block List) List of replicas in the external shard. (see [below for nested schema](#nestedblock--shard_group--external_shard--replica))
+- `weight` (Number) Relative weight of the external shard.
+
+<a id="nestedblock--shard_group--external_shard--replica"></a>
+### Nested Schema for `shard_group.external_shard.replica`
+
+Read-Only:
+
+- `host` (String) Name (FQDN) or IP address of the external replica host.
+- `password` (String, Sensitive) Password of the user (not returned by API).
+- `port` (Number) Port to connect to the external replica.
+- `priority` (Number) Priority of the external replica for load balancing.
+- `secure` (Boolean) Whether to use a secure (SSL/TLS) connection.
+- `user` (String) Name of the user to authenticate with.
+
+
 
 
 <a id="nestedatt--shards"></a>

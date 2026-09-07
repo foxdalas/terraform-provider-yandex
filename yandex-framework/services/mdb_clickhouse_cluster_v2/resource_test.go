@@ -3,6 +3,7 @@ package mdb_clickhouse_cluster_v2_test
 import (
 	"context"
 	"fmt"
+	"github.com/yandex-cloud/go-sdk/services/mdb/clickhouse/v1"
 	"os"
 	"reflect"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1"
 	clickhouseConfig "github.com/yandex-cloud/go-genproto/yandex/cloud/mdb/clickhouse/v1/config"
@@ -23,6 +25,8 @@ import (
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/kms_symmetric_key"
 	"github.com/yandex-cloud/terraform-provider-yandex/yandex-framework/services/mdb_clickhouse_cluster_v2/utils"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -31,13 +35,23 @@ const (
 	yandexMDBClickHouseClusterDeleteTimeout = 15 * time.Minute
 	yandexMDBClickHouseClusterUpdateTimeout = 60 * time.Minute
 
-	chVersion        = "25.3"
-	chUpdatedVersion = "25.8"
+	chVersion        = "25.8"
+	chUpdatedVersion = "26.3"
 
-	chResourceKeeper       = "yandex_mdb_clickhouse_cluster_v2.keeper"
-	chResourceCloudStorage = "yandex_mdb_clickhouse_cluster_v2.cloud"
-	chResourceSharded      = "yandex_mdb_clickhouse_cluster_v2.bar"
-	chResource             = "yandex_mdb_clickhouse_cluster_v2.foo"
+	sqlManagementEnabled = `
+  sql_user_management     = true
+  sql_database_management = true
+`
+
+	chResourceKeeper        = "yandex_mdb_clickhouse_cluster_v2.keeper"
+	chResourceCloudStorage  = "yandex_mdb_clickhouse_cluster_v2.cloud"
+	chResourceSharded       = "yandex_mdb_clickhouse_cluster_v2.bar"
+	chResource              = "yandex_mdb_clickhouse_cluster_v2.foo"
+	chResourceRestore       = "yandex_mdb_clickhouse_cluster_v2.restore_test"
+	chResourceRemoteServers = "yandex_mdb_clickhouse_cluster_v2.remote_servers"
+	chResourceMigrateKeeper = "yandex_mdb_clickhouse_cluster_v2.migrate_to_keeper"
+
+	chRestoreBackupWithExtensionId = "c9qqv135s8oadbbjcq7m:c9qmqctragekko24qtt3"
 
 	defaultMDBPageSize = 1000
 )
@@ -850,18 +864,35 @@ func TestAccMDBClickHouseCluster_clickhouse_config(t *testing.T) {
 		},
 	}
 
+	defaultUserSettingsForFirstStep := `
+	default_user_settings = {
+		max_threads      = 8
+		max_memory_usage = 1000000000
+	}
+`
+
+	defaultUserSettingsForSecondStep := `
+	default_user_settings = {
+		max_threads    = 16
+		join_algorithm = ["hash"]
+	}
+`
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { test.AccPreCheck(t) },
 		ProtoV6ProviderFactories: test.AccProviderFactories,
 		CheckDestroy:             testAccCheckMDBClickHouseClusterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccMDBClickHouseCluster_clickhouse_config(chName, configForFirstStep),
+				Config: testAccMDBClickHouseCluster_clickhouse_config(chName, configForFirstStep, defaultUserSettingsForFirstStep, ""),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckMDBClickHouseClusterExists(chResource, &r, 1),
 					resource.TestCheckResourceAttr(chResource, "name", chName),
 					resource.TestCheckResourceAttr(chResource, "folder_id", folderID),
 					resource.TestCheckResourceAttr(chResource, "version", chVersion),
+
+					resource.TestCheckResourceAttr(chResource, "clickhouse.default_user_settings.max_threads", "8"),
+					resource.TestCheckResourceAttr(chResource, "clickhouse.default_user_settings.max_memory_usage", "1000000000"),
 
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.log_level", "TRACE"),
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.max_connections", "512"),
@@ -1024,16 +1055,45 @@ func TestAccMDBClickHouseCluster_clickhouse_config(t *testing.T) {
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.jdbc_bridge.host", "127.0.0.2"),
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.jdbc_bridge.port", "8999"),
 
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.%", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.lifetime.fixed_lifetime", "300"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.layout.type", "FLAT"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.db", "mydb"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.table", "cities"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.user", "mysql_user"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.#", "2"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.host", "rc1b-mysql.mdb.yandexcloud.net"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.priority", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.port", "3306"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.host", "rc1d-mysql.mdb.yandexcloud.net"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.priority", "2"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.port", "3306"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.#", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.0.name", "city"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.0.type", "String"),
+
 					testAccCheckCreatedAtAttr(chResource)),
 			},
 			mdbClickHouseClusterImportStep(chResource),
 			{
-				Config: testAccMDBClickHouseCluster_clickhouse_config(chName, configForSecondStep),
+				Config: testAccMDBClickHouseCluster_clickhouse_config(chName, configForSecondStep, defaultUserSettingsForSecondStep, sqlManagementEnabled),
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectResourceAction(chResource, plancheck.ResourceActionUpdate),
+					},
+				},
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(chResource, "sql_user_management", "true"),
+					resource.TestCheckResourceAttr(chResource, "sql_database_management", "true"),
+
 					testAccCheckMDBClickHouseClusterExists(chResource, &r, 1),
 					resource.TestCheckResourceAttr(chResource, "name", chName),
 					resource.TestCheckResourceAttr(chResource, "folder_id", folderID),
 					resource.TestCheckResourceAttr(chResource, "version", chVersion),
+
+					resource.TestCheckResourceAttr(chResource, "clickhouse.default_user_settings.max_threads", "16"),
+					resource.TestCheckResourceAttr(chResource, "clickhouse.default_user_settings.join_algorithm.#", "1"),
+					resource.TestCheckResourceAttr(chResource, "clickhouse.default_user_settings.max_memory_usage", "1000000000"),
 
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.log_level", "WARNING"),
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.max_connections", "1024"),
@@ -1216,6 +1276,23 @@ func TestAccMDBClickHouseCluster_clickhouse_config(t *testing.T) {
 
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.jdbc_bridge.host", "127.0.0.3"),
 					resource.TestCheckResourceAttr(chResource, "clickhouse.config.jdbc_bridge.port", "8998"),
+
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.%", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.lifetime.fixed_lifetime", "300"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.layout.type", "FLAT"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.db", "mydb"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.table", "cities"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.user", "mysql_user"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.#", "2"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.host", "rc1b-mysql.mdb.yandexcloud.net"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.priority", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.0.port", "3306"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.host", "rc1d-mysql.mdb.yandexcloud.net"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.priority", "2"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.source.mysql_source.replicas.1.port", "3306"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.#", "1"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.0.name", "city"),
+					resource.TestCheckResourceAttr(chResource, "external_dictionary.mysql_dict.structure.attributes.0.type", "String"),
 
 					testAccCheckCreatedAtAttr(chResource)),
 			},
@@ -1451,6 +1528,148 @@ shard_group {
 	})
 }
 
+// Test that a ClickHouse cluster supports remote_servers (external shards) in a shard group, using a second cluster as the external shard target
+func TestAccMDBClickHouseCluster_remoteServers(t *testing.T) {
+	t.Parallel()
+
+	var cluster clickhouse.Cluster
+	chName := acctest.RandomWithPrefix("tf-clickhouse-remote-servers")
+	chTargetName := acctest.RandomWithPrefix("tf-clickhouse-remote-target")
+	folderID := test.GetExampleFolderID()
+
+	externalShardFirstStep := `
+	external_shard {
+		name   = "ext_shard1"
+		weight = 100
+		replica {
+			host     = yandex_mdb_clickhouse_cluster_v2.remote_servers_target.hosts["eh1"].fqdn
+			port     = 9440
+			secure   = true
+			user     = "admin"
+			password = "strong_external_password"
+			priority = 0
+		}
+	}
+`
+
+	externalShardSecondStep := `
+	external_shard {
+		name   = "ext_shard1"
+		weight = 200
+		replica {
+			host     = yandex_mdb_clickhouse_cluster_v2.remote_servers_target.hosts["eh1"].fqdn
+			port     = 9440
+			secure   = true
+			user     = "admin"
+			password = "strong_external_password"
+			priority = 0
+		}
+	}
+	external_shard {
+		name   = "ext_shard2"
+		weight = 50
+		replica {
+			host     = yandex_mdb_clickhouse_cluster_v2.remote_servers_target.hosts["eh1"].fqdn
+			port     = 9440
+			secure   = true
+			user     = "admin"
+			password = "strong_external_password"
+			priority = 0
+		}
+	}
+`
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { test.AccPreCheck(t) },
+		ProtoV6ProviderFactories: test.AccProviderFactories,
+		CheckDestroy:             testAccCheckMDBClickHouseClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMDBClickHouseCluster_remoteServers(chName, chTargetName, externalShardFirstStep),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseClusterExists(chResourceRemoteServers, &cluster, 1),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "name", chName),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "folder_id", folderID),
+
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.name", "remote_group"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.name", "ext_shard1"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.weight", "100"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.replica.0.port", "9440"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.replica.0.secure", "true"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.replica.0.user", "admin"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.replica.0.priority", "0"),
+					resource.TestCheckResourceAttrSet(chResourceRemoteServers, "shard_group.0.external_shard.0.replica.0.host"),
+
+					testAccCheckMDBClickHouseClusterHasExternalShards(&cluster, map[string]map[string]int{
+						"remote_group": {"ext_shard1": 1},
+					}),
+					testAccCheckCreatedAtAttr(chResourceRemoteServers),
+				),
+			},
+			mdbClickHouseClusterImportStep(chResourceRemoteServers),
+			{
+				Config: testAccMDBClickHouseCluster_remoteServers(chName, chTargetName, externalShardSecondStep),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseClusterExists(chResourceRemoteServers, &cluster, 1),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.name", "ext_shard1"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.0.weight", "200"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.1.name", "ext_shard2"),
+					resource.TestCheckResourceAttr(chResourceRemoteServers, "shard_group.0.external_shard.1.weight", "50"),
+
+					testAccCheckMDBClickHouseClusterHasExternalShards(&cluster, map[string]map[string]int{
+						"remote_group": {"ext_shard1": 1, "ext_shard2": 1},
+					}),
+					testAccCheckCreatedAtAttr(chResourceRemoteServers),
+				),
+			},
+			mdbClickHouseClusterImportStep(chResourceRemoteServers),
+		},
+	})
+}
+
+// Test that a ClickHouse cluster with dedicated ZooKeeper hosts can be migrated to Keeper.
+func TestAccMDBClickHouseCluster_migrateToKeeper(t *testing.T) {
+	var cluster clickhouse.Cluster
+	clusterName := acctest.RandomWithPrefix("tf-clickhouse-migrate-keeper")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { test.AccPreCheck(t) },
+		ProtoV6ProviderFactories: test.AccProviderFactories,
+		CheckDestroy:             testAccCheckMDBClickHouseClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMDBClickHouseClusterMigrateToKeeper(clusterName, "ZOOKEEPER", false),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseClusterExists(chResourceMigrateKeeper, &cluster, 4),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.za.type", "ZOOKEEPER"),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.zb.type", "ZOOKEEPER"),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.zd.type", "ZOOKEEPER"),
+					testAccCheckMDBClickHouseCoordinatorHosts(chResourceMigrateKeeper, clickhouse.Host_ZOOKEEPER, 3),
+				),
+			},
+			{
+				Config: testAccMDBClickHouseClusterMigrateToKeeper(clusterName, "KEEPER", true),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseClusterExists(chResourceMigrateKeeper, &cluster, 4),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "allow_degradation_to_read_only", "true"),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.za.type", "KEEPER"),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.zb.type", "KEEPER"),
+					resource.TestCheckResourceAttr(chResourceMigrateKeeper, "hosts.zd.type", "KEEPER"),
+					resource.TestCheckResourceAttrSet(chResourceMigrateKeeper, "hosts.za.fqdn"),
+					resource.TestCheckResourceAttrSet(chResourceMigrateKeeper, "hosts.zb.fqdn"),
+					resource.TestCheckResourceAttrSet(chResourceMigrateKeeper, "hosts.zd.fqdn"),
+					testAccCheckMDBClickHouseCoordinatorHosts(chResourceMigrateKeeper, clickhouse.Host_KEEPER, 3),
+				),
+			},
+			{
+				Config:             testAccMDBClickHouseClusterMigrateToKeeper(clusterName, "KEEPER", true),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: false,
+			},
+		},
+	})
+}
+
 // Test that a Keeper-based ClickHouse Cluster can be created and destroyed
 func TestAccMDBClickHouseCluster_keeper(t *testing.T) {
 	t.Parallel()
@@ -1585,6 +1804,34 @@ func TestAccMDBClickHouseCluster_encrypted_disk(t *testing.T) {
 	})
 }
 
+// Test that a ClickHouse cluster can be restored from a backup that already contains an extension
+// and declaring the same extension in config does not produce an "already exists" error.
+func TestAccMDBClickHouseCluster_restore(t *testing.T) {
+	t.Parallel()
+
+	var cluster clickhouse.Cluster
+	clusterName := acctest.RandomWithPrefix("tf-clickhouse-restored")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { test.AccPreCheck(t) },
+		ProtoV6ProviderFactories: test.AccProviderFactories,
+		CheckDestroy:             testAccCheckMDBClickHouseClusterDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccMDBClickHouseCluster_restore(clusterName),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckMDBClickHouseClusterExists(chResourceRestore, &cluster, 1),
+					resource.TestCheckResourceAttr(chResourceRestore, "name", clusterName),
+					resource.TestCheckResourceAttr(chResourceRestore, "restore.backup_id", chRestoreBackupWithExtensionId),
+					testAccCheckMDBClickHouseClusterHasExtensions(chResourceRestore, map[string]string{
+						"catboost": "1.17.3",
+					}),
+				),
+			},
+		},
+	})
+}
+
 // Test HCL configs
 
 func testAccMDBClickHouseCluster_basic(name string, bucket string, randInt int, changeableConf string) string {
@@ -1706,17 +1953,24 @@ resource "yandex_mdb_clickhouse_cluster_v2" "foo" {
 	)
 }
 
-func testAccMDBClickHouseCluster_clickhouse_config(name string, config *clickhouseConfig.ClickhouseConfig) string {
+func testAccMDBClickHouseCluster_clickhouse_config(name string, config *clickhouseConfig.ClickhouseConfig, defaultUserSettings, sqlManagement string) string {
 	return fmt.Sprintf(clickHouseVPCDependencies+"\n"+`
 resource "yandex_mdb_clickhouse_cluster_v2" "foo" {
   name           = "%s"
   description    = "ClickHouse config"
   environment    = "PRESTABLE"
   network_id     = "${yandex_vpc_network.mdb-ch-test-net.id}"
+  admin_password = "strong_password"
+
+  # sql management
+  %s
 
   version = "%s"
   clickhouse = {
 	# clickhouse config
+	%s
+
+	# default user settings
 	%s
 
 	resources = {
@@ -1742,12 +1996,57 @@ resource "yandex_mdb_clickhouse_cluster_v2" "foo" {
   # maintenance_window
   %s
 
+  external_dictionary = {
+    "mysql_dict" = {
+      lifetime = {
+        fixed_lifetime = 300
+      }
+      structure = {
+        id = {
+          name = "id"
+        }
+        attributes = [{
+          name = "city"
+          type = "String"
+        }]
+      }
+      layout = {
+        type = "FLAT"
+      }
+      source = {
+        mysql_source = {
+          db       = "mydb"
+          table    = "cities"
+          user     = "mysql_user"
+          replicas = [
+            {
+              host     = "rc1b-mysql.mdb.yandexcloud.net"
+              priority = 1
+              port     = 3306
+              user     = "replica_user"
+              password = "replica1_pass"
+            },
+            {
+              host     = "rc1d-mysql.mdb.yandexcloud.net"
+              priority = 2
+              port     = 3306
+              user     = "replica_user"
+              password = "replica2_pass"
+            },
+          ]
+        }
+      }
+    }
+  }
+
   # deletion_protection = true
 }
 `,
 		name,
+		sqlManagement,
 		chVersion,
 		buildClickhouseConfigHCL(config),
+		defaultUserSettings,
 		maintenanceWindowAnytime,
 	)
 }
@@ -1769,6 +2068,72 @@ resource "yandex_mdb_clickhouse_cluster_v2" "bar" {
 `,
 		name,
 		shards,
+		maintenanceWindowWeekly,
+	)
+}
+
+func testAccMDBClickHouseCluster_remoteServers(name, targetName, externalShard string) string {
+	return fmt.Sprintf(clickHouseVPCDependencies+"\n"+`
+resource "yandex_mdb_clickhouse_cluster_v2" "remote_servers_target" {
+  name           = "%s"
+  description    = "ClickHouse target cluster used as an external shard"
+  environment    = "PRESTABLE"
+  network_id     = "${yandex_vpc_network.mdb-ch-test-net.id}"
+  admin_password = "strong_external_password"
+
+  hosts = {
+    "eh1" = {
+	  type       = "CLICKHOUSE"
+	  zone       = "ru-central1-a"
+	  subnet_id  = "${yandex_vpc_subnet.mdb-ch-test-subnet-a.id}"
+	  shard_name = "shard1"
+    }
+  }
+
+  shards = {
+	shard1 = {}
+  }
+
+  # maintenance_window
+  %s
+}
+
+resource "yandex_mdb_clickhouse_cluster_v2" "remote_servers" {
+  name           = "%s"
+  description    = "ClickHouse Cluster with remote_servers Terraform Test"
+  environment    = "PRESTABLE"
+  network_id     = "${yandex_vpc_network.mdb-ch-test-net.id}"
+
+  hosts = {
+    "h1" = {
+	  type       = "CLICKHOUSE"
+	  zone       = "ru-central1-a"
+	  subnet_id  = "${yandex_vpc_subnet.mdb-ch-test-subnet-a.id}"
+	  shard_name = "shard1"
+    }
+  }
+
+  shards = {
+	shard1 = {}
+  }
+
+  shard_group {
+	name        = "remote_group"
+	description = "shard group with external shards"
+	shard_names = [
+		"shard1",
+	]
+	%s
+  }
+
+  # maintenance_window
+  %s
+}
+`,
+		targetName,
+		maintenanceWindowWeekly,
+		name,
+		externalShard,
 		maintenanceWindowWeekly,
 	)
 }
@@ -1810,6 +2175,69 @@ resource "yandex_mdb_clickhouse_cluster_v2" "keeper" {
 		name,
 		desc,
 		maintenanceWindowAnytime,
+	)
+}
+
+func testAccMDBClickHouseClusterMigrateToKeeper(name, coordinatorType string, allowDegradation bool) string {
+	allowDegradationConfig := ""
+	if allowDegradation {
+		allowDegradationConfig = "allow_degradation_to_read_only = true"
+	}
+
+	return fmt.Sprintf(clickHouseVPCDependencies+"\n"+`
+resource "yandex_mdb_clickhouse_cluster_v2" "migrate_to_keeper" {
+  name        = "%s"
+  environment = "PRESTABLE"
+  network_id  = yandex_vpc_network.mdb-ch-test-net.id
+
+  zookeeper = {
+    resources = {
+      resource_preset_id = "s2.micro"
+      disk_type_id       = "network-ssd"
+      disk_size          = 10
+    }
+  }
+
+  hosts = {
+    "za" = {
+      type      = "%s"
+      zone      = "ru-central1-a"
+      subnet_id = yandex_vpc_subnet.mdb-ch-test-subnet-a.id
+    }
+    "zb" = {
+      type      = "%s"
+      zone      = "ru-central1-b"
+      subnet_id = yandex_vpc_subnet.mdb-ch-test-subnet-b.id
+    }
+    "zd" = {
+      type      = "%s"
+      zone      = "ru-central1-d"
+      subnet_id = yandex_vpc_subnet.mdb-ch-test-subnet-d.id
+    }
+    "ha" = {
+      type       = "CLICKHOUSE"
+      zone       = "ru-central1-a"
+      subnet_id  = yandex_vpc_subnet.mdb-ch-test-subnet-a.id
+      shard_name = "shard1"
+    }
+  }
+
+  shards = {
+    shard1 = {}
+  }
+
+  # maintenance_window
+  %s
+
+  %s
+}
+`,
+		name,
+		coordinatorType,
+		coordinatorType,
+		coordinatorType,
+		maintenanceWindowAnytime,
+		allowDegradationConfig,
 	)
 }
 
@@ -1898,6 +2326,55 @@ resource "yandex_mdb_clickhouse_cluster_v2" "foo" {
 	)
 }
 
+func testAccMDBClickHouseCluster_restore(name string) string {
+	return fmt.Sprintf(clickHouseVPCDependencies+"\n"+`
+resource "yandex_mdb_clickhouse_cluster_v2" "restore_test" {
+  name                = "%s"
+  description         = "ClickHouse Cluster Restore Test"
+  environment         = "PRESTABLE"
+  network_id          = "${yandex_vpc_network.mdb-ch-test-net.id}"
+  deletion_protection = false
+
+  restore = {
+    backup_id = "%s"
+  }
+
+  clickhouse = {
+    resources = {
+      resource_preset_id = "s2.micro"
+      disk_type_id       = "network-ssd"
+      disk_size          = 10
+    }
+  }
+
+  hosts = {
+    "ha" = {
+      type       = "CLICKHOUSE"
+      zone       = "ru-central1-a"
+      subnet_id  = "${yandex_vpc_subnet.mdb-ch-test-subnet-a.id}"
+      shard_name = "shard1"
+    }
+  }
+
+  shards = {
+    shard1 = {}
+  }
+
+  extension {
+    name    = "catboost"
+    version = "1.17.3"
+  }
+
+  maintenance_window {
+    type = "ANYTIME"
+  }
+}
+`,
+		name,
+		chRestoreBackupWithExtensionId,
+	)
+}
+
 // Utils
 
 func testAccCheckMDBClickHouseClusterHasDiskSizeAutoscaling(cluster *clickhouse.Cluster, targetDsa *clickhouse.DiskSizeAutoscaling) resource.TestCheckFunc {
@@ -1918,7 +2395,7 @@ func testAccCheckMDBClickHouseShardHasDiskSizeAutoscaling(r *clickhouse.Cluster,
 	return func(s *terraform.State) error {
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		shard, err := config.SDK.MDB().Clickhouse().Cluster().GetShard(context.Background(), &clickhouse.GetClusterShardRequest{
+		shard, err := clickhousesdk.NewClusterClient(config.SDKv2).GetShard(context.Background(), &clickhouse.GetClusterShardRequest{
 			ClusterId: r.Id,
 			ShardName: shardName,
 		})
@@ -1962,7 +2439,7 @@ func testAccCheckMDBClickHouseShardHasResources(r *clickhouse.Cluster, shardName
 	return func(s *terraform.State) error {
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		shard, err := config.SDK.MDB().Clickhouse().Cluster().GetShard(context.Background(), &clickhouse.GetClusterShardRequest{
+		shard, err := clickhousesdk.NewClusterClient(config.SDKv2).GetShard(context.Background(), &clickhouse.GetClusterShardRequest{
 			ClusterId: r.Id,
 			ShardName: shardName,
 		})
@@ -1992,7 +2469,7 @@ func testAccCheckMDBClickHouseClusterHasShards(r *clickhouse.Cluster, shards []s
 	return func(s *terraform.State) error {
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		resp, err := config.SDK.MDB().Clickhouse().Cluster().ListShards(context.Background(), &clickhouse.ListClusterShardsRequest{
+		resp, err := clickhousesdk.NewClusterClient(config.SDKv2).ListShards(context.Background(), &clickhouse.ListClusterShardsRequest{
 			ClusterId: r.Id,
 			PageSize:  defaultMDBPageSize,
 		})
@@ -2022,7 +2499,7 @@ func testAccCheckMDBClickHouseClusterHasShardGroups(r *clickhouse.Cluster, shard
 	return func(s *terraform.State) error {
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		resp, err := config.SDK.MDB().Clickhouse().Cluster().ListShardGroups(context.Background(), &clickhouse.ListClusterShardGroupsRequest{
+		resp, err := clickhousesdk.NewClusterClient(config.SDKv2).ListShardGroups(context.Background(), &clickhouse.ListClusterShardGroupsRequest{
 			ClusterId: r.Id,
 			PageSize:  defaultMDBPageSize,
 		})
@@ -2045,6 +2522,51 @@ func testAccCheckMDBClickHouseClusterHasShardGroups(r *clickhouse.Cluster, shard
 			}
 			if !found {
 				return fmt.Errorf("Shard group '%s' not found", s)
+			}
+		}
+		return nil
+	}
+}
+
+func testAccCheckMDBClickHouseClusterHasExternalShards(r *clickhouse.Cluster, groups map[string]map[string]int) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		config := test.AccProvider.(*provider.Provider).GetConfig()
+
+		resp, err := clickhousesdk.NewClusterClient(config.SDKv2).ListShardGroups(context.Background(), &clickhouse.ListClusterShardGroupsRequest{
+			ClusterId: r.Id,
+			PageSize:  defaultMDBPageSize,
+		})
+		if err != nil {
+			return err
+		}
+
+		for groupName, expectedShards := range groups {
+			var group *clickhouse.ShardGroup
+			for _, g := range resp.ShardGroups {
+				if g.Name == groupName {
+					group = g
+					break
+				}
+			}
+			if group == nil {
+				return fmt.Errorf("shard group %q not found", groupName)
+			}
+			if len(group.ExternalShards) != len(expectedShards) {
+				return fmt.Errorf("group %q: expected %d external shards, got %d", groupName, len(expectedShards), len(group.ExternalShards))
+			}
+			for _, es := range group.ExternalShards {
+				wantReplicas, ok := expectedShards[es.Name]
+				if !ok {
+					return fmt.Errorf("group %q: unexpected external shard %q", groupName, es.Name)
+				}
+				if len(es.Replicas) != wantReplicas {
+					return fmt.Errorf("group %q external shard %q: expected %d replicas, got %d", groupName, es.Name, wantReplicas, len(es.Replicas))
+				}
+				for _, rep := range es.Replicas {
+					if rep.Host == "" {
+						return fmt.Errorf("group %q external shard %q: replica has empty host", groupName, es.Name)
+					}
+				}
 			}
 		}
 		return nil
@@ -2097,7 +2619,7 @@ func testAccCheckMDBClickHouseClusterExists(n string, r *clickhouse.Cluster, hos
 
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		found, err := config.SDK.MDB().Clickhouse().Cluster().Get(context.Background(), &clickhouse.GetClusterRequest{
+		found, err := clickhousesdk.NewClusterClient(config.SDKv2).Get(context.Background(), &clickhouse.GetClusterRequest{
 			ClusterId: rs.Primary.ID,
 		})
 		if err != nil {
@@ -2110,7 +2632,7 @@ func testAccCheckMDBClickHouseClusterExists(n string, r *clickhouse.Cluster, hos
 
 		*r = *found
 
-		resp, err := config.SDK.MDB().Clickhouse().Cluster().ListHosts(context.Background(), &clickhouse.ListClusterHostsRequest{
+		resp, err := clickhousesdk.NewClusterClient(config.SDKv2).ListHosts(context.Background(), &clickhouse.ListClusterHostsRequest{
 			ClusterId: rs.Primary.ID,
 			PageSize:  defaultMDBPageSize,
 		})
@@ -2126,6 +2648,41 @@ func testAccCheckMDBClickHouseClusterExists(n string, r *clickhouse.Cluster, hos
 	}
 }
 
+func testAccCheckMDBClickHouseCoordinatorHosts(n string, expectedType clickhouse.Host_Type, expectedCount int) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("Not found: %s", n)
+		}
+
+		config := test.AccProvider.(*provider.Provider).GetConfig()
+		resp, err := clickhousesdk.NewClusterClient(config.SDKv2).ListHosts(context.Background(), &clickhouse.ListClusterHostsRequest{
+			ClusterId: rs.Primary.ID,
+			PageSize:  defaultMDBPageSize,
+		})
+		if err != nil {
+			return err
+		}
+
+		coordinatorCount := 0
+		for _, host := range resp.Hosts {
+			if host.GetType() != clickhouse.Host_ZOOKEEPER && host.GetType() != clickhouse.Host_KEEPER {
+				continue
+			}
+			if host.GetType() != expectedType {
+				return fmt.Errorf("Expected coordinator host type %s, got %s for host %q", expectedType, host.GetType(), host.GetName())
+			}
+			coordinatorCount++
+		}
+
+		if coordinatorCount != expectedCount {
+			return fmt.Errorf("Expected %d coordinator hosts of type %s, got %d", expectedCount, expectedType, coordinatorCount)
+		}
+
+		return nil
+	}
+}
+
 func testAccCheckMDBClickHouseClusterDestroy(s *terraform.State) error {
 	config := test.AccProvider.(*provider.Provider).GetConfig()
 
@@ -2134,7 +2691,7 @@ func testAccCheckMDBClickHouseClusterDestroy(s *terraform.State) error {
 			continue
 		}
 
-		_, err := config.SDK.MDB().Clickhouse().Cluster().Get(context.Background(), &clickhouse.GetClusterRequest{
+		_, err := clickhousesdk.NewClusterClient(config.SDKv2).Get(context.Background(), &clickhouse.GetClusterRequest{
 			ClusterId: rs.Primary.ID,
 		})
 
@@ -2159,7 +2716,7 @@ func testAccCheckMDBClickHouseClusterHasFormatSchemas(r string, targetSchemas ma
 
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		resp, err := config.SDK.MDB().Clickhouse().FormatSchema().List(context.Background(), &clickhouse.ListFormatSchemasRequest{
+		resp, err := clickhousesdk.NewFormatSchemaClient(config.SDKv2).List(context.Background(), &clickhouse.ListFormatSchemasRequest{
 			ClusterId: rs.Primary.ID,
 			PageSize:  defaultMDBPageSize,
 		})
@@ -2204,7 +2761,7 @@ func testAccCheckMDBClickHouseClusterHasExtensions(r string, targetExtensions ma
 
 		config := test.AccProvider.(*provider.Provider).GetConfig()
 
-		resp, err := config.SDK.MDB().Clickhouse().ClusterExtension().List(context.Background(), &clickhouse.ListClusterExtensionsRequest{
+		resp, err := clickhousesdk.NewClusterExtensionClient(config.SDKv2).List(context.Background(), &clickhouse.ListClusterExtensionsRequest{
 			ClusterId: rs.Primary.ID,
 			PageSize:  defaultMDBPageSize,
 		})
@@ -2238,14 +2795,21 @@ func mdbClickHouseClusterImportStep(name string) resource.TestStep {
 		ImportState:       true,
 		ImportStateVerify: true,
 		ImportStateVerifyIgnore: []string{
-			"user",                       // passwords are not returned
-			"host",                       // zookeeper hosts are not imported by default
-			"zookeeper",                  // zookeeper spec is not imported by default
-			"health",                     // volatile value
-			"copy_schema_on_new_hosts",   // special parameter
-			"admin_password",             // passwords are not returned
-			"clickhouse.config.kafka",    // passwords are not returned
-			"clickhouse.config.rabbitmq", // passwords are not returned
+			"user",                           // passwords are not returned
+			"host",                           // zookeeper hosts are not imported by default
+			"zookeeper",                      // zookeeper spec is not imported by default
+			"health",                         // volatile value
+			"copy_schema_on_new_hosts",       // special parameter
+			"allow_host_recreation",          // special parameter
+			"allow_degradation_to_read_only", // special parameter
+			"admin_password",                 // passwords are not returned
+			"admin_password_wo_version",      // write-only password versions are not returned
+			"clickhouse.config.kafka",        // passwords are not returned
+			"clickhouse.config.rabbitmq",     // passwords are not returned
+			"external_dictionary.mysql_dict.source.mysql_source.replicas.0.password", // passwords are not returned
+			"external_dictionary.mysql_dict.source.mysql_source.replicas.1.password", // passwords are not returned
+			"shard_group.0.external_shard.0.replica.0.password",                      // passwords are not returned
+			"shard_group.0.external_shard.1.replica.0.password",                      // passwords are not returned
 		},
 	}
 }
@@ -2258,7 +2822,7 @@ func testSweepMDBClickHouseCluster(_ string) error {
 		return fmt.Errorf("error getting client: %s", err)
 	}
 
-	resp, err := conf.SDK.MDB().Clickhouse().Cluster().List(context.Background(), &clickhouse.ListClustersRequest{
+	resp, err := clickhousesdk.NewClusterClient(conf.SDKv2).List(context.Background(), &clickhouse.ListClustersRequest{
 		FolderId: conf.ProviderState.FolderID.ValueString(),
 		PageSize: defaultMDBPageSize,
 	})
@@ -2285,20 +2849,32 @@ func sweepMDBClickHouseClusterOnce(conf *config.Config, id string) error {
 	defer cancel()
 
 	mask := field_mask.FieldMask{Paths: []string{"deletion_protection"}}
-	op, err := conf.SDK.MDB().Clickhouse().Cluster().Update(ctx, &clickhouse.UpdateClusterRequest{
+	client := clickhousesdk.NewClusterClient(conf.SDKv2)
+	clusterAbsent := func() bool {
+		_, getErr := client.Get(ctx, &clickhouse.GetClusterRequest{ClusterId: id})
+		return status.Code(getErr) == codes.NotFound
+	}
+	op, err := client.Update(ctx, &clickhouse.UpdateClusterRequest{
 		ClusterId:          id,
 		DeletionProtection: false,
 		UpdateMask:         &mask,
 	})
-	err = test.HandleSweepOperation(ctx, conf, op, err)
+	err = test.HandleSweepOperationV2(ctx, op, err)
 	if err != nil && !strings.EqualFold(test.ErrorMessage(err), "no changes detected") {
+		if clusterAbsent() {
+			return nil
+		}
 		return err
 	}
 
-	op, err = conf.SDK.MDB().Clickhouse().Cluster().Delete(ctx, &clickhouse.DeleteClusterRequest{
+	deleteOp, err := client.Delete(ctx, &clickhouse.DeleteClusterRequest{
 		ClusterId: id,
 	})
-	return test.HandleSweepOperation(ctx, conf, op, err)
+	err = test.HandleSweepOperationV2(ctx, deleteOp, err)
+	if err != nil && clusterAbsent() {
+		return nil
+	}
+	return err
 }
 
 // Build HCL functions
