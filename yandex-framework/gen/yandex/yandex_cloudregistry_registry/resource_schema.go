@@ -177,7 +177,7 @@ func YandexCloudregistryRegistryResourceSchema(ctx context.Context) schema.Schem
 					),
 					mapvalidator.ValueStringsAre(
 						stringvalidator.RegexMatches(regexp.MustCompile("^([-_.~!*'();/?:@&=+$,%#0-9a-zA-Z]+)$"), "error validating regexp"),
-						stringvalidator.LengthBetween(0, 63),
+						stringvalidator.LengthBetween(0, 255),
 					),
 				},
 			},
